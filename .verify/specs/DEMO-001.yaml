@@ -1,0 +1,111 @@
+# .verify/specs/DEMO-001.yaml
+# Handcrafted spec for the dummy app's GET /api/v1/users/me endpoint
+# This is the contract that proves the spec format works end-to-end.
+
+meta:
+  spec_version: "1.0"
+  jira_key: "DEMO-001"
+  jira_summary: "User can view their profile"
+  generated_at: "2026-03-21T00:00:00Z"
+  approved_at: "2026-03-21T00:00:00Z"
+  approved_by: "hackathon-team"
+  status: approved
+
+requirements:
+  - id: REQ-001
+    ac_checkbox: 0
+    ac_text: "User can view their profile"
+    title: "Authenticated user retrieves their profile"
+    type: api_behavior
+
+    contract:
+      interface:
+        method: GET
+        path: /api/v1/users/me
+        auth: jwt_bearer
+
+      preconditions:
+        - id: PRE-001
+          description: "Request includes a valid Bearer token in the Authorization header"
+          formal: "authorization_header != null AND authorization_header.startsWith('Bearer ')"
+          category: authentication
+
+        - id: PRE-002
+          description: "A user record exists for the authenticated token"
+          formal: "users.findByToken(token) != null"
+          category: data_existence
+
+      success:
+        status: 200
+        content_type: application/json
+        schema:
+          type: object
+          required:
+            - id
+            - email
+            - displayName
+          properties:
+            id:
+              type: string
+            email:
+              type: string
+              format: email
+            displayName:
+              type: string
+          forbidden_fields:
+            - password
+            - ssn
+
+      failures:
+        - id: FAIL-001
+          when: "No Authorization header present or header does not start with 'Bearer '"
+          violates: PRE-001
+          status: 401
+          body:
+            error: unauthorized
+            message: "Missing or invalid authorization header"
+
+        - id: FAIL-002
+          when: "Bearer token references a non-existent user"
+          violates: PRE-002
+          status: 404
+          body:
+            error: user_not_found
+            message: "User not found"
+
+      invariants:
+        - id: INV-001
+          type: security
+          rule: "Response body must never contain 'password' or 'ssn' fields"
+          formal: "'password' not in response.keys() AND 'ssn' not in response.keys()"
+
+    verification:
+      - refs:
+          - success
+          - FAIL-001
+          - FAIL-002
+          - INV-001
+        skill: pytest_unit_test
+        output: ".verify/generated/test_demo_001.py"
+
+traceability:
+  ac_mappings:
+    - ac_checkbox: 0
+      ac_text: "User can view their profile"
+      pass_condition: ALL_PASS
+      required_verifications:
+        - ref: "REQ-001.success"
+          description: "Happy path returns correct profile data"
+          verification_type: test_result
+
+        - ref: "REQ-001.FAIL-001"
+          description: "Missing auth returns 401"
+          verification_type: test_result
+
+        - ref: "REQ-001.FAIL-002"
+          description: "Non-existent user returns 404"
+          verification_type: test_result
+
+        - ref: "REQ-001.INV-001"
+          description: "Forbidden fields never appear in response"
+          verification_type: test_result
