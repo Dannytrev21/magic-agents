@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Negotiation UI</title>
+<style>
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --surface-2: #242836; --border: #2e3345;
+    --text: #e2e4ea; --text-dim: #8b8fa3; --accent: #6c5ce7; --accent-glow: rgba(108,92,231,0.15);
+    --green: #00b894; --orange: #fdcb6e; --red: #e17055; --blue: #74b9ff; --radius: 12px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'SF Mono','Fira Code','JetBrains Mono',monospace; background:var(--bg); color:var(--text); min-height:100vh; }
+
+  /* Layout */
+  .app { display:flex; flex-direction:column; min-height:100vh; }
+  header { padding:16px 32px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:16px; }
+  header h1 { font-size:15px; font-weight:600; letter-spacing:0.5px; }
+  .nav-btn { background:var(--surface-2); border:1px solid var(--border); color:var(--text-dim); border-radius:6px; padding:6px 14px; font-family:inherit; font-size:11px; cursor:pointer; transition:all 0.2s; }
+  .nav-btn:hover { border-color:var(--accent); color:var(--text); }
+  .nav-btn.active { background:var(--accent-glow); border-color:var(--accent); color:var(--text); }
+  .spacer { flex:1; }
+  .phase-dots { display:flex; gap:6px; }
+  .phase-dot { width:10px; height:10px; border-radius:50%; background:var(--surface-2); border:1px solid var(--border); transition:all 0.3s; }
+  .phase-dot.active { background:var(--accent); border-color:var(--accent); box-shadow:0 0 8px var(--accent-glow); }
+  .phase-dot.done { background:var(--green); border-color:var(--green); }
+  main { flex:1; overflow-y:auto; padding:24px 32px; }
+
+  /* Screens */
+  .screen { display:none; } .screen.active { display:block; }
+
+  /* Home — Story Picker */
+  .home-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; max-width:960px; margin:0 auto; }
+  .home-panel { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; }
+  .home-panel h2 { font-size:14px; margin-bottom:16px; color:var(--accent); }
+  .story-list { display:flex; flex-direction:column; gap:8px; max-height:400px; overflow-y:auto; }
+  .story-card { background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:12px 16px; cursor:pointer; transition:all 0.2s; }
+  .story-card:hover { border-color:var(--accent); }
+  .story-key { font-size:12px; color:var(--accent); font-weight:600; }
+  .story-summary { font-size:12px; color:var(--text); margin-top:4px; }
+  .story-status { font-size:10px; color:var(--green); text-transform:uppercase; letter-spacing:0.5px; margin-top:4px; }
+  .story-empty { font-size:12px; color:var(--text-dim); padding:24px; text-align:center; }
+  .jira-loading { font-size:12px; color:var(--text-dim); padding:24px; text-align:center; }
+
+  /* Manual form */
+  label { display:block; font-size:11px; color:var(--text-dim); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px; }
+  input, textarea { width:100%; background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:10px 14px; color:var(--text); font-family:inherit; font-size:13px; outline:none; margin-bottom:12px; }
+  textarea { min-height:80px; resize:vertical; }
+  input:focus, textarea:focus { border-color:var(--accent); }
+  .btn { background:var(--accent); color:white; border:none; border-radius:8px; padding:12px 24px; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; transition:opacity 0.2s; }
+  .btn:hover { opacity:0.85; } .btn:disabled { opacity:0.4; cursor:not-allowed; }
+  .btn-full { width:100%; }
+  .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text-dim); }
+  .btn-outline:hover { border-color:var(--accent); color:var(--text); }
+
+  /* AC Overview */
+  .ac-header { display:flex; align-items:center; gap:16px; margin-bottom:24px; }
+  .ac-header h2 { font-size:16px; }
+  .ac-header .tag { font-size:12px; }
+  .ac-grid { display:flex; flex-direction:column; gap:12px; max-width:800px; }
+  .ac-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px 20px; }
+  .ac-idx { font-size:11px; color:var(--accent); font-weight:600; }
+  .ac-text { font-size:13px; margin-top:6px; line-height:1.6; }
+  .ac-check { font-size:11px; color:var(--green); margin-top:4px; }
+
+  /* Chat / Negotiation */
+  .chat-area { display:flex; flex-direction:column; gap:16px; max-width:900px; }
+  .message { max-width:85%; animation:fadeIn 0.3s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  .message.ai { align-self:flex-start; } .message.human { align-self:flex-end; } .message.system { align-self:center; max-width:100%; }
+  .msg-label { font-size:10px; color:var(--text-dim); margin-bottom:6px; text-transform:uppercase; letter-spacing:1px; }
+  .msg-body { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px 20px; font-size:13px; line-height:1.6; }
+  .message.human .msg-body { background:var(--accent-glow); border-color:var(--accent); }
+  .message.system .msg-body { background:transparent; border:1px dashed var(--border); text-align:center; color:var(--text-dim); font-size:12px; }
+  .phase-title { font-size:14px; font-weight:600; color:var(--accent); margin-bottom:12px; }
+  .result-card { background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:12px 16px; margin-bottom:8px; font-size:12px; line-height:1.5; }
+  .field { display:flex; gap:8px; margin-bottom:2px; }
+  .field-key { color:var(--blue); min-width:100px; }
+  .field-val { color:var(--text); word-break:break-word; }
+  .tag { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:500; }
+  .tag-type { background:rgba(116,185,255,0.15); color:var(--blue); }
+  .tag-actor { background:rgba(0,184,148,0.15); color:var(--green); }
+  .tag-category { background:rgba(253,203,110,0.15); color:var(--orange); }
+  .tag-status { background:rgba(225,112,85,0.15); color:var(--red); }
+  .tag-id { background:rgba(108,92,231,0.15); color:var(--accent); }
+  .questions-box { margin-top:12px; padding:12px 16px; background:rgba(253,203,110,0.08); border:1px solid rgba(253,203,110,0.25); border-radius:8px; }
+  .questions-label { font-size:11px; color:var(--orange); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+  .question-item { font-size:12px; color:var(--text); margin-bottom:4px; }
+
+  /* Input bar */
+  #input-bar { padding:16px 32px; border-top:1px solid var(--border); display:flex; gap:12px; align-items:center; }
+  .quick-actions { display:flex; gap:8px; }
+  .quick-btn { background:var(--surface-2); border:1px solid var(--border); color:var(--text-dim); border-radius:6px; padding:8px 14px; font-family:inherit; font-size:12px; cursor:pointer; transition:all 0.2s; }
+  .quick-btn:hover { border-color:var(--accent); color:var(--text); }
+  #input-bar input { flex:1; }
+
+  /* Traceability / Summary */
+  .summary-header { margin-bottom:24px; }
+  .summary-header h2 { font-size:16px; margin-bottom:4px; }
+  .summary-header p { font-size:12px; color:var(--text-dim); }
+  .summary-stats { display:flex; gap:12px; margin:20px 0; flex-wrap:wrap; }
+  .stat { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:12px 20px; text-align:center; min-width:100px; }
+  .stat .num { font-size:24px; font-weight:700; color:var(--accent); }
+  .stat .lbl { font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.5px; margin-top:2px; }
+
+  .trace-ac { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:20px; overflow:hidden; }
+  .trace-ac-header { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; cursor:pointer; }
+  .trace-ac-header:hover { background:var(--surface-2); }
+  .trace-ac-idx { font-size:12px; color:var(--accent); font-weight:600; }
+  .trace-ac-text { font-size:13px; flex:1; }
+  .trace-ac-badge { font-size:10px; padding:3px 8px; border-radius:4px; }
+  .trace-body { padding:0 20px 20px; display:flex; flex-direction:column; gap:12px; }
+  .trace-section { margin-top:12px; }
+  .trace-section-title { font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; border-bottom:1px solid var(--border); padding-bottom:4px; }
+  .trace-item { font-size:12px; padding:8px 12px; background:var(--surface-2); border-radius:6px; margin-bottom:4px; line-height:1.5; }
+  .trace-ref { font-size:11px; color:var(--accent); margin-right:8px; }
+
+  .ears-section { margin-top:24px; }
+  .ears-item { font-size:12px; font-style:italic; color:var(--blue); padding:8px 12px; background:var(--surface); border:1px solid var(--border); border-radius:6px; margin-bottom:6px; line-height:1.5; }
+
+  .spinner { display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.6s linear infinite; margin-right:8px; vertical-align:middle; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <h1>NEGOTIATION</h1>
+    <button class="nav-btn active" id="navHome" onclick="showScreen('home')">Home</button>
+    <button class="nav-btn" id="navAC" onclick="showScreen('ac-overview')">AC Overview</button>
+    <button class="nav-btn" id="navNeg" onclick="showScreen('negotiate')">Negotiate</button>
+    <button class="nav-btn" id="navTrace" onclick="showScreen('traceability')">Traceability</button>
+    <div class="spacer"></div>
+    <div class="phase-dots" id="phaseDots">
+      <div class="phase-dot" data-phase="1"></div>
+      <div class="phase-dot" data-phase="2"></div>
+      <div class="phase-dot" data-phase="3"></div>
+      <div class="phase-dot" data-phase="4"></div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Screen 1: Home / Story Picker -->
+    <div class="screen active" id="screen-home">
+      <div class="home-grid">
+        <div class="home-panel">
+          <h2>Jira Stories In Progress</h2>
+          <div id="jiraPanel">
+            <div class="jira-loading">Checking Jira connection...</div>
+          </div>
+        </div>
+        <div class="home-panel">
+          <h2>Manual Entry</h2>
+          <label>Jira Key</label>
+          <input type="text" id="jiraKey" value="DEMO-001" />
+          <label>Summary</label>
+          <input type="text" id="jiraSummary" value="User Profile Endpoint" />
+          <label>Acceptance Criteria (one per line)</label>
+          <textarea id="acInput">User can view their profile via GET /api/v1/users/me
+The endpoint returns 401 when no auth header is present
+User profile never exposes password or internal fields</textarea>
+          <button class="btn btn-full" onclick="startManual()">Load AC</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 2: AC Overview -->
+    <div class="screen" id="screen-ac-overview">
+      <div class="ac-header">
+        <h2 id="acTitle">Acceptance Criteria</h2>
+        <span class="tag tag-id" id="acKey"></span>
+      </div>
+      <div class="ac-grid" id="acGrid"></div>
+      <div style="margin-top:20px">
+        <button class="btn" onclick="beginNegotiation()">Begin Negotiation</button>
+      </div>
+    </div>
+
+    <!-- Screen 3: Negotiation Chat -->
+    <div class="screen" id="screen-negotiate">
+      <div class="chat-area" id="chat"></div>
+    </div>
+
+    <!-- Screen 4: Traceability / Summary -->
+    <div class="screen" id="screen-traceability">
+      <div id="traceContent"></div>
+    </div>
+  </main>
+
+  <div id="input-bar" class="hidden">
+    <div class="quick-actions">
+      <button class="quick-btn" onclick="quickSend('approve')">approve</button>
+      <button class="quick-btn" onclick="quickSend('skip')">skip</button>
+    </div>
+    <input type="text" id="userInput" placeholder="Type feedback or 'approve'..." onkeydown="if(event.key==='Enter')sendResponse()" />
+    <button class="btn" id="sendBtn" onclick="sendResponse()">Send</button>
+  </div>
+</div>
+
+<script>
+// State
+let currentScreen = 'home';
+let storyData = null; // {key, summary, acceptance_criteria}
+let negotiationDone = false;
+let summaryData = null;
+
+// Navigation
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('nav' + {home:'Home','ac-overview':'AC',negotiate:'Neg',traceability:'Trace'}[id]).classList.add('active');
+  currentScreen = id;
+  document.getElementById('input-bar').classList.toggle('hidden', id !== 'negotiate' || negotiationDone);
+}
+
+// Jira
+async function checkJira() {
+  const panel = document.getElementById('jiraPanel');
+  try {
+    const res = await fetch('/api/jira/configured');
+    const data = await res.json();
+    if (!data.configured) {
+      panel.innerHTML = '<div class="story-empty">Jira not configured.<br><br><span style="font-size:11px;color:var(--text-dim)">Set JIRA_BASE_URL, JIRA_EMAIL,<br>and JIRA_API_TOKEN env vars.</span></div>';
+      return;
+    }
+    panel.innerHTML = '<div class="jira-loading"><span class="spinner"></span> Loading stories...</div>';
+    const storiesRes = await fetch('/api/jira/stories');
+    const storiesData = await storiesRes.json();
+    if (storiesData.error) {
+      panel.innerHTML = `<div class="story-empty">${storiesData.error}</div>`;
+      return;
+    }
+    if (!storiesData.stories.length) {
+      panel.innerHTML = '<div class="story-empty">No stories in progress.</div>';
+      return;
+    }
+    let html = '<div class="story-list">';
+    storiesData.stories.forEach(s => {
+      html += `<div class="story-card" onclick="loadJiraStory('${s.key}')">
+        <div class="story-key">${s.key}</div>
+        <div class="story-summary">${s.summary}</div>
+        <div class="story-status">${s.status} &middot; ${s.assignee}</div>
+      </div>`;
+    });
+    html += '</div>';
+    panel.innerHTML = html;
+  } catch(e) {
+    panel.innerHTML = '<div class="story-empty">Could not connect to Jira.</div>';
+  }
+}
+
+async function loadJiraStory(key) {
+  const panel = document.getElementById('jiraPanel');
+  panel.innerHTML = '<div class="jira-loading"><span class="spinner"></span> Loading ' + key + '...</div>';
+  try {
+    const res = await fetch(`/api/jira/ticket/${key}`);
+    const data = await res.json();
+    if (data.error) { panel.innerHTML = `<div class="story-empty">${data.error}</div>`; return; }
+    storyData = data;
+    showACOverview();
+  } catch(e) {
+    panel.innerHTML = `<div class="story-empty">Error: ${e.message}</div>`;
+  }
+}
+
+// Manual entry
+function startManual() {
+  const key = document.getElementById('jiraKey').value.trim();
+  const summary = document.getElementById('jiraSummary').value.trim();
+  const lines = document.getElementById('acInput').value.split('\n').filter(l => l.trim());
+  storyData = {
+    key, summary,
+    acceptance_criteria: lines.map((t, i) => ({ index: i, text: t.trim(), checked: false }))
+  };
+  showACOverview();
+}
+
+// AC Overview
+function showACOverview() {
+  document.getElementById('acTitle').textContent = storyData.summary;
+  document.getElementById('acKey').textContent = storyData.key;
+  const grid = document.getElementById('acGrid');
+  grid.innerHTML = '';
+  storyData.acceptance_criteria.forEach(ac => {
+    const check = ac.checked ? 'x' : ' ';
+    grid.innerHTML += `<div class="ac-card">
+      <div class="ac-idx">AC[${ac.index}]</div>
+      <div class="ac-text">${ac.text}</div>
+      ${ac.checked ? '<div class="ac-check">Verified</div>' : ''}
+    </div>`;
+  });
+  showScreen('ac-overview');
+}
+
+// Negotiation
+async function beginNegotiation() {
+  negotiationDone = false;
+  showScreen('negotiate');
+  document.getElementById('input-bar').classList.remove('hidden');
+  const chat = document.getElementById('chat');
+  chat.innerHTML = '';
+
+  addMsg('system', `Starting negotiation for <strong>${storyData.key}</strong>: ${storyData.summary}<br>${storyData.acceptance_criteria.length} acceptance criteria`);
+  setLoading(true);
+
+  const res = await fetch('/api/start', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ jira_key: storyData.key, jira_summary: storyData.summary, acceptance_criteria: storyData.acceptance_criteria }),
+  });
+  const data = await res.json();
+  removeLoading();
+  updateDots(data.phase_number, false);
+  addMsg('ai', renderPhaseResults(data));
+  setLoading(false);
+  document.getElementById('userInput').focus();
+}
+
+async function sendResponse() {
+  if (negotiationDone || document.getElementById('sendBtn').disabled) return;
+  const text = document.getElementById('userInput').value.trim() || 'approve';
+  document.getElementById('userInput').value = '';
+  addMsg('human', text);
+
+  const isApproval = ['approve','skip',''].includes(text.toLowerCase());
+  setLoading(true, isApproval ? 'Running next phase...' : 'Revising based on your feedback...');
+
+  const res = await fetch('/api/respond', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ input: text }),
+  });
+  const data = await res.json();
+  removeLoading();
+
+  if (data.done) {
+    negotiationDone = true;
+    summaryData = data.summary;
+    updateDots(4, true);
+    addMsg('system', 'Negotiation complete. Synthesis generated.');
+    document.getElementById('input-bar').classList.add('hidden');
+    renderTraceability();
+    showScreen('traceability');
+  } else {
+    updateDots(data.phase_number, false);
+    addMsg('ai', renderPhaseResults(data));
+    setLoading(false);
+    document.getElementById('userInput').focus();
+  }
+}
+
+function quickSend(t) { document.getElementById('userInput').value = t; sendResponse(); }
+
+// Rendering
+function addMsg(type, html) {
+  const labels = {ai:'AI',human:'You',system:'System'};
+  const chat = document.getElementById('chat');
+  const div = document.createElement('div');
+  div.className = `message ${type}`;
+  div.innerHTML = `<div class="msg-label">${labels[type]||type}</div><div class="msg-body">${html}</div>`;
+  chat.appendChild(div);
+  setTimeout(() => chat.scrollTop = chat.scrollHeight, 50);
+}
+
+function renderPhaseResults(data) {
+  let html = `<div class="phase-title">${data.phase_title}</div>`;
+  (data.results||[]).forEach(r => {
+    html += '<div class="result-card">';
+    for (const [k,v] of Object.entries(r)) {
+      if (typeof v==='object' && v!==null && !Array.isArray(v)) html += `<div class="field"><span class="field-key">${k}</span><span class="field-val">${JSON.stringify(v)}</span></div>`;
+      else if (Array.isArray(v)) html += `<div class="field"><span class="field-key">${k}</span><span class="field-val">${v.join(', ')}</span></div>`;
+      else if (k==='type') html += `<div class="field"><span class="field-key">${k}</span><span class="tag tag-type">${v}</span></div>`;
+      else if (k==='actor') html += `<div class="field"><span class="field-key">${k}</span><span class="tag tag-actor">${v}</span></div>`;
+      else if (k==='category') html += `<div class="field"><span class="field-key">${k}</span><span class="tag tag-category">${v}</span></div>`;
+      else if (k==='status'&&typeof v==='number') html += `<div class="field"><span class="field-key">${k}</span><span class="tag tag-status">${v}</span></div>`;
+      else if (k==='id') html += `<div class="field"><span class="field-key">${k}</span><span class="tag tag-id">${v}</span></div>`;
+      else html += `<div class="field"><span class="field-key">${k}</span><span class="field-val">${v}</span></div>`;
+    }
+    html += '</div>';
+  });
+  if (data.questions && data.questions.length) {
+    html += '<div class="questions-box"><div class="questions-label">Clarifying Questions</div>';
+    data.questions.forEach(q => { html += `<div class="question-item">&mdash; ${q}</div>`; });
+    html += '</div>';
+  }
+  return html;
+}
+
+function renderTraceability() {
+  if (!summaryData) return;
+  const s = summaryData;
+  const c = s.counts;
+  let html = '<div class="summary-header"><h2>' + s.jira_key + ': ' + s.jira_summary + '</h2><p>Negotiation complete &mdash; traceability from AC to verification specs</p></div>';
+
+  html += '<div class="summary-stats">';
+  html += `<div class="stat"><div class="num">${c.classifications}</div><div class="lbl">Classifications</div></div>`;
+  html += `<div class="stat"><div class="num">${c.postconditions}</div><div class="lbl">Postconditions</div></div>`;
+  html += `<div class="stat"><div class="num">${c.preconditions}</div><div class="lbl">Preconditions</div></div>`;
+  html += `<div class="stat"><div class="num">${c.failure_modes}</div><div class="lbl">Failure Modes</div></div>`;
+  html += `<div class="stat"><div class="num">${c.invariants}</div><div class="lbl">Invariants</div></div>`;
+  html += `<div class="stat"><div class="num">${c.ears}</div><div class="lbl">EARS</div></div>`;
+  html += '</div>';
+
+  // Per-AC traceability
+  (s.ac_details||[]).forEach(detail => {
+    const ac = detail.ac;
+    const clf = detail.classification;
+    const pc = detail.postcondition;
+    const pres = detail.preconditions || [];
+    const fms = detail.failure_modes || [];
+    const trace = detail.traceability;
+    const refCount = trace ? (trace.required_verifications||[]).length : 0;
+
+    html += '<div class="trace-ac">';
+    html += `<div class="trace-ac-header" onclick="this.parentElement.classList.toggle('collapsed')">
+      <span class="trace-ac-idx">AC[${ac.index}]</span>
+      <span class="trace-ac-text">${ac.text}</span>
+      <span class="trace-ac-badge tag-type tag">${clf?clf.type:'?'}</span>
+      <span class="trace-ac-badge tag-id tag">${refCount} refs</span>
+    </div>`;
+    html += '<div class="trace-body">';
+
+    // Classification
+    if (clf) {
+      html += '<div class="trace-section"><div class="trace-section-title">Classification</div>';
+      html += `<div class="trace-item"><span class="tag tag-type">${clf.type}</span> <span class="tag tag-actor">${clf.actor}</span>`;
+      if (clf.interface) html += ` &rarr; ${clf.interface.method} ${clf.interface.path}`;
+      html += '</div></div>';
+    }
+
+    // Postcondition
+    if (pc) {
+      html += '<div class="trace-section"><div class="trace-section-title">Happy Path Contract</div>';
+      html += `<div class="trace-item"><span class="tag tag-status">${pc.status}</span> ${pc.content_type||''}`;
+      if (pc.constraints) html += `<br><span style="color:var(--text-dim);font-size:11px">Constraints: ${pc.constraints.join('; ')}</span>`;
+      if (pc.forbidden_fields) html += `<br><span style="color:var(--red);font-size:11px">Forbidden: ${pc.forbidden_fields.join(', ')}</span>`;
+      html += '</div></div>';
+    }
+
+    // Preconditions
+    if (pres.length) {
+      html += '<div class="trace-section"><div class="trace-section-title">Preconditions</div>';
+      pres.forEach(p => {
+        html += `<div class="trace-item"><span class="trace-ref">${p.id}</span> <span class="tag tag-category">${p.category}</span> ${p.description}<br><span style="color:var(--text-dim);font-size:11px">${p.formal||''}</span></div>`;
+      });
+      html += '</div>';
+    }
+
+    // Failure Modes
+    if (fms.length) {
+      html += '<div class="trace-section"><div class="trace-section-title">Failure Modes</div>';
+      fms.forEach(f => {
+        html += `<div class="trace-item"><span class="trace-ref">${f.id}</span> <span class="tag tag-status">${f.status}</span> ${f.description} <span style="color:var(--text-dim);font-size:11px">(violates ${f.violates})</span></div>`;
+      });
+      html += '</div>';
+    }
+
+    // Traceability refs
+    if (trace && trace.required_verifications) {
+      html += '<div class="trace-section"><div class="trace-section-title">Verification Refs</div>';
+      trace.required_verifications.forEach(v => {
+        html += `<div class="trace-item"><span class="trace-ref">${v.ref}</span> ${v.description}</div>`;
+      });
+      html += '</div>';
+    }
+
+    html += '</div></div>';
+  });
+
+  // EARS
+  const ears = s.ears_statements || [];
+  if (ears.length) {
+    html += '<div class="ears-section"><div class="trace-section-title">EARS Formal Statements</div>';
+    ears.forEach(e => { html += `<div class="ears-item">${e}</div>`; });
+    html += '</div>';
+  }
+
+  document.getElementById('traceContent').innerHTML = html;
+}
+
+// Helpers
+function updateDots(phase, done) {
+  document.querySelectorAll('.phase-dot').forEach(d => {
+    const p = +d.dataset.phase;
+    if (p < phase) d.className = 'phase-dot done';
+    else if (p === phase && !done) d.className = 'phase-dot active';
+    else if (done) d.className = 'phase-dot done';
+    else d.className = 'phase-dot';
+  });
+}
+
+function setLoading(on, msg) {
+  document.getElementById('sendBtn').disabled = on;
+  document.getElementById('userInput').disabled = on;
+  if (on) addMsg('system', `<span class="spinner"></span> ${msg || 'Running phase...'}`);
+}
+
+function removeLoading() {
+  const msgs = document.querySelectorAll('#chat .message.system');
+  const last = msgs[msgs.length-1];
+  if (last && (last.textContent.includes('Running') || last.textContent.includes('Revising'))) last.remove();
+}
+
+// Init
+checkJira();
+</script>
+</body>
+</html>

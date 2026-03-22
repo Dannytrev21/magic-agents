@@ -29,6 +29,48 @@ class JiraClient:
         self.auth = (self.email, self.api_token)
         self.headers = {"Accept": "application/json", "Content-Type": "application/json"}
 
+    # ── Search operations ──
+
+    def search_tickets(self, jql: str, max_results: int = 20) -> list[dict]:
+        """Search for tickets using JQL. Returns a list of issue summaries."""
+        url = f"{self.base_url}/rest/api/3/search/jql"
+        params = {
+            "jql": jql,
+            "maxResults": max_results,
+            "fields": "summary,status,assignee,description",
+        }
+        response = requests.get(url, auth=self.auth, headers=self.headers, params=params)
+
+        # Fall back to legacy endpoint if new one isn't available
+        if response.status_code in (404, 410):
+            url = f"{self.base_url}/rest/api/2/search"
+            response = requests.get(url, auth=self.auth, headers=self.headers, params=params)
+
+        if response.status_code == 401:
+            raise JiraAuthError("Authentication failed. Check JIRA_EMAIL and JIRA_API_TOKEN.")
+        response.raise_for_status()
+
+        issues = response.json().get("issues", [])
+        results = []
+        for issue in issues:
+            fields = issue.get("fields", {})
+            assignee = fields.get("assignee") or {}
+            results.append({
+                "key": issue["key"],
+                "summary": fields.get("summary", ""),
+                "status": (fields.get("status") or {}).get("name", ""),
+                "assignee": assignee.get("displayName", "Unassigned"),
+            })
+        return results
+
+    def get_in_progress_stories(self, project: str | None = None) -> list[dict]:
+        """Get stories currently In Progress, optionally filtered by project."""
+        jql = 'status = "In Progress"'
+        if project:
+            jql = f'project = "{project}" AND {jql}'
+        jql += " ORDER BY updated DESC"
+        return self.search_tickets(jql)
+
     # ── Read operations ──
 
     def fetch_ticket(self, jira_key: str) -> dict:
