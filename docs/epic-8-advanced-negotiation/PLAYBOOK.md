@@ -25,5 +25,24 @@
 
 Each EARS statement maps to exactly one verifiable assertion. Present the full list for developer approval. On approve → `context.approved = True`, spec freezes. On reject → harness re-enters the relevant earlier phase (feedback loop). The synthesis module currently generates basic EARS from postconditions/failures — this phase refines them with LLM reasoning and developer confirmation.
 
+### Feature 8.4: Multi-Agent Debate for Security Decisions [STRETCH]
+
+**Agentic Pattern:** Multi-Agent Debate
+
+**Problem:** Phase 4 surfaces security decisions (404 vs 410 for deleted users, generic vs specific error messages) but presents them as simple questions. The developer may not fully understand the tradeoffs without deeper analysis from both sides.
+
+**Pattern:** For contentious security decisions, spawn two sub-agents with opposing personas. Each argues its case, then the results are presented to the developer as a structured tradeoff analysis.
+
+**Implementation:**
+- Two Agent Skills with distinct personas:
+  - `.claude/skills/debate-security/SKILL.md` — Security-focused persona: "minimize information leakage, use generic errors, prefer 404 over 410"
+  - `.claude/skills/debate-ux/SKILL.md` — UX-focused persona: "clients need actionable errors, distinguish recoverable from permanent failures"
+- The harness detects security-relevant questions in Phase 4 output (questions containing "leak", "404 vs 410", "information disclosure")
+- For each flagged question, spawns both agents as sub-agents (context firewalls from [reference-library.md §3](../../reference-library.md#3-harness-engineering--structuring-agent-environments-for-reliability))
+- Results presented side-by-side: "Security says X because... | UX says Y because... | Your decision?"
+- Developer's choice is recorded in the negotiation log with the reasoning from both sides
+
+**Depends on:** Feature 2.6 (Phase 4 must surface security questions), evaluator-optimizer pattern (Feature 2.9)
+
 ---
 
