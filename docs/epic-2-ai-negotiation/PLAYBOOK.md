@@ -24,6 +24,53 @@
 
 **Agent Skills:** Each negotiation phase has a corresponding SKILL.md in `.claude/skills/` following the [Agent Skills open standard](https://agentskills.io). Skills use progressive disclosure: metadata (Level 1, ~100 tokens always loaded) → instructions with constitutional rules (Level 2, loaded when triggered) → SCHEMA.md reference (Level 3, loaded during execution). See [agent-skills-reference.md §6](agent-skills-reference.md) for how these map to our project.
 
+### Planned Agentic Patterns (Next Enhancements)
+
+#### Feature 2.8: Checkpoint & Resume [HIGH PRIORITY]
+
+**Problem:** Negotiation takes 10+ minutes for complex tickets. If the browser closes or the session times out, all state is lost and the developer must start over.
+**Pattern:** Serialize `VerificationContext` to `.verify/sessions/{jira_key}/` after each phase advance. On startup, check for existing sessions and offer to resume from the last checkpoint.
+
+**Implementation:**
+- Add `save_checkpoint(context, phase)` to `harness.py` — serializes context to JSON after each `advance_phase()`
+- Add `load_checkpoint(jira_key) -> VerificationContext | None` — loads the latest checkpoint
+- Web UI checks for existing sessions on page load, shows "Resume from Phase N" option
+- Session files: `.verify/sessions/{jira_key}/checkpoint_{phase}.json` + `negotiation_log.jsonl`
+- Maps to Sherpa's "agent persistence across sessions" ([reference-library.md §1](../../reference-library.md#1-sherpa--model-driven-agent-orchestration-via-state-machines))
+
+**Depends on:** Features 2.1, 2.7 (harness + web UI exist)
+
+#### Feature 2.9: Evaluator-Optimizer [HIGH PRIORITY]
+
+**Problem:** LLM output can have subtle gaps — missing precondition categories, inconsistent status codes, security oversights — that pass deterministic validation but aren't caught until the developer reviews. The developer shouldn't be the last line of defense for completeness.
+**Pattern:** After each phase produces output and passes `validate.py`, a second LLM call with an adversarial evaluator persona critiques it before presenting to the developer. The evaluator catches gaps that enum validation can't.
+
+**Implementation:**
+- New Agent Skill at `.claude/skills/evaluator-optimizer/SKILL.md` with constitutional rules:
+  - "Check every precondition category (auth, authz, data_existence, data_state, rate_limit, system_health) is addressed"
+  - "Verify failure modes cover both the obvious and subtle subcategories"
+  - "Flag any security-relevant status code decisions that weren't surfaced as questions"
+- Harness calls `evaluate_phase_output(context, phase, results)` between validation and developer presentation
+- If evaluator finds gaps, it feeds critique back to the phase skill for a retry (before the developer ever sees it)
+- Maps to harness engineering's back-pressure pattern ([reference-library.md §3](../../reference-library.md#3-harness-engineering--structuring-agent-environments-for-reliability))
+
+**Depends on:** Features 2.1-2.7 (full negotiation loop exists)
+
+#### Feature 2.10: Plan-then-Execute [MEDIUM PRIORITY]
+
+**Problem:** With multiple ACs, the AI dives into Phase 1 without considering the full picture. It might miss that AC[0] and AC[4] reference the same endpoint, or that AC[3] is actually a security invariant that cross-cuts all other ACs.
+**Pattern:** Before Phase 1, a planner skill reads all ACs and proposes a negotiation plan — which ACs are related, which phases each needs, expected complexity, and initial questions. The developer confirms before execution.
+
+**Implementation:**
+- New Agent Skill at `.claude/skills/negotiation-planner/SKILL.md`
+- Runs as "Phase -1" in the harness, before classification
+- Plan output: AC groupings, per-AC phase requirements, cross-AC dependencies, estimated complexity
+- Developer confirms or adjusts the plan, then harness executes it
+- The plan configures the state machine — some ACs may skip phases (e.g., security invariants skip Phase 2)
+- Maps to Sherpa's "treat state machines as configurable data" ([reference-library.md §1](../../reference-library.md#1-sherpa--model-driven-agent-orchestration-via-state-machines))
+
+**Depends on:** Features 2.1-2.7 (full negotiation loop exists)
+
 ---
 
 ### Feature 2.1: Negotiation Harness & VerificationContext [MVP]

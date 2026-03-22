@@ -103,11 +103,12 @@ flowchart TD
 
 ## 4. Negotiation State Machine
 
-The `NegotiationHarness` drives the `VerificationContext` through phases with guard conditions on each transition.
+The `NegotiationHarness` drives the `VerificationContext` through phases with guard conditions on each transition. Each phase includes validation, optional evaluator-optimizer critique, and checkpointing.
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Phase0
+    [*] --> Plan: read all ACs
+    Plan --> Phase0: plan confirmed
     Phase0 --> Phase1: all ACs classified
     Phase1 --> Phase2: all api_behaviors\nhave postconditions
     Phase2 --> Phase3: preconditions populated
@@ -117,21 +118,31 @@ stateDiagram-v2
     Compile --> [*]: .verify/specs/{key}.yaml
 
     state Phase0 {
-        [*] --> Classify
-        Classify --> Validate: LLM output
-        Validate --> Retry: validation errors
-        Retry --> Classify: append errors to prompt
-        Validate --> [*]: valid
+        [*] --> Generate: LLM call
+        Generate --> Validate: raw output
+        Validate --> Retry: schema errors
+        Retry --> Generate
+        Validate --> Evaluate: structurally valid
+        Evaluate --> Improve: gaps found
+        Improve --> Generate
+        Evaluate --> Present: complete
+        Present --> Revise: developer feedback
+        Revise --> Generate
+        Present --> Checkpoint: approved
+        Checkpoint --> [*]: saved
     }
 
+    Plan: Plan-then-Execute (negotiation plan)
     Phase0: Phase 0 — Interface & Actor Discovery
     Phase1: Phase 1 — Happy Path Contract
     Phase2: Phase 2 — Precondition Formalization
     Phase3: Phase 3 — Failure Mode Enumeration
-    Phase4: Phase 4 — Developer Feedback Loop
+    Phase4: Phase 4 — Final Review
     Synthesis: Synthesis (zero AI)
     Compile: Spec Compilation (zero AI)
 ```
+
+**Inner phase flow:** Generate → Validate (deterministic) → Evaluate (LLM critique) → Present (developer) → Checkpoint (persist). The evaluator-optimizer and checkpoint patterns apply to every phase.
 
 ---
 
@@ -247,23 +258,149 @@ Deterministic mapping from requirement type to verification skill (zero AI):
 
 ## 8. Epic Summary
 
-| Epic | Name | Features | Status | Playbook |
-|------|------|----------|--------|----------|
-| 0 | Bullet Tracer | 6 | Foundation | [docs/epic-0-bullet-tracer/](epic-0-bullet-tracer/PLAYBOOK.md) |
-| 1 | Jira Integration | 4 | Foundation | [docs/epic-1-jira-integration/](epic-1-jira-integration/PLAYBOOK.md) |
-| 2 | AI Negotiation | 7 | Complete | [docs/epic-2-ai-negotiation/](epic-2-ai-negotiation/PLAYBOOK.md) |
-| 3 | Formal Spec Emission | 3 | Complete | [docs/epic-3-formal-spec/](epic-3-formal-spec/PLAYBOOK.md) |
-| 4 | Skill Routing | 3 | MVP Next | [docs/epic-4-skill-routing/](epic-4-skill-routing/PLAYBOOK.md) |
-| 5 | Evaluation Engine | 3 | MVP Next | [docs/epic-5-evaluation/](epic-5-evaluation/PLAYBOOK.md) |
-| 6 | Jira Feedback | 3 | MVP Next | [docs/epic-6-jira-feedback/](epic-6-jira-feedback/PLAYBOOK.md) |
-| 7 | Constitution | 3 | Stretch | [docs/epic-7-constitution/](epic-7-constitution/PLAYBOOK.md) |
-| 8 | Advanced Negotiation | 3 | Stretch | [docs/epic-8-advanced-negotiation/](epic-8-advanced-negotiation/PLAYBOOK.md) |
-| 9 | Beyond-Code Skills | 3 | Stretch | [docs/epic-9-verification-skills/](epic-9-verification-skills/PLAYBOOK.md) |
-| 10 | CI/CD | 3 | Stretch | [docs/epic-10-cicd/](epic-10-cicd/PLAYBOOK.md) |
+| Epic | Name | Features | Agentic Patterns | Status | Playbook |
+|------|------|----------|-----------------|--------|----------|
+| 0 | Bullet Tracer | 6 | — | Foundation | [epic-0](epic-0-bullet-tracer/PLAYBOOK.md) |
+| 1 | Jira Integration | 4 | — | Foundation | [epic-1](epic-1-jira-integration/PLAYBOOK.md) |
+| 2 | AI Negotiation | 7 | State machine, belief system, feedback loop, constitutional AI, **checkpoint & resume, evaluator-optimizer, plan-then-execute** | Complete (patterns pending) | [epic-2](epic-2-ai-negotiation/PLAYBOOK.md) |
+| 3 | Formal Spec Emission | 3 | Two-zone architecture, deterministic validation | Complete | [epic-3](epic-3-formal-spec/PLAYBOOK.md) |
+| 4 | Verification Agent Skills | 3 | Progressive disclosure, Block's 3 Principles | MVP Next | [epic-4](epic-4-skill-routing/PLAYBOOK.md) |
+| 5 | Evaluation Engine | 3 | Back-pressure (tag enforcement) | MVP Next | [epic-5](epic-5-evaluation/PLAYBOOK.md) |
+| 6 | Jira Feedback | 3 | — | MVP Next | [epic-6](epic-6-jira-feedback/PLAYBOOK.md) |
+| 7 | Constitution & RAG | 3 | **Code-grounded negotiation (RAG)** | Stretch | [epic-7](epic-7-constitution/PLAYBOOK.md) |
+| 8 | Advanced Negotiation | 3 | **Multi-agent debate**, evaluator-optimizer | Stretch | [epic-8](epic-8-advanced-negotiation/PLAYBOOK.md) |
+| 9 | Beyond-Code Skills | 3 | Progressive disclosure | Stretch | [epic-9](epic-9-verification-skills/PLAYBOOK.md) |
+| 10 | CI/CD | 3 | **Spec drift detection** | Stretch | [epic-10](epic-10-cicd/PLAYBOOK.md) |
 
 ---
 
-## 9. Design Influences
+## 9. Agentic Patterns
+
+Patterns that shape how AI agents operate within the pipeline. Each maps to a specific epic.
+
+### Implemented
+
+```mermaid
+flowchart LR
+    subgraph implemented["Currently Implemented"]
+        SM["State Machine\nOrchestration"] --- BS["Belief System\n(VerificationContext)"]
+        BS --- PD["Progressive\nDisclosure"]
+        PD --- CA["Constitutional AI\n(Block P3)"]
+        CA --- DV["Deterministic\nValidation (Block P1)"]
+        DV --- TZ["Two-Zone\nArchitecture"]
+        TZ --- FL["Feedback Loop\n(multi-turn)"]
+    end
+```
+
+### Planned
+
+```mermaid
+flowchart TB
+    subgraph high["HIGH PRIORITY"]
+        CP["Checkpoint & Resume\nSerialize context after each phase\nResume from last checkpoint"]
+        EO["Evaluator-Optimizer\nSecond LLM critiques output\nbefore showing developer"]
+    end
+
+    subgraph medium["MEDIUM PRIORITY"]
+        PE["Plan-then-Execute\nAI proposes negotiation plan\nbefore diving into phases"]
+        RAG["Code-Grounded Negotiation\nLLM reads actual source code\nto ground proposals in reality"]
+    end
+
+    subgraph low["STRETCH"]
+        OW["Orchestrator-Worker\nParallel sub-agents per AC\nMerge + resolve conflicts"]
+        MAD["Multi-Agent Debate\nTwo personas argue\nsecurity tradeoffs"]
+        SD["Spec Drift Detection\nCI detects when code\nbreaks the spec contract"]
+    end
+
+    CP --> PE
+    EO --> RAG
+    PE --> OW
+    RAG --> MAD
+```
+
+### Pattern Details
+
+#### Checkpoint & Resume (Epic 2 enhancement)
+
+**Problem:** Negotiation takes 10+ minutes. If the browser closes, all state is lost.
+**Pattern:** Serialize `VerificationContext` to `.verify/sessions/{jira_key}/` after each phase advance. On startup, check for existing sessions and offer to resume.
+
+```
+.verify/sessions/{jira_key}/
+├── checkpoint_phase0.json    # After classification
+├── checkpoint_phase1.json    # After postconditions
+├── checkpoint_phase2.json    # After preconditions
+├── checkpoint_phase3.json    # After failure modes
+├── checkpoint_synthesis.json # After synthesis
+└── negotiation_log.jsonl     # Full conversation history
+```
+
+**Implementation:** The harness calls `save_checkpoint()` after each `advance_phase()`. The web UI checks for sessions on load and shows a "Resume" option. Maps to Sherpa's "agent persistence across sessions" capability ([reference-library.md §1](../reference-library.md#1-sherpa--model-driven-agent-orchestration-via-state-machines)).
+
+#### Evaluator-Optimizer (Epic 2 enhancement)
+
+**Problem:** LLM output can have subtle gaps (missing precondition categories, inconsistent status codes) that pass validation but aren't caught until the developer reviews.
+**Pattern:** After each phase produces output, a second LLM call with an adversarial evaluator persona critiques it before presenting to the developer.
+
+```mermaid
+sequenceDiagram
+    participant P as Phase Skill
+    participant V as Validate.py
+    participant E as Evaluator Skill
+    participant D as Developer
+
+    P->>V: Raw LLM output
+    V->>V: Enum/schema check
+    V->>E: Structurally valid output
+    E->>E: "Missing rate_limit precondition"
+    E->>P: Critique + retry
+    P->>V: Improved output
+    V->>E: Re-evaluate
+    E->>D: "Looks complete"
+```
+
+**Implementation:** A new Agent Skill at `.claude/skills/evaluator-optimizer/SKILL.md` with constitutional rules like "check every precondition category is addressed" and "verify failure modes cover both happy and unhappy subcategories." The harness calls it between validation and developer presentation. Maps to harness engineering's back-pressure pattern ([reference-library.md §3](../reference-library.md#3-harness-engineering--structuring-agent-environments-for-reliability)).
+
+#### Plan-then-Execute (Epic 2 enhancement)
+
+**Problem:** With multiple ACs, the AI dives into Phase 1 without considering the full picture. It might classify AC[0] as `api_behavior` and AC[3] as `security_invariant` but miss that they're related.
+**Pattern:** Before Phase 1, the AI reads all ACs and proposes a negotiation plan — which ACs are related, which phases each needs, expected complexity. The developer confirms before execution.
+
+```mermaid
+sequenceDiagram
+    participant AI as Planner Skill
+    participant D as Developer
+    participant H as Harness
+
+    AI->>D: "5 ACs: 3 API behaviors, 1 perf SLA, 1 security invariant.
+AC[0] and AC[4] are related (same endpoint).
+Estimated: ~8 preconditions, ~15 failure modes.
+Questions: [...]"
+    D->>AI: "AC[3] is actually a data constraint, not perf SLA"
+    AI->>H: Revised plan (configures state machine)
+    H->>H: Execute plan (phases 1-4 per AC group)
+```
+
+**Implementation:** A new Agent Skill at `.claude/skills/negotiation-planner/SKILL.md`. The harness runs it as "Phase -1" before classification. The plan output configures which phases each AC flows through. Maps to Sherpa's "treat state machines as configurable data" principle ([reference-library.md §1](../reference-library.md#1-sherpa--model-driven-agent-orchestration-via-state-machines)).
+
+#### Code-Grounded Negotiation / RAG (Epic 7 integration)
+
+**Problem:** The AI proposes schemas and error codes based on convention, but the actual codebase may already implement things differently. The developer has to manually correct every mismatch.
+**Pattern:** During phases 2-4, the LLM can call a `read_source(path, lines)` tool to inspect actual endpoint code, error handlers, and model definitions. Proposals are grounded in what's already implemented.
+
+```mermaid
+flowchart LR
+    AC["AC text"] --> LLM["Phase 2 Skill"]
+    CODE["Actual source code\n(endpoint, models, errors)"] --> LLM
+    CONST["Constitution\n(conventions)"] --> LLM
+    LLM --> POST["Postconditions\n(grounded in reality)"]
+```
+
+**Implementation:** Extend `LLMClient` with tool-use support. Add a `CodeSearchTool` that the LLM calls during negotiation. The constitution (Epic 7) provides file paths; the tool reads the actual code. Results are injected into the conversation as tool results, not the system prompt (respecting instruction budget). Maps to harness engineering's "tools & dispatch" pattern ([reference-library.md §3](../reference-library.md#3-harness-engineering--structuring-agent-environments-for-reliability)).
+
+---
+
+## 10. Design Influences
 
 | Influence | What It Provides | Reference |
 |-----------|-----------------|-----------|

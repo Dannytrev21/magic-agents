@@ -21,5 +21,24 @@
 **Story:** Detect base paths, auth mechanism, error format.
 **Implementation:** Scan route/controller files for patterns. Detect auth from decorators/middleware (e.g., `@jwt_required`, `Depends(get_current_user)`). Parse error handlers for response format (e.g., `{"error": str, "message": str}`). Populate `constitution.api` with `base_path`, `auth.mechanism`, `auth.claims`, `error_format.example`, `common_status_codes`. These fields are used by all 4 negotiation phase prompts for constitution-steered classification and contract proposals.
 
+### Feature 7.4: Code-Grounded Negotiation / RAG [MEDIUM PRIORITY]
+
+**Agentic Pattern:** Code-Grounded Negotiation
+
+**Problem:** During negotiation, the AI proposes schemas and error codes based on convention, but the actual codebase may already implement things differently. The developer has to manually correct every mismatch between what the AI proposes and what the code actually does.
+
+**Pattern:** During phases 2-4, the LLM can call a `read_source(path, lines)` tool to inspect actual endpoint code, error handlers, and model definitions. Proposals are grounded in what's already implemented rather than guessed from conventions.
+
+**Implementation:**
+- Extend `LLMClient` with Claude's tool-use API — define a `code_search` tool the LLM can call during negotiation
+- Add a `CodeSearchTool` that accepts file path + optional line range, reads the source, returns relevant snippets
+- The constitution (Features 7.1-7.3) provides the index of relevant files; the tool provides the content
+- Tool results are injected as tool-use messages in the conversation, not into the system prompt (respects instruction budget)
+- Phase 2 (postconditions) benefits most: "Here's the actual endpoint handler — propose postconditions that match the implementation"
+- Phase 4 (failure modes) benefits from reading error handlers: "Here's how errors are actually raised — enumerate failure modes from the code"
+- Maps to harness engineering's "tools & dispatch" pattern ([reference-library.md §3](../../reference-library.md#3-harness-engineering--structuring-agent-environments-for-reliability))
+
+**Depends on:** Features 7.1-7.3 (constitution provides the file index to search)
+
 ---
 

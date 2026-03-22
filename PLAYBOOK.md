@@ -36,13 +36,13 @@ Check off `- [ ]` boxes as you complete each step. Do not skip verification step
 |------|------|----------|--------|----------|
 | 0 | Bullet Tracer | 6 | Foundation | [epic-0-bullet-tracer](docs/epic-0-bullet-tracer/PLAYBOOK.md) |
 | 1 | Jira Integration | 4 | Foundation | [epic-1-jira-integration](docs/epic-1-jira-integration/PLAYBOOK.md) |
-| 2 | AI Negotiation | 7 | Complete | [epic-2-ai-negotiation](docs/epic-2-ai-negotiation/PLAYBOOK.md) |
+| 2 | AI Negotiation | 10 | Core complete, patterns pending | [epic-2-ai-negotiation](docs/epic-2-ai-negotiation/PLAYBOOK.md) |
 | 3 | Formal Spec Emission | 3 | Complete | [epic-3-formal-spec](docs/epic-3-formal-spec/PLAYBOOK.md) |
 | 4 | Verification Agent Skills | 3 | **MVP Next** | [epic-4-skill-routing](docs/epic-4-skill-routing/PLAYBOOK.md) |
 | 5 | Evaluation Engine | 3 | MVP | [epic-5-evaluation](docs/epic-5-evaluation/PLAYBOOK.md) |
 | 6 | Jira Feedback Loop | 3 | MVP | [epic-6-jira-feedback](docs/epic-6-jira-feedback/PLAYBOOK.md) |
-| 7 | Constitution | 3 | Stretch | [epic-7-constitution](docs/epic-7-constitution/PLAYBOOK.md) |
-| 8 | Advanced Negotiation | 3 | Stretch | [epic-8-advanced-negotiation](docs/epic-8-advanced-negotiation/PLAYBOOK.md) |
+| 7 | Constitution & RAG | 4 | Stretch | [epic-7-constitution](docs/epic-7-constitution/PLAYBOOK.md) |
+| 8 | Advanced Negotiation | 4 | Stretch | [epic-8-advanced-negotiation](docs/epic-8-advanced-negotiation/PLAYBOOK.md) |
 | 9 | Beyond-Code Verification Skills | 3 | Stretch | [epic-9-verification-skills](docs/epic-9-verification-skills/PLAYBOOK.md) |
 | 10 | CI/CD & PR Automation | 3 | Stretch | [epic-10-cicd](docs/epic-10-cicd/PLAYBOOK.md) |
 
