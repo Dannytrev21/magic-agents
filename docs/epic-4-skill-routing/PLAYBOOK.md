@@ -1,8 +1,8 @@
 ## Epic 4: Multi-Skill Routing & Test Generation [MVP]
 
-**Goal:** Replace the hardcoded test generator with AI-powered skill agents that read specs and generate framework-appropriate tests.
+**Goal:** Replace the hardcoded test generator with **Claude Agent Skills** that read spec contracts and generate proof-of-correctness artifacts (tests, configs, scenarios). Each verification skill follows the same SKILL.md standard as the negotiation phase skills — the pipeline uses Agent Skills end-to-end.
 **Depends on:** Epic 3 (specs with routing tables exist)
-**After this epic:** The spec drives real test generation via specialized skills.
+**After this epic:** The spec drives real verification artifact generation via specialized Agent Skills dispatched by the routing table.
 
 > **Design references:** This epic is where the Agent Skills pattern becomes concrete. Each `VerificationSkill` follows the [SKILL.md open standard](https://agentskills.io) (see [agent-skills-reference.md §3](agent-skills-reference.md) for the complete specification). The `SKILL_REGISTRY` + `dispatch_skills` implements the three-stage loading mechanism: **Level 1 (Metadata)** — skill name + description always in context for discovery; **Level 2 (Instructions)** — SKILL.md body loaded when the routing table dispatches to this skill; **Level 3 (Resources)** — templates, reference docs, and scripts loaded during execution ([reference-library.md §2](reference-library.md#2-agent-skills--modular-discoverable-capability-packages)). The tag enforcer is a back-pressure mechanism from harness engineering — agents validate their own work before declaring success ([reference-library.md §3](reference-library.md#3-harness-engineering--structuring-agent-environments-for-reliability)).
 
@@ -16,27 +16,42 @@ Following Block's 3 Principles ([agent-skills-reference.md §6](agent-skills-ref
 
 **Principle 3 (Constitutional rules, not suggestions):** Each skill's SKILL.md includes explicit `MUST`/`FORBIDDEN` sections. The skill description (Level 1 metadata) includes trigger terms for auto-discovery. Instructions explain *why* things are important (not just what to do) — this is more effective than heavy-handed MUSTs for smart models.
 
-### Verification Skill Directory Structure
+### Proof-of-Correctness Skills — Directory Structure
 
+Verification skills live in `.claude/skills/verify-*/` alongside the negotiation phase skills, following the same [Agent Skills open standard](https://agentskills.io). Each skill has a SKILL.md defining its persona, input/output contract, and constitutional rules — just like the phase skills.
+
+```
+.claude/skills/
+├── phase1-classification/     # Spec generation skill (Epic 2)
+│   ├── SKILL.md
+│   └── SCHEMA.md
+├── phase2-postconditions/     # Spec generation skill (Epic 2)
+│   ├── SKILL.md
+│   └── SCHEMA.md
+├── phase3-preconditions/      # Spec generation skill (Epic 2)
+│   └── SKILL.md
+├── phase4-failure-modes/      # Spec generation skill (Epic 2)
+│   └── SKILL.md
+├── verify-pytest/             # Proof-of-correctness skill (this epic)
+│   ├── SKILL.md               # Instructions: generate pytest tests from spec contracts
+│   ├── TEMPLATES.md           # Test templates for success, failure, invariant patterns
+│   └── scripts/
+│       └── validate_tags.py   # Ensure all spec refs are tagged
+├── verify-newrelic/           # Proof-of-correctness skill (Epic 9 stretch)
+│   └── SKILL.md
+├── verify-gherkin/            # Proof-of-correctness skill (Epic 9 stretch)
+│   └── SKILL.md
+└── verify-otel/               # Proof-of-correctness skill (Epic 9 stretch)
+    └── SKILL.md
+```
+
+The Python runtime dispatches to these skills via `src/verify/skills/framework.py`:
 ```
 src/verify/skills/
 ├── framework.py           # VerificationSkill base class + SKILL_REGISTRY + dispatch_skills()
-├── pytest_skill/
-│   ├── SKILL.md           # Instructions: how to generate pytest tests from spec contracts
-│   ├── TEMPLATES.md       # Test templates for success, failure, invariant patterns
-│   ├── pytest_skill.py    # PytestSkill(VerificationSkill) implementation
-│   └── scripts/
-│       └── validate_tags.py  # Ensure all spec refs are tagged in generated tests
-├── newrelic_skill/        # (Epic 9 stretch)
-│   ├── SKILL.md
-│   └── newrelic_skill.py
-├── gherkin_skill/         # (Epic 9 stretch)
-│   ├── SKILL.md
-│   └── gherkin_skill.py
-├── otel_skill/            # (Epic 9 stretch)
-│   ├── SKILL.md
-│   └── otel_skill.py
-└── tag_enforcer.py        # Cross-cutting tag coverage validation
+├── pytest_skill.py        # Reads .claude/skills/verify-pytest/SKILL.md, generates tests
+├── tag_enforcer.py        # Cross-cutting tag coverage validation
+└── (future skill runners)
 ```
 
 Each skill follows the progressive disclosure pattern from [agent-skills-reference.md §2](agent-skills-reference.md):
