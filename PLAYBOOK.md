@@ -4,6 +4,23 @@
 **Stack:** Python 3.11+ / FastAPI / pytest
 **MVP Scope:** Epics 0-4 + Stories 6.1-6.2
 **Source docs:** `ac-to-specs-plan.md`, `user-stories.md`
+**Reference library:** [`reference-library.md`](reference-library.md) — compiled knowledge base for all design influences
+
+### Design Influences (Quick Reference)
+
+This project synthesizes four bodies of work. Each is covered in depth in `reference-library.md`; what follows is the minimum you need to keep in mind while implementing.
+
+**Sherpa — State Machine Orchestration** (→ [reference-library.md §1](reference-library.md#1-sherpa--model-driven-agent-orchestration-via-state-machines))
+The negotiation loop is a hierarchical state machine. Each phase is a composite state with rule-based or LLM-driven transitions. The belief system (our `VerificationContext`) accumulates structured knowledge across phases. Sherpa's key insight: treat state machines as configurable data, not fixed code.
+
+**Agent Skills — Progressive Disclosure** (→ [reference-library.md §2](reference-library.md#2-agent-skills--modular-discoverable-capability-packages))
+Each negotiation phase and each downstream generator is a self-contained skill with a SKILL.md contract. Skills load on demand — lightweight metadata first, full instructions only when relevant. Block's two-zone architecture applies: deterministic scripts for reproducible operations, agents for context-dependent reasoning. Constitutional rules (not suggestions) prevent agent deviation.
+
+**Harness Engineering — Structured Agent Environments** (→ [reference-library.md §3](reference-library.md#3-harness-engineering--structuring-agent-environments-for-reliability))
+The orchestrator is a harness, not an agent. It manages context windows, enforces phase transitions, and provides the belief/context object. Key levers: sub-agents as context firewalls, hooks for lifecycle automation, back-pressure mechanisms for self-verification. Remember: `coding agent = AI model(s) + harness`. Respect the instruction budget — swallow success output, surface errors only.
+
+**BMAD — Agent-as-Code** (→ [reference-library.md §4](reference-library.md#4-bmad--agent-as-code-agile-development-framework))
+Agents are versionable markdown files with personas, responsibilities, and output contracts. The four-phase workflow (Analysis → Planning → Solutioning → Implementation) mirrors our pipeline. Documentation-first: specs become the contract, not your latest chat message. Context-engineered story files carry full architectural context so no information is lost in handoff.
 
 ### How to Use This Playbook
 
@@ -14,49 +31,106 @@ Work through features **sequentially within each epic**. Each feature has:
 
 Check off `- [ ]` boxes as you complete each step. Do not skip verification steps.
 
-### Project Structure (Target)
+### Project Structure (Current)
 
 ```
 magic-agents/
 ├── pyproject.toml
+├── run_web.py                 # Launch web UI (loads .env, prompts for API key)
+├── run_negotiation.py         # Launch terminal CLI negotiation
 ├── src/
-│   ├── dummy_app/          # The target app tests run against
+│   ├── dummy_app/             # The target app tests run against
 │   │   ├── __init__.py
-│   │   └── main.py
-│   └── verify/             # The verification pipeline
+│   │   └── main.py            # FastAPI app: GET /api/v1/users/me
+│   └── verify/                # The verification pipeline
 │       ├── __init__.py
-│       ├── context.py      # VerificationContext dataclass
-│       ├── generator.py    # Template-based test generator
-│       ├── runner.py        # Test runner + JUnit XML parser
-│       ├── evaluator.py     # Spec-to-verdict evaluation
-│       ├── pipeline.py      # End-to-end orchestrator
-│       ├── jira_client.py   # Jira REST API client
-│       ├── llm_client.py    # Claude/Anthropic LLM client
-│       ├── negotiation/     # AI negotiation phases
-│       │   ├── __init__.py
-│       │   ├── harness.py
-│       │   ├── phase1.py
-│       │   ├── phase2.py
-│       │   ├── phase3.py
-│       │   ├── phase4.py
-│       │   └── cli.py
-│       ├── compiler.py      # VerificationContext → spec YAML
-│       └── skills/          # Verification artifact generators
+│       ├── context.py         # VerificationContext dataclass (Sherpa belief system)
+│       ├── compiler.py        # VerificationContext → spec YAML + routing table + traceability
+│       ├── generator.py       # Template-based test generator (reads spec YAML)
+│       ├── runner.py           # Test runner + JUnit XML parser
+│       ├── evaluator.py        # Spec-to-verdict evaluation (zero AI)
+│       ├── pipeline.py         # End-to-end orchestrator
+│       ├── jira_client.py      # Jira REST API v3 client (read/write/search)
+│       ├── llm_client.py       # Claude SDK wrapper (chat + chat_multi + mock mode)
+│       └── negotiation/        # AI negotiation phases
 │           ├── __init__.py
-│           ├── framework.py
-│           ├── pytest_skill.py
-│           └── tag_enforcer.py
+│           ├── harness.py      # Phase state machine with guard conditions
+│           ├── phase1.py       # Interface & Actor Discovery
+│           ├── phase2.py       # Happy Path Contract
+│           ├── phase3.py       # Precondition Formalization
+│           ├── phase4.py       # Failure Mode Enumeration
+│           ├── validate.py     # Deterministic output validation (Block Principle 1)
+│           ├── synthesis.py    # Post-negotiation: invariants, EARS, traceability
+│           ├── cli.py          # Terminal CLI + auto mode
+│           └── web.py          # FastAPI web UI (Jira picker, negotiation, traceability)
+├── static/
+│   └── index.html             # Web UI (dark theme, 4 screens)
+├── .claude/
+│   └── skills/                # Agent Skills (SKILL.md standard)
+│       ├── phase1-classification/
+│       │   ├── SKILL.md       # Instructions + constitutional rules
+│       │   └── SCHEMA.md      # Output schema reference
+│       ├── phase2-postconditions/
+│       │   ├── SKILL.md
+│       │   └── SCHEMA.md
+│       ├── phase3-preconditions/
+│       │   └── SKILL.md
+│       └── phase4-failure-modes/
+│           └── SKILL.md
 ├── tests/
 │   ├── conftest.py
-│   └── test_*.py
+│   └── test_dummy_app.py
 ├── .verify/
-│   ├── specs/
-│   ├── generated/
-│   └── results/
+│   ├── specs/                 # Compiled YAML specs
+│   ├── generated/             # Generated test files
+│   └── results/               # Test execution results
+├── .env                       # JIRA_BASE_URL, JIRA_EMAIL, JIRA_API_TOKEN, ANTHROPIC_API_KEY
 ├── PLAYBOOK.md
 ├── ac-to-specs-plan.md
-└── user-stories.md
+├── user-stories.md
+├── reference-library.md       # Sherpa, Agent Skills, Harness Engineering, BMAD
+└── agent-skills-reference.md  # Agent Skills standard + API skills reference
 ```
+
+### Architecture: Two-Zone Boundary
+
+```
+┌─────────────────────────────────────────────┐
+│                  AI ZONE                      │
+│  (fuzzy-to-formal translation)               │
+│                                               │
+│  Negotiation phases: interpret AC,            │
+│  generate questions, propose contracts        │
+│  → Phases 1-4 with feedback loop             │
+├───────────────── SPEC BOUNDARY ──────────────┤
+│                DETERMINISTIC ZONE             │
+│  (mechanical translation of spec)             │
+│                                               │
+│  Compiler, routing table, test generation,    │
+│  tag enforcement, evaluation, Jira updates    │
+└─────────────────────────────────────────────┘
+```
+
+### Agent Skills Architecture
+
+This project uses Agent Skills at two levels (see [agent-skills-reference.md](agent-skills-reference.md)):
+
+**1. Negotiation Phase Skills** (`.claude/skills/phase*-*/SKILL.md`)
+Each negotiation phase follows the [Agent Skills open standard](https://agentskills.io):
+- **Level 1 (Metadata):** `name` + `description` in YAML frontmatter — always in context (~100 tokens)
+- **Level 2 (Instructions):** SKILL.md body with constitutional rules — loaded when phase triggers
+- **Level 3 (Resources):** SCHEMA.md with output schemas — loaded on demand during execution
+
+**2. Verification Generator Skills** (Epic 4, `src/verify/skills/`)
+Each downstream generator is a self-contained skill with:
+- A `VerificationSkill` base class with `generate()` and `output_path()` methods
+- Registration in `SKILL_REGISTRY` for deterministic dispatch
+- The routing table (`ROUTING_TABLE` in `compiler.py`) maps requirement types to skills
+
+Both follow Block's 3 Principles ([reference-library.md §2](reference-library.md#2-agent-skills--modular-discoverable-capability-packages)):
+1. **What agents should NOT decide** → Deterministic validation scripts (`validate.py`, `tag_enforcer.py`)
+2. **What agents SHOULD decide** → Interpretation, context-dependent reasoning, clarifying questions
+3. **Constitutional rules, not suggestions** → `MUST`/`FORBIDDEN` language in prompts, explicit enum constraints
 
 ---
 
@@ -1039,11 +1113,31 @@ print('PASS: JiraClient has all required methods')
 
 ---
 
-## Epic 2: AI Negotiation — Core Loop [MVP]
+## Epic 2: AI Negotiation — Core Loop [MVP] ✅ COMPLETE
 
 **Goal:** Build the AI-powered negotiation that transforms fuzzy AC into structured spec elements (Phases 1-4).
 **Depends on:** Epic 0 (pipeline exists), Epic 1 (can read from Jira)
 **After this epic:** A developer can interactively negotiate with the AI, turning AC into classifications, postconditions, preconditions, and failure modes.
+
+> **Design references:** This epic implements the core Sherpa state machine pattern ([reference-library.md §1](reference-library.md#1-sherpa--model-driven-agent-orchestration-via-state-machines)). The `NegotiationHarness` follows harness engineering principles — it manages context, enforces transitions, and provides the belief object, while the AI operates *within* the harness, not above it ([reference-library.md §3](reference-library.md#3-harness-engineering--structuring-agent-environments-for-reliability)). Each phase skill follows the agent-as-code pattern: a self-contained module with a persona, input/output contract, and trigger conditions ([reference-library.md §4](reference-library.md#4-bmad--agent-as-code-agile-development-framework)).
+
+### Implementation Notes (Learned During Development)
+
+**Feedback loop:** The negotiation supports multi-turn revision. When the developer provides feedback instead of approving, the LLM receives a 3-turn conversation (original prompt → AI's previous output → developer feedback) via `LLMClient.chat_multi()`. This lets the AI revise its output based on specific corrections. The loop continues until the developer types "approve" or "skip".
+
+**Deterministic validation (Block Principle 1):** Every phase output is validated by `negotiation/validate.py` against strict enums and schema rules. Invalid types, actors, or orphaned references trigger automatic retry — the LLM gets the validation errors appended to its prompt and tries again (up to 2 retries). This catches LLM inconsistencies (e.g., `api behavior` instead of `api_behavior`) without human intervention.
+
+**Constitutional prompts (Block Principle 3):** Phase prompts use `MUST`/`RULES`/`FORBIDDEN` sections. Each prompt loads only the constitution fields relevant to that phase (not the full constitution), respecting the instruction budget from harness engineering.
+
+**Guard conditions (Sherpa):** Phase transitions check structural integrity, not just "list non-empty": Phase 0 verifies every AC is classified, Phase 1 verifies every `api_behavior` has a postcondition, Phase 2 verifies every failure mode references a valid precondition.
+
+**Post-negotiation synthesis:** After Phase 4, `synthesis.py` runs deterministically (zero AI) to extract invariants from the constitution, generate EARS statements (WHEN/SHALL, IF/THEN, WHILE/SHALL), and build the traceability map.
+
+**Mock mode:** `LLM_MOCK=true` provides canned responses keyed by unique phrases in each phase's system prompt. Mock hint matching is order-sensitive — distinctive phrases like `"failure mode enumeration"` must appear before generic ones like `"classify"`.
+
+**Web UI:** A FastAPI app at `localhost:8000` with 4 screens: Home (Jira story picker + manual entry), AC Overview, Negotiation (chat with clarifying questions), and Traceability (per-AC drill-down with stats).
+
+**Agent Skills:** Each negotiation phase has a corresponding SKILL.md in `.claude/skills/` following the [Agent Skills open standard](https://agentskills.io). Skills use progressive disclosure: metadata (Level 1, ~100 tokens always loaded) → instructions with constitutional rules (Level 2, loaded when triggered) → SCHEMA.md reference (Level 3, loaded during execution). See [agent-skills-reference.md §6](agent-skills-reference.md) for how these map to our project.
 
 ---
 
@@ -1051,6 +1145,7 @@ print('PASS: JiraClient has all required methods')
 
 **Story:** A harness that manages negotiation state, tracks phases, and accumulates spec elements.
 **Depends on:** None
+> **Deep dive:** The `VerificationContext` is Sherpa's "belief system" — agent-specific state tracking execution history, action logs, and task data. The harness is the outer layer of the three-layer stack (prompt → context → harness engineering). See [reference-library.md §1](reference-library.md#1-sherpa--model-driven-agent-orchestration-via-state-machines) for the belief system architecture and [reference-library.md §3](reference-library.md#3-harness-engineering--structuring-agent-environments-for-reliability) for the harness pattern (especially "The Agent Loop" and "Context Management Principles").
 
 #### Prerequisites
 
@@ -1232,6 +1327,7 @@ print('PASS: LLM client works in mock mode')
 
 **Story:** The AI reads AC and classifies each one by type, actor, and interface.
 **Depends on:** Features 2.1, 2.2
+> **Deep dive:** Each phase skill follows Block's 3 Principles: (1) identify what agents should NOT decide — use deterministic checks for type classification validation, (2) identify what agents SHOULD decide — interpretation and context-dependent reasoning, (3) write constitutional rules, not suggestions — explicit constraints in the prompt prevent skipping steps. See [reference-library.md §2](reference-library.md#2-agent-skills--modular-discoverable-capability-packages).
 
 #### Prerequisites
 
@@ -1606,11 +1702,25 @@ print('PASS: auto-negotiation works')
 
 ---
 
-## Epic 3: Formal Spec Emission [MVP]
+## Epic 3: Formal Spec Emission [MVP] ✅ COMPLETE
 
 **Goal:** Compile negotiation output into a complete, validated YAML spec with traceability map.
 **Depends on:** Epic 2 (negotiation produces the context to serialize)
 **After this epic:** The negotiation produces a real `.verify/specs/{jira_key}.yaml` file.
+
+> **Design references:** The spec is the intelligence boundary — AI handles the fuzzy-to-formal translation (Epics 2-3), everything downstream is deterministic (Epics 4-6). This follows BMAD's documentation-first principle: "specs become the contract, not your latest chat message" ([reference-library.md §4](reference-library.md#4-bmad--agent-as-code-agile-development-framework)). The verification routing table is a simple lookup — zero AI — following the harness engineering principle that deterministic operations belong in scripts, not agents ([reference-library.md §3](reference-library.md#3-harness-engineering--structuring-agent-environments-for-reliability)).
+
+### Implementation Notes (Learned During Development)
+
+**Compiler location:** `src/verify/compiler.py` — three public functions: `compile_spec()` (pure dict assembly), `write_spec()` (YAML serialization), `compile_and_write()` (convenience wrapper that sets `context.spec_path`).
+
+**Schema restructuring:** The critical transform is Phase 2's postcondition schema `{field: {type, required: true}}` → generator's expected format `{type: "object", required: [...], properties: {...}, forbidden_fields: [...]}`. The compiler iterates the schema dict, extracts required field names into a list, and strips the `required` key from each property.
+
+**Routing table:** `ROUTING_TABLE` in `compiler.py` maps 6 requirement types to verification skills: `api_behavior` → `pytest_unit_test`, `performance_sla` → `newrelic_alert_config`, `security_invariant` → `pytest_unit_test`, `observability` → `otel_config`, `compliance` → `gherkin_scenario`, `data_constraint` → `pytest_unit_test`. This is a deterministic lookup — zero AI.
+
+**Traceability:** The compiler builds `traceability.ac_mappings` from compiled requirements (not from synthesis). Each AC gets refs from its requirement's contract elements with routing-aware `verification_type` (`test_result`, `config_validation`, `deployment_check`). Invariants are cross-cutting — they appear in every AC mapping (many-to-many).
+
+**Generator compatibility verified E2E:** Compiled specs are consumed by `generator.py` to produce valid pytest code, which runs against the dummy app and feeds into `evaluator.py` for verdicts. The full chain: `VerificationContext` → `compile_and_write()` → `.yaml` → `generate_tests()` → `run_and_parse()` → `evaluate_spec()` → verdicts.
 
 ---
 
@@ -1886,6 +1996,47 @@ print('PASS: traceability map generated')
 **Depends on:** Epic 3 (specs with routing tables exist)
 **After this epic:** The spec drives real test generation via specialized skills.
 
+> **Design references:** This epic is where the Agent Skills pattern becomes concrete. Each `VerificationSkill` follows the [SKILL.md open standard](https://agentskills.io) (see [agent-skills-reference.md §3](agent-skills-reference.md) for the complete specification). The `SKILL_REGISTRY` + `dispatch_skills` implements the three-stage loading mechanism: **Level 1 (Metadata)** — skill name + description always in context for discovery; **Level 2 (Instructions)** — SKILL.md body loaded when the routing table dispatches to this skill; **Level 3 (Resources)** — templates, reference docs, and scripts loaded during execution ([reference-library.md §2](reference-library.md#2-agent-skills--modular-discoverable-capability-packages)). The tag enforcer is a back-pressure mechanism from harness engineering — agents validate their own work before declaring success ([reference-library.md §3](reference-library.md#3-harness-engineering--structuring-agent-environments-for-reliability)).
+
+### Agent Skills Architecture for Verification Skills
+
+Following Block's 3 Principles ([agent-skills-reference.md §6](agent-skills-reference.md)):
+
+**Principle 1 (What agents should NOT decide):** Tag coverage validation, spec schema validation, pass condition evaluation — all handled by deterministic scripts (`tag_enforcer.py`, `validate.py`). The routing table itself is a simple dict lookup in `compiler.py`, not an AI decision.
+
+**Principle 2 (What agents SHOULD decide):** Adapting test templates to specific contract shapes, generating setup fixtures from semi-formal precondition expressions, translating constraint patterns into assertion code.
+
+**Principle 3 (Constitutional rules, not suggestions):** Each skill's SKILL.md includes explicit `MUST`/`FORBIDDEN` sections. The skill description (Level 1 metadata) includes trigger terms for auto-discovery. Instructions explain *why* things are important (not just what to do) — this is more effective than heavy-handed MUSTs for smart models.
+
+### Verification Skill Directory Structure
+
+```
+src/verify/skills/
+├── framework.py           # VerificationSkill base class + SKILL_REGISTRY + dispatch_skills()
+├── pytest_skill/
+│   ├── SKILL.md           # Instructions: how to generate pytest tests from spec contracts
+│   ├── TEMPLATES.md       # Test templates for success, failure, invariant patterns
+│   ├── pytest_skill.py    # PytestSkill(VerificationSkill) implementation
+│   └── scripts/
+│       └── validate_tags.py  # Ensure all spec refs are tagged in generated tests
+├── newrelic_skill/        # (Epic 9 stretch)
+│   ├── SKILL.md
+│   └── newrelic_skill.py
+├── gherkin_skill/         # (Epic 9 stretch)
+│   ├── SKILL.md
+│   └── gherkin_skill.py
+├── otel_skill/            # (Epic 9 stretch)
+│   ├── SKILL.md
+│   └── otel_skill.py
+└── tag_enforcer.py        # Cross-cutting tag coverage validation
+```
+
+Each skill follows the progressive disclosure pattern from [agent-skills-reference.md §2](agent-skills-reference.md):
+- **SKILL.md** is the only required file (<500 lines recommended)
+- **TEMPLATES.md** and other .md files are loaded as-needed references
+- **Scripts** execute via bash — only their *output* enters context, not the code itself
+- **The routing table** in `compiler.py` determines which skill handles which requirement type
+
 ---
 
 ### Feature 4.1: Skill Agent Framework [MVP]
@@ -2129,6 +2280,8 @@ print('PASS: tag enforcement works')
 **Depends on:** Epic 0 (basic evaluator), Epic 4 (generated tests with tags)
 **After this epic:** The evaluator handles test results, deployment checks, and config validations.
 
+> **Design references:** The multi-format parser and evaluation strategies implement harness engineering's back-pressure pattern — make verification context-efficient by auto-detecting formats and merging results. The pass condition logic (ALL_PASS / ANY_PASS / PERCENTAGE) maps directly to Sherpa's guard conditions on state transitions ([reference-library.md §1](reference-library.md#1-sherpa--model-driven-agent-orchestration-via-state-machines), [reference-library.md §3](reference-library.md#3-harness-engineering--structuring-agent-environments-for-reliability)).
+
 ---
 
 ### Feature 5.1: Multi-Format Test Result Parser [MVP]
@@ -2255,6 +2408,8 @@ print('PASS: pass conditions work')
 **Depends on:** Epics 1 (Jira client) + 5 (evaluator with verdicts)
 **After this epic:** Full end-to-end: Jira AC → AI → spec → tests → execution → Jira checkboxes ticked + evidence posted.
 
+> **Design references:** This closes the correctness chain from `ac-to-specs-plan.md` §1.1. The Jira update is fully deterministic — no AI involved — following the intelligence boundary principle: all downstream operations are mechanical translations of the spec ([reference-library.md §5](reference-library.md#5-cross-cutting-patterns--synthesis)).
+
 ---
 
 ### Feature 6.1: Wire Evaluator to Jira Checkbox Updates [MVP]
@@ -2345,77 +2500,105 @@ The following epics are stretch goals. Each is listed with its stories and key i
 
 ## Epic 7: Constitution & Repo Awareness [STRETCH]
 
+> **Design references:** The constitution concept comes from GitHub Spec Kit and AWS Kiro — a repo-level file capturing organizational conventions, tech stack, and testing patterns. All spec generation and negotiation is steered by this context. See `ac-to-specs-plan.md` §1.2 and [reference-library.md §4](reference-library.md#4-bmad--agent-as-code-agile-development-framework) for BMAD's context-engineered development approach.
+
+**Note:** The constitution is already used throughout the pipeline — Phase 1 prompts use `constitution.api.base_path` and `constitution.api.auth.mechanism`, Phase 2 uses `constitution.verification_standards.security_invariants`, and the compiler uses `constitution.api.auth.mechanism` for the interface auth field. Currently the constitution is passed in manually. This epic auto-generates it from repo analysis.
+
+**Implementation pattern:** Each scanner is a deterministic script (not an Agent Skill) because repo scanning is mechanical, not context-dependent. Following Block Principle 1: agents should NOT decide what framework a repo uses — that's a `pyproject.toml` parse.
+
 ### Feature 7.1: Repo Scanner — Stack Detection
 
 **Story:** Auto-detect language, framework, build tool from repo files.
-**Implementation:** Parse `pyproject.toml`/`package.json`/`pom.xml`/`build.gradle` to detect stack. Populate `constitution.project` section. Present for developer confirmation.
+**Implementation:** Parse `pyproject.toml`/`package.json`/`pom.xml`/`build.gradle` to detect stack. Populate `constitution.project` section (`language`, `framework`, `build_tool`, `package_manager`). Present for developer confirmation. This is a deterministic script, not an LLM call.
 
 ### Feature 7.2: Test Pattern Discovery
 
 **Story:** Sample existing test files and extract patterns.
-**Implementation:** Find test files via glob, extract imports/annotations/assertion styles. Classify as controller_test, service_test, integration_test. Store in `constitution.testing.patterns`.
+**Implementation:** Find test files via glob (`test_*.py`, `*Test.java`, `*.test.js`), extract imports/annotations/assertion styles. Classify as `controller_test`, `service_test`, `integration_test`. Store in `constitution.testing.patterns`. This information steers the Pytest Skill (Epic 4) to generate tests matching the repo's existing conventions (import style, assertion style, fixture patterns).
 
 ### Feature 7.3: API Convention Discovery
 
 **Story:** Detect base paths, auth mechanism, error format.
-**Implementation:** Scan route/controller files for patterns. Detect auth from decorators/middleware. Parse error handlers for response format. Populate `constitution.api`.
+**Implementation:** Scan route/controller files for patterns. Detect auth from decorators/middleware (e.g., `@jwt_required`, `Depends(get_current_user)`). Parse error handlers for response format (e.g., `{"error": str, "message": str}`). Populate `constitution.api` with `base_path`, `auth.mechanism`, `auth.claims`, `error_format.example`, `common_status_codes`. These fields are used by all 4 negotiation phase prompts for constitution-steered classification and contract proposals.
 
 ---
 
 ## Epic 8: Advanced Negotiation [STRETCH]
 
+> **Design references:** These phases complete the six dimensions of ambiguity from `ac-to-specs-plan.md` §1.3. Phase 7's EARS formalization uses WHEN/SHALL/IF-THEN/WHILE patterns — each maps to exactly one verifiable assertion. See [reference-library.md §1](reference-library.md#1-sherpa--model-driven-agent-orchestration-via-state-machines) for how Sherpa's composite states handle complex multi-phase workflows.
+
+**Note:** `synthesis.py` already generates basic invariants and EARS statements deterministically after Phase 4. These stretch phases add LLM-powered depth — the AI discovers invariants the developer didn't think of, runs a completeness sweep, and formats EARS statements for human approval. Each phase follows the same Agent Skills pattern as Phases 1-4: a SKILL.md in `.claude/skills/` with constitutional rules, a Python module in `src/verify/negotiation/`, and deterministic validation of outputs.
+
 ### Feature 8.1: Phase 5 — Invariant Extraction
 
 **Story:** Extract universal properties from AC, constitution, and data model.
-**Implementation:** Create `src/verify/negotiation/phase5.py`. Extract invariants from three sources: AC text, constitution security standards, inferred from data model. Each has ID, type, rule, verification type.
+**Implementation:** Create `src/verify/negotiation/phase5.py` + `.claude/skills/phase5-invariants/SKILL.md`. Extract invariants from three sources: AC text (security-related ACs), constitution `verification_standards.security_invariants`, and inferred from data model (e.g., if schema has `email` field, add format validation invariant). Each has ID (INV-NNN), type (`security`, `performance`, `data_integrity`, `compliance`, `idempotency`, `observability`), rule, and formal expression. Validate with `validate.py`. The harness guard condition for Phase 3 (`_phase_3_ok`) already checks for invariants — this phase populates them via AI rather than the current deterministic extraction.
 
 ### Feature 8.2: Phase 6 — Completeness Sweep
 
 **Story:** Run a checklist of dimensions and flag gaps.
-**Implementation:** Create `src/verify/negotiation/phase6.py`. Standard checklist (auth, authz, validation, schema, errors, rate limiting, pagination, caching, observability, security, data classification). Mark each: COVERED, DEFERRED, NOT ADDRESSED.
+**Implementation:** Create `src/verify/negotiation/phase6.py` + `.claude/skills/phase6-completeness/SKILL.md`. Standard checklist of 11 dimensions: authentication, authorization, input validation, schema compliance, error handling, rate limiting, pagination, caching, observability, security, data classification. For each dimension, the AI marks: `COVERED` (spec addresses it), `DEFERRED` (acknowledged but out of scope), `NOT ADDRESSED` (gap). The LLM prompt includes all postconditions, preconditions, failure modes, and invariants so it can assess coverage. Output stored in `context.verification_routing` with routing decisions per dimension.
 
 ### Feature 8.3: Phase 7 — EARS Formalization & Approval
 
 **Story:** Synthesize everything into EARS statements for final approval.
-**Implementation:** Create `src/verify/negotiation/phase7.py`. Generate WHEN/SHALL, IF/THEN, WHILE/SHALL statements from all contract elements. Present for approval. On approve → freeze spec. On reject → re-enter relevant phase.
+**Implementation:** Create `src/verify/negotiation/phase7.py` + `.claude/skills/phase7-ears/SKILL.md`. The AI generates EARS statements from all contract elements using four patterns:
+- `WHEN {event} THEN {system} SHALL {action}` (event-driven)
+- `IF {condition} THEN {response}` (unwanted behavior)
+- `WHILE {state} {system} SHALL {property}` (state-driven)
+- `{system} SHALL {property}` (ubiquitous)
+
+Each EARS statement maps to exactly one verifiable assertion. Present the full list for developer approval. On approve → `context.approved = True`, spec freezes. On reject → harness re-enters the relevant earlier phase (feedback loop). The synthesis module currently generates basic EARS from postconditions/failures — this phase refines them with LLM reasoning and developer confirmation.
 
 ---
 
 ## Epic 9: Beyond-Code Verification Skills [STRETCH]
 
+> **Design references:** Each new skill follows the `VerificationSkill` base class and registers in `SKILL_REGISTRY`. The progressive disclosure pattern from the [Agent Skills standard](https://agentskills.io) means these skills only load when the routing table points to them — you can install many skills without context penalty. See [agent-skills-reference.md §2](agent-skills-reference.md) for the three-tier loading model and [reference-library.md §2](reference-library.md#2-agent-skills--modular-discoverable-capability-packages) for Block's design principles.
+
 ### Feature 9.1: New Relic Alert Config Skill
 
 **Story:** Generate NRQL alert configurations from performance invariants.
-**Implementation:** Create `src/verify/skills/newrelic_skill.py`. Read `type: performance` invariants. Generate NRQL JSON with query, threshold, duration. Register as `newrelic_alert_config` in SKILL_REGISTRY.
+**Implementation:** Create `src/verify/skills/newrelic_skill/` with SKILL.md + `newrelic_skill.py`. Read `type: performance_sla` requirements from the spec. Generate NRQL JSON with query, threshold, duration, notification channel. Register as `newrelic_alert_config` in SKILL_REGISTRY. The routing table already maps `performance_sla` → `newrelic_alert_config` with output pattern `.verify/generated/{key}_alerts.json`. Verification type: `config_validation` (file exists + structurally valid JSON).
+
+**SKILL.md structure:**
+```yaml
+---
+name: newrelic-alert-config
+description: Generate New Relic NRQL alert configurations from performance SLA requirements in spec contracts. Use when the routing table dispatches a performance_sla requirement.
+---
+```
 
 ### Feature 9.2: Gherkin Scenario Skill
 
 **Story:** Generate .feature files from spec contracts.
-**Implementation:** Create `src/verify/skills/gherkin_skill.py`. Generate Given/When/Then scenarios with `@TAG` annotations. Register as `gherkin_scenario`.
+**Implementation:** Create `src/verify/skills/gherkin_skill/` with SKILL.md + `gherkin_skill.py`. Generate Given/When/Then scenarios with `@TAG` annotations from spec contracts. Register as `gherkin_scenario`. The routing table maps `compliance` → `gherkin_scenario` with output pattern `.verify/generated/{key}_compliance.feature`. Verification type: `test_result` (Behave/Cucumber runner).
 
 ### Feature 9.3: OpenTelemetry Instrumentation Skill
 
 **Story:** Generate OTel span configs for monitored endpoints.
-**Implementation:** Create `src/verify/skills/otel_skill.py`. Generate OTel config snippets for each observed endpoint. Register as `otel_config`.
+**Implementation:** Create `src/verify/skills/otel_skill/` with SKILL.md + `otel_skill.py`. Generate OTel collector config snippets for each observed endpoint. Register as `otel_config`. The routing table maps `observability` → `otel_config` with output pattern `.verify/generated/{key}_otel.yaml`. Verification type: `deployment_check` (file exists + valid YAML).
 
 ---
 
 ## Epic 10: CI/CD & PR Automation [STRETCH]
 
+> **Design references:** CI integration follows harness engineering's hooks pattern — event-driven scripts executing at lifecycle points (PR creation, test completion, failure detection). The spec drift detection implements the back-pressure mechanism: generated artifacts must stay in sync with the spec. See [reference-library.md §3](reference-library.md#3-harness-engineering--structuring-agent-environments-for-reliability) for hooks and verification patterns. The CI skills could be implemented as Agent Skills with SKILL.md files that describe the GitHub Actions workflow and PR formatting conventions ([agent-skills-reference.md §4](agent-skills-reference.md)).
+
 ### Feature 10.1: Automated PR Creation
 
 **Story:** Auto-create PRs with generated spec and verification artifacts.
-**Implementation:** Use GitHub REST API. Create branch per constitution naming. Commit generated files. Open PR with Jira link, spec summary, EARS statements.
+**Implementation:** Use `gh` CLI or GitHub REST API. After `compile_and_write()`, create a branch named `verify/{jira_key}`, commit the spec YAML + generated test files + any config artifacts. Open a PR with: Jira link in title, EARS statements in body, traceability map as a markdown table, and a checklist of verification refs. The PR description follows the spec-as-contract principle — reviewers see exactly what will be verified and how.
 
 ### Feature 10.2: GitHub Actions Integration
 
 **Story:** Run evaluation pipeline in CI on PR creation.
-**Implementation:** Create `.github/workflows/verify.yml`. Trigger on PR. Run tests, evaluate, update Jira. Post PR comment with results.
+**Implementation:** Create `.github/workflows/verify.yml`. Trigger on PR labels or paths matching `.verify/**`. Steps: install deps → run `python -m verify.pipeline .verify/specs/{key}.yaml` → parse verdicts → post PR comment with pass/fail per AC checkbox → if Jira configured, update checkboxes and post evidence. The workflow is the harness's CI hook — it fires on the PR lifecycle event and runs the deterministic pipeline.
 
 ### Feature 10.3: Spec Drift Detection
 
 **Story:** Detect when code changes break the spec.
-**Implementation:** On test failure, match `@Tag` to spec refs. Report which business requirements are violated. If spec modified, verify all artifacts regenerated.
+**Implementation:** On test failure in CI, match `[REQ-NNN.FAIL-NNN]` tags from test names to spec refs. Report which business requirements (AC checkboxes) are violated — not just "3 tests failed" but "AC checkbox 0 ('User can view profile') is no longer satisfied because FAIL-002 (user not found) now returns 500 instead of 404." If the spec YAML is modified, verify all downstream artifacts (generated tests, alert configs) are regenerated — stale artifacts break traceability.
 
 ---
 
