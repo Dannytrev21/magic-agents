@@ -2,7 +2,9 @@
 
 ## Intent-to-Verification Spec Engine
 
-Transforms fuzzy Jira acceptance criteria into formal, machine-verifiable specifications through AI-driven negotiation, then generates tests, runs them, and feeds verdicts back to Jira — closing the loop from business intent to verified software.
+Transforms fuzzy Jira acceptance criteria into formal, machine-verifiable specifications through AI-driven negotiation, then dispatches to **Claude Agent Skills** that generate verification artifacts (tests, alert configs, compliance scenarios), runs them, and feeds verdicts back to Jira — closing the loop from business intent to verified software.
+
+Both sides of the pipeline — **spec generation** (negotiation phases) and **proof-of-correctness generation** (verification skills) — are implemented as [Agent Skills](https://agentskills.io) following the SKILL.md open standard with progressive disclosure.
 
 **Stack:** Python 3.11+ / FastAPI / pytest / Claude API
 **References:** [reference-library.md](../reference-library.md) | [agent-skills-reference.md](../agent-skills-reference.md) | [ac-to-specs-plan.md](../ac-to-specs-plan.md)
@@ -19,8 +21,8 @@ flowchart LR
     Synthesis --> Compile["Spec Compiler"]
     Compile --> Spec[".verify/specs/*.yaml"]
     Spec --> Route["Routing Table\n(deterministic)"]
-    Route --> Generate["Test Generator\n(skill dispatch)"]
-    Generate --> Tests[".verify/generated/*"]
+    Route --> Generate["Agent Skills\n(proof-of-correctness\ngenerators)"]
+    Generate --> Tests[".verify/generated/*\n(tests, configs,\nscenarios)"]
     Tests --> Run["Test Runner\n(pytest + JUnit XML)"]
     Run --> Evaluate["Evaluator\n(zero AI)"]
     Evaluate --> Verdicts["Verdicts\n(per AC checkbox)"]
@@ -31,30 +33,44 @@ flowchart LR
 
 ## 2. Two-Zone Architecture
 
-The spec YAML is the intelligence boundary. Everything above it uses AI; everything below is deterministic.
+The spec YAML is the intelligence boundary. Both zones use **Claude Agent Skills** — but for fundamentally different purposes.
 
 ```mermaid
 flowchart TB
-    subgraph ai["AI ZONE — Fuzzy-to-Formal Translation"]
+    subgraph ai["AI ZONE — Spec Generation Agent Skills"]
         direction LR
-        P1["Phase 1\nClassify ACs"] --> P2["Phase 2\nPostconditions"]
-        P2 --> P3["Phase 3\nPreconditions"]
-        P3 --> P4["Phase 4\nFailure Modes"]
-        P4 --> SYN["Synthesis"]
+        P1["Phase 1 Skill\nClassify ACs"] --> P2["Phase 2 Skill\nPostconditions"]
+        P2 --> P3["Phase 3 Skill\nPreconditions"]
+        P3 --> P4["Phase 4 Skill\nFailure Modes"]
+        P4 --> SYN["Synthesis\n(deterministic)"]
     end
 
     SYN --> SPEC["SPEC YAML\n(.verify/specs/*.yaml)"]
 
-    subgraph det["DETERMINISTIC ZONE — Mechanical Translation"]
+    subgraph poc["PROOF-OF-CORRECTNESS — Verification Agent Skills"]
         direction LR
-        RT["Routing\nTable"] --> GEN["Test\nGenerator"]
-        GEN --> RUN["Test\nRunner"]
-        RUN --> EVAL["Evaluator"]
-        EVAL --> JIRA["Jira\nUpdates"]
+        RT["Routing\nTable"] --> SK1["pytest Skill"]
+        RT --> SK2["NewRelic Skill"]
+        RT --> SK3["Gherkin Skill"]
+        RT --> SK4["OTel Skill"]
     end
 
     SPEC --> RT
+
+    subgraph det["DETERMINISTIC ZONE — Execution & Evaluation"]
+        direction LR
+        RUN["Test\nRunner"] --> EVAL["Evaluator"]
+        EVAL --> JIRA["Jira\nUpdates"]
+    end
+
+    SK1 & SK2 & SK3 & SK4 --> RUN
 ```
+
+**Spec Generation Skills** (`.claude/skills/phase*-*/SKILL.md`) — AI interprets fuzzy AC into structured contracts through negotiation with the developer. Each phase is a Claude Agent Skill with constitutional rules.
+
+**Proof-of-Correctness Skills** (`.claude/skills/verify-*/SKILL.md`) — Agent Skills that read the spec contract and generate verification artifacts: pytest tests, New Relic alert configs, Gherkin scenarios, OTel configs. Each skill follows the same SKILL.md standard — metadata for discovery, instructions for generation, templates as resources.
+
+**Execution & Evaluation** — Fully deterministic. Run the generated artifacts, parse results, map back to AC checkboxes via the traceability map.
 
 ---
 
@@ -160,11 +176,11 @@ sequenceDiagram
 
 ## 6. Agent Skills Architecture
 
-Two layers of skills following the [Agent Skills open standard](https://agentskills.io):
+**Both spec generation and proof-of-correctness generation are Claude Agent Skills.** They follow the same [SKILL.md open standard](https://agentskills.io) with the same progressive disclosure pattern — the only difference is what they produce.
 
 ```mermaid
 flowchart TB
-    subgraph phase_skills["Negotiation Phase Skills\n(.claude/skills/)"]
+    subgraph spec_skills["SPEC GENERATION SKILLS\n(.claude/skills/phase*-*/SKILL.md)"]
         direction LR
         PS1["phase1-classification\nSKILL.md + SCHEMA.md"]
         PS2["phase2-postconditions\nSKILL.md + SCHEMA.md"]
@@ -172,33 +188,45 @@ flowchart TB
         PS4["phase4-failure-modes\nSKILL.md"]
     end
 
-    subgraph ver_skills["Verification Generator Skills\n(src/verify/skills/)"]
+    PS4 --> SPEC["SPEC YAML"]
+    SPEC --> RT["ROUTING_TABLE\n(deterministic dispatch)"]
+
+    subgraph poc_skills["PROOF-OF-CORRECTNESS SKILLS\n(.claude/skills/verify-*/SKILL.md)"]
         direction LR
-        VS1["pytest_unit_test"]
-        VS2["newrelic_alert_config"]
-        VS3["otel_config"]
-        VS4["gherkin_scenario"]
+        VS1["verify-pytest\nSKILL.md + TEMPLATES.md"]
+        VS2["verify-newrelic\nSKILL.md"]
+        VS3["verify-gherkin\nSKILL.md"]
+        VS4["verify-otel\nSKILL.md"]
     end
 
-    subgraph loading["Progressive Disclosure (3-Tier)"]
-        L1["Level 1: Metadata\n~100 tokens, always loaded"]
-        L2["Level 2: Instructions\nSKILL.md body, on trigger"]
-        L3["Level 3: Resources\nSCHEMA.md, scripts, on demand"]
+    RT --> VS1 & VS2 & VS3 & VS4
+
+    subgraph loading["Progressive Disclosure — Same for Both Skill Types"]
+        L1["Level 1: Metadata\nname + description\n~100 tokens, always loaded"]
+        L2["Level 2: Instructions\nSKILL.md body\nloaded when skill triggers"]
+        L3["Level 3: Resources\nSCHEMA.md, TEMPLATES.md, scripts\nloaded on demand"]
     end
-
-    RT["ROUTING_TABLE\n(compiler.py)"] --> VS1 & VS2 & VS3 & VS4
-
-    PS1 --> PS2 --> PS3 --> PS4
-    PS4 --> RT
 ```
 
-### Block's 3 Principles Applied
+### How the Two Skill Types Compare
 
-| Principle | What | Example |
-|-----------|------|---------|
-| **1. Agents should NOT decide** | Deterministic operations | `validate.py` enums, `tag_enforcer.py`, routing table lookup |
-| **2. Agents SHOULD decide** | Context-dependent reasoning | Interpreting AC text, generating clarifying questions |
-| **3. Constitutional rules** | Explicit constraints | `MUST`/`FORBIDDEN` in prompts, strict output schemas |
+| | Spec Generation Skills | Proof-of-Correctness Skills |
+|---|---|---|
+| **Location** | `.claude/skills/phase*-*/` | `.claude/skills/verify-*/` |
+| **Input** | Raw AC + constitution | Spec contract + constitution |
+| **Output** | Structured data on VerificationContext | Verification artifacts (tests, configs, scenarios) |
+| **AI role** | Interpret, classify, propose, negotiate | Generate code/configs from structured spec |
+| **Validation** | `validate.py` (enum checks) | `tag_enforcer.py` (spec ref coverage) |
+| **Developer interaction** | Feedback loop (approve/revise) | None (deterministic dispatch) |
+| **Standard** | SKILL.md + SCHEMA.md | SKILL.md + TEMPLATES.md |
+
+### Block's 3 Principles Applied (Both Skill Types)
+
+| Principle | Spec Skills | Verification Skills |
+|-----------|-------------|---------------------|
+| **1. NOT decide** | `validate.py` enums, guard conditions | `tag_enforcer.py`, routing table |
+| **2. SHOULD decide** | Interpreting AC, clarifying questions | Adapting templates to contract shapes |
+| **3. Constitutional rules** | `MUST`/`FORBIDDEN` in prompts | `MUST tag every ref`, `MUST use TestClient` |
 
 ---
 
@@ -256,11 +284,12 @@ Deterministic mapping from requirement type to verification skill (zero AI):
 | | `src/verify/negotiation/validate.py` | Deterministic output validation |
 | | `src/verify/negotiation/synthesis.py` | Post-negotiation: invariants, EARS, traceability |
 | **Compiler** | `src/verify/compiler.py` | Context → YAML spec + routing table + traceability |
-| **Pipeline** | `src/verify/generator.py` | Spec → pytest test file |
+| **Pipeline** | `src/verify/generator.py` | Spec → pytest test file (to be replaced by verify-pytest skill) |
 | | `src/verify/runner.py` | Run tests + parse JUnit XML |
 | | `src/verify/evaluator.py` | Spec + results → verdicts |
 | | `src/verify/pipeline.py` | End-to-end orchestrator |
 | **Jira** | `src/verify/jira_client.py` | Read/write/search Jira Cloud REST API |
 | **LLM** | `src/verify/llm_client.py` | Claude SDK + mock mode + multi-turn |
 | **UI** | `static/index.html` | Web UI (Jira picker, negotiation, traceability) |
-| **Skills** | `.claude/skills/phase*-*/SKILL.md` | Negotiation phase skill definitions |
+| **Spec Skills** | `.claude/skills/phase*-*/SKILL.md` | Negotiation phase skill definitions |
+| **Verification Skills** | `.claude/skills/verify-*/SKILL.md` | Proof-of-correctness generator skills (Epic 4) |
