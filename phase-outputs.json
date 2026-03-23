@@ -1,0 +1,320 @@
+{
+  "_comment": "Phase 1-6 Output Contracts. Each phase produces one of these JSON objects. The harness validates structure before storing in the VerificationContext.",
+
+  "phase1_classifications": {
+    "_producer": "Phase 1 Skill (Interface & Actor Discovery)",
+    "_consumer": "Harness → VerificationContext.classifications → Phase 2",
+    "_validation": "Every AC must have a classification. Type must be from enum.",
+    "classifications": [
+      {
+        "ac_index": 0,
+        "ac_text": "User can view their profile",
+        "type": "api_behavior",
+        "actor": "authenticated_user",
+        "interface": {
+          "method": "GET",
+          "path": "/api/v1/users/me",
+          "discovered_from": "UserController.java"
+        },
+        "codebase_evidence": {
+          "existing_endpoint": true,
+          "handler": "UserController.getUserProfile",
+          "existing_dto": "UserProfileResponse",
+          "existing_test_count": 3
+        },
+        "questions": []
+      },
+      {
+        "ac_index": 1,
+        "ac_text": "Profile endpoint responds within 500ms at p99",
+        "type": "performance_sla",
+        "actor": "system",
+        "interface": {
+          "applies_to": "GET /api/v1/users/me"
+        },
+        "codebase_evidence": {
+          "newrelic_config_exists": true,
+          "existing_alerts": false
+        },
+        "questions": []
+      },
+      {
+        "ac_index": 2,
+        "ac_text": "Profile data is never exposed to other users",
+        "type": "security_invariant",
+        "actor": "any",
+        "interface": {
+          "applies_to": "all endpoints returning user data"
+        },
+        "codebase_evidence": {
+          "sensitive_fields_found": ["passwordHash", "ssn", "internalId"],
+          "dto_excludes_sensitive": true
+        },
+        "questions": []
+      }
+    ]
+  },
+
+  "phase2_postconditions": {
+    "_producer": "Phase 2 Skill (Happy Path Contract)",
+    "_consumer": "Harness → VerificationContext.postconditions → Phase 3",
+    "_validation": "Every api_behavior classification must have a postcondition.",
+    "postconditions": [
+      {
+        "req_id": "REQ-001",
+        "ac_index": 0,
+        "title": "Authenticated user profile retrieval",
+        "success": {
+          "status": 200,
+          "content_type": "application/json",
+          "schema": {
+            "type": "object",
+            "required": ["id", "email", "displayName", "role", "createdAt"],
+            "properties": {
+              "id": { "type": "string", "format": "uuid", "constraint": "equals jwt.sub" },
+              "email": { "type": "string", "format": "email" },
+              "displayName": { "type": "string", "minLength": 1, "maxLength": 255 },
+              "role": { "type": "string" },
+              "createdAt": { "type": "string", "format": "iso8601" },
+              "avatar": { "type": "string", "format": "uri", "nullable": true }
+            },
+            "forbidden_fields": ["passwordHash", "ssn", "internalId", "status"],
+            "source": "Matches existing UserProfileResponse DTO"
+          }
+        },
+        "questions": []
+      }
+    ]
+  },
+
+  "phase3_preconditions": {
+    "_producer": "Phase 3 Skill (Precondition Formalization)",
+    "_consumer": "Harness → VerificationContext.preconditions → Phase 4",
+    "_validation": "At least one precondition. IDs must start with PRE-.",
+    "preconditions": [
+      {
+        "id": "PRE-001",
+        "req_id": "REQ-001",
+        "description": "Valid non-expired JWT Bearer token in Authorization header",
+        "formal": "request.header('Authorization') != null AND jwt.exp > now() AND jwt.sub != null",
+        "category": "authentication",
+        "codebase_evidence": "SecurityConfig.java requires JWT for /api/** paths"
+      },
+      {
+        "id": "PRE-002",
+        "req_id": "REQ-001",
+        "description": "User record exists in the database",
+        "formal": "userRepository.findById(jwt.sub) != null",
+        "category": "data_existence",
+        "codebase_evidence": "UserService.getUserProfile throws UserNotFoundException"
+      },
+      {
+        "id": "PRE-003",
+        "req_id": "REQ-001",
+        "description": "User account is in ACTIVE status",
+        "formal": "userRepository.findById(jwt.sub).status == 'ACTIVE'",
+        "category": "data_state",
+        "codebase_evidence": "UserEntity.status field is @Enumerated"
+      }
+    ]
+  },
+
+  "phase4_failure_modes": {
+    "_producer": "Phase 4 Skill (FMEA Failure Mode Enumeration)",
+    "_consumer": "Harness → VerificationContext.failure_modes → Phase 5",
+    "_validation": "Every precondition must have at least one failure. IDs start with FAIL-.",
+    "failure_modes": [
+      {
+        "id": "FAIL-001",
+        "req_id": "REQ-001",
+        "when": "No Authorization header present",
+        "violates": "PRE-001",
+        "status": 401,
+        "body": { "error": "unauthorized", "message": "Authentication required" },
+        "security_note": null
+      },
+      {
+        "id": "FAIL-002",
+        "req_id": "REQ-001",
+        "when": "JWT is present but expired",
+        "violates": "PRE-001",
+        "status": 401,
+        "body": { "error": "token_expired", "message": "Token has expired", "retryable": true },
+        "security_note": null
+      },
+      {
+        "id": "FAIL-003",
+        "req_id": "REQ-001",
+        "when": "JWT is malformed or has invalid signature",
+        "violates": "PRE-001",
+        "status": 401,
+        "body": { "error": "invalid_token", "message": "Token is invalid" },
+        "security_note": null
+      },
+      {
+        "id": "FAIL-004",
+        "req_id": "REQ-001",
+        "when": "JWT sub references a user that never existed",
+        "violates": "PRE-002",
+        "status": 404,
+        "body": { "error": "user_not_found", "message": "User not found" },
+        "security_note": "Returns same 404 as FAIL-005 to prevent account enumeration"
+      },
+      {
+        "id": "FAIL-005",
+        "req_id": "REQ-001",
+        "when": "JWT sub references a soft-deleted user",
+        "violates": "PRE-002",
+        "status": 404,
+        "body": { "error": "user_not_found", "message": "User not found" },
+        "security_note": "Same as FAIL-004 — do NOT return 410 (leaks deletion status)"
+      },
+      {
+        "id": "FAIL-006",
+        "req_id": "REQ-001",
+        "when": "User account status is SUSPENDED",
+        "violates": "PRE-003",
+        "status": 403,
+        "body": { "error": "account_suspended", "message": "Account is suspended" },
+        "security_note": null
+      },
+      {
+        "id": "FAIL-007",
+        "req_id": "REQ-001",
+        "when": "User account status is PENDING_VERIFICATION",
+        "violates": "PRE-003",
+        "status": 403,
+        "body": { "error": "account_pending", "message": "Account pending verification" },
+        "security_note": null
+      }
+    ],
+    "security_questions_surfaced": [
+      "Should 'user not found' and 'user deleted' return different status codes? Returning different codes reveals whether an account ever existed. Recommend: both return 404."
+    ]
+  },
+
+  "phase5_invariants": {
+    "_producer": "Phase 5 Skill (Invariant Extraction)",
+    "_consumer": "Harness → VerificationContext.invariants → Phase 6",
+    "_validation": "IDs start with INV-. Type must be from enum.",
+    "invariants": [
+      {
+        "id": "INV-001",
+        "req_id": "REQ-001",
+        "type": "security",
+        "rule": "Response body MUST only contain data belonging to the authenticated user (response.id == jwt.sub)",
+        "source": "inferred from data model",
+        "verification_type": "test_result"
+      },
+      {
+        "id": "INV-002",
+        "req_id": "REQ-001",
+        "type": "security",
+        "rule": "Response body MUST NEVER contain fields: passwordHash, ssn, internalId",
+        "source": "constitution security_invariants + codebase sensitive field scan",
+        "verification_type": "test_result"
+      },
+      {
+        "id": "INV-003",
+        "req_id": "REQ-001",
+        "type": "security",
+        "rule": "No response (success or error) may include stack traces, internal exception details, or database query information",
+        "source": "inferred security best practice",
+        "verification_type": "test_result"
+      },
+      {
+        "id": "INV-004",
+        "req_id": "REQ-001",
+        "type": "performance",
+        "rule": "p99 response time MUST be below 500ms",
+        "source": "AC[1]",
+        "verification_type": "deployment_check",
+        "target": "new_relic"
+      },
+      {
+        "id": "INV-005",
+        "req_id": "REQ-001",
+        "type": "idempotency",
+        "rule": "GET requests MUST be safe — no side effects on user data, identical sequential requests return identical responses",
+        "source": "inferred from HTTP method semantics",
+        "verification_type": "test_result"
+      },
+      {
+        "id": "INV-006",
+        "req_id": "REQ-001",
+        "type": "observability",
+        "rule": "All profile access MUST be logged with user_id, action, timestamp, source_ip, and response_status in structured JSON format",
+        "source": "constitution observability standards",
+        "verification_type": "test_result"
+      },
+      {
+        "id": "INV-007",
+        "req_id": "REQ-001",
+        "type": "compliance",
+        "rule": "Response contains PII (email). X-Data-Classification: PII-STANDARD header MUST be present",
+        "source": "inferred from PII in response schema + constitution compliance requirements",
+        "verification_type": "test_result"
+      }
+    ]
+  },
+
+  "phase6_routing": {
+    "_producer": "Phase 6 Skill (Completeness Sweep & Verification Routing)",
+    "_consumer": "Harness → VerificationContext.verification_routing → Spec Compiler",
+    "_validation": "Every contract element must be covered by at least one routing entry.",
+    "completeness_checklist": {
+      "authentication": "COVERED (PRE-001)",
+      "authorization": "COVERED (any valid JWT)",
+      "input_validation": "N/A (GET with no params)",
+      "output_schema": "COVERED (Phase 2)",
+      "error_responses": "COVERED (Phase 4, 7 failure modes)",
+      "rate_limiting": "DEFERRED (out of scope for this story)",
+      "pagination": "N/A (single resource)",
+      "caching": "NOT_ADDRESSED",
+      "versioning": "NOT_ADDRESSED",
+      "idempotency": "COVERED (INV-005)",
+      "observability": "COVERED (INV-004, INV-006)",
+      "security": "COVERED (INV-001, INV-002, INV-003)",
+      "data_classification": "COVERED (INV-007)",
+      "deprecation": "NOT_ADDRESSED",
+      "documentation": "NOT_ADDRESSED"
+    },
+    "verification_routing": [
+      {
+        "refs": ["success", "FAIL-001", "FAIL-002", "FAIL-003", "FAIL-004", "FAIL-005", "FAIL-006", "FAIL-007", "INV-001", "INV-002", "INV-003", "INV-005"],
+        "skill": "junit5_controller_test",
+        "pattern": "controller_test",
+        "output": "src/test/java/com/example/controller/UserProfileVerificationTest.java",
+        "framework": "junit5"
+      },
+      {
+        "refs": ["success.schema"],
+        "skill": "schema_contract_test",
+        "pattern": "controller_test",
+        "output": "src/test/java/com/example/contract/UserProfileContractTest.java",
+        "framework": "junit5"
+      },
+      {
+        "refs": ["INV-004"],
+        "skill": "newrelic_alert_config",
+        "pattern": null,
+        "output": "infra/alerts/user-profile-latency.json",
+        "framework": null
+      },
+      {
+        "refs": ["INV-006"],
+        "skill": "audit_log_test",
+        "pattern": "service_test",
+        "output": "src/test/java/com/example/audit/UserProfileAuditTest.java",
+        "framework": "junit5"
+      },
+      {
+        "refs": ["INV-007"],
+        "skill": "compliance_header_test",
+        "pattern": "controller_test",
+        "output": "src/test/java/com/example/compliance/UserProfileComplianceTest.java",
+        "framework": "junit5"
+      }
+    ]
+  }
+}

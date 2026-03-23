@@ -1,0 +1,46 @@
+# AC Input Contract
+# Producer: Jira Client (Person 1 - Maggie)
+# Consumer: Negotiation Harness (Person 2 - Danny)
+# Trigger: POST /api/start { jira_key: "PROJ-1234" }
+
+# This is what the Jira client extracts from a Jira Cloud ticket
+# and passes to the negotiation harness.
+
+jira_key: "PROJ-1234"
+jira_summary: "User profile endpoint"
+jira_url: "https://yourteam.atlassian.net/browse/PROJ-1234"
+jira_status: "To Do"
+jira_assignee: "danny.trevino"
+jira_labels: ["backend", "api"]
+jira_components: ["user-service"]
+
+# The acceptance criteria extracted from the ticket description.
+# Jira stores AC as taskList/taskItem nodes in ADF (Atlassian Document Format).
+# The Jira client parses these into this flat structure.
+acceptance_criteria:
+  - index: 0
+    text: "User can view their profile"
+    checked: false
+    # The raw ADF node ID — needed to update this specific checkbox later
+    adf_local_id: "task-item-abc-001"
+
+  - index: 1
+    text: "Profile endpoint responds within 500ms at p99"
+    checked: false
+    adf_local_id: "task-item-abc-002"
+
+  - index: 2
+    text: "Profile data is never exposed to other users"
+    checked: false
+    adf_local_id: "task-item-abc-003"
+
+# Optional: full description text (useful for additional context)
+description_text: |
+  As an authenticated user, I want to view my profile information
+  so that I can verify my account details are correct.
+
+# Optional: linked tickets (for cross-reference)
+linked_tickets:
+  - key: "PROJ-1200"
+    type: "is blocked by"
+    summary: "Authentication service JWT endpoint"

@@ -1,0 +1,361 @@
+# SPECify Specification Contract
+# ═══════════════════════════════════════════════════════════════
+# THIS IS THE CANONICAL CONTRACT. Everything upstream produces it.
+# Everything downstream consumes it. It is the boundary between
+# AI (negotiation) and determinism (execution).
+# ═══════════════════════════════════════════════════════════════
+#
+# Producer: Spec Compiler (from VerificationContext after negotiation)
+# Consumers:
+#   - Skill Router (reads requirements[].verification)
+#   - Skill Agents (reads requirements[].contract)
+#   - Evaluator (reads traceability.ac_mappings)
+#   - Jira Updater (reads traceability.ac_mappings[].ac_checkbox)
+#   - Web UI (reads everything for display)
+# Location: .verify/specs/{jira_key}.yaml
+# Validated against: .verify/schemas/spec.schema.json
+
+meta:
+  spec_version: "1.0"
+  jira_key: "PROJ-1234"
+  jira_summary: "User profile endpoint"
+  jira_url: "https://yourteam.atlassian.net/browse/PROJ-1234"
+  generated_at: "2026-03-22T14:30:00Z"
+  approved_at: "2026-03-22T14:35:00Z"
+  approved_by: "danny.trevino"
+  constitution_ref: ".verify/constitution.yaml"
+  negotiation_log: ".verify/logs/PROJ-1234-negotiation.md"
+  codebase_index_ref: ".verify/logs/PROJ-1234-codebase-index.yaml"
+  status: approved  # draft | in_review | approved | superseded
+
+context:
+  relevant_source_files:
+    - "src/main/java/com/example/controller/UserController.java"
+    - "src/main/java/com/example/entity/UserEntity.java"
+    - "src/main/java/com/example/dto/UserProfileResponse.java"
+    - "src/main/java/com/example/service/UserService.java"
+    - "src/main/java/com/example/exception/GlobalExceptionHandler.java"
+  relevant_test_files:
+    - "src/test/java/com/example/controller/UserControllerTest.java"
+  related_specs: []
+
+# ═══════════════════════════════════════════════════════════════
+# REQUIREMENTS
+# Each AC checkbox maps to one or more requirement blocks.
+# ═══════════════════════════════════════════════════════════════
+
+requirements:
+
+  # ─────────────────────────────────────────────────────────────
+  # REQ-001: Derived from AC[0] "User can view their profile"
+  # Also contributes to AC[2] via invariants
+  # ─────────────────────────────────────────────────────────────
+  - id: REQ-001
+    ac_checkbox: 0
+    ac_text: "User can view their profile"
+    title: "Authenticated user profile retrieval"
+    type: api_behavior
+
+    ears:
+      - type: event_driven
+        when: "authenticated user with valid JWT requests GET /api/v1/users/me"
+        shall: "return 200 with JSON body containing id, email, displayName, role, createdAt, and avatar"
+      - type: event_driven
+        when: "authenticated user requests GET /api/v1/users/me"
+        shall: "return response where id equals the JWT sub claim"
+      - type: unwanted
+        if: "request has no Authorization header"
+        then: "return 401 with error 'unauthorized'"
+      - type: unwanted
+        if: "JWT is expired"
+        then: "return 401 with error 'token_expired' and retryable=true"
+      - type: unwanted
+        if: "JWT is malformed or has invalid signature"
+        then: "return 401 with error 'invalid_token'"
+      - type: unwanted
+        if: "JWT sub references a non-existent or deleted user"
+        then: "return 404 with error 'user_not_found'"
+      - type: unwanted
+        if: "user account is suspended or pending verification"
+        then: "return 403 with appropriate error string"
+      - type: ubiquitous
+        shall: "never include passwordHash, ssn, internalId in any profile response"
+      - type: ubiquitous
+        shall: "never include stack traces or internal exception details in error responses"
+      - type: ubiquitous
+        shall: "respond within 500ms at the 99th percentile"
+      - type: ubiquitous
+        shall: "log every profile access with user_id, action, timestamp, source_ip, response_status"
+      - type: ubiquitous
+        shall: "include X-Data-Classification: PII-STANDARD header on all responses containing PII"
+
+    contract:
+      interface:
+        method: GET
+        path: "/api/v1/users/me"
+        auth: jwt_bearer
+        discovered_from: "UserController.java → getUserProfile()"
+
+      preconditions:
+        - id: PRE-001
+          description: "Valid non-expired JWT Bearer token in Authorization header"
+          formal: "request.header('Authorization') != null AND jwt.exp > now() AND jwt.sub != null"
+          category: authentication
+
+        - id: PRE-002
+          description: "User record exists in the database"
+          formal: "userRepository.findById(jwt.sub) != null"
+          category: data_existence
+
+        - id: PRE-003
+          description: "User account is in ACTIVE status"
+          formal: "userRepository.findById(jwt.sub).status == 'ACTIVE'"
+          category: data_state
+
+      success:
+        status: 200
+        content_type: "application/json"
+        schema:
+          type: object
+          required: [id, email, displayName, role, createdAt]
+          properties:
+            id:
+              type: string
+              format: uuid
+              constraint: "MUST equal jwt.sub"
+            email:
+              type: string
+              format: email
+            displayName:
+              type: string
+              minLength: 1
+              maxLength: 255
+            role:
+              type: string
+            createdAt:
+              type: string
+              format: iso8601
+            avatar:
+              type: string
+              format: uri
+              nullable: true
+          forbidden_fields: [passwordHash, ssn, internalId, status]
+          source_dto: "UserProfileResponse"
+
+      failures:
+        - id: FAIL-001
+          when: "No Authorization header present"
+          violates: PRE-001
+          status: 401
+          body:
+            error: unauthorized
+            message: "Authentication required"
+
+        - id: FAIL-002
+          when: "JWT is expired"
+          violates: PRE-001
+          status: 401
+          body:
+            error: token_expired
+            message: "Token has expired"
+            retryable: true
+
+        - id: FAIL-003
+          when: "JWT is malformed or signature invalid"
+          violates: PRE-001
+          status: 401
+          body:
+            error: invalid_token
+            message: "Token is invalid"
+
+        - id: FAIL-004
+          when: "JWT sub references a user that never existed"
+          violates: PRE-002
+          status: 404
+          body:
+            error: user_not_found
+            message: "User not found"
+
+        - id: FAIL-005
+          when: "JWT sub references a soft-deleted user"
+          violates: PRE-002
+          status: 404  # Same as FAIL-004 to prevent enumeration
+          body:
+            error: user_not_found
+            message: "User not found"
+
+        - id: FAIL-006
+          when: "User account status is SUSPENDED"
+          violates: PRE-003
+          status: 403
+          body:
+            error: account_suspended
+            message: "Account is suspended"
+
+        - id: FAIL-007
+          when: "User account status is PENDING_VERIFICATION"
+          violates: PRE-003
+          status: 403
+          body:
+            error: account_pending
+            message: "Account pending verification"
+
+      invariants:
+        - id: INV-001
+          type: security
+          rule: "Response body MUST only contain data belonging to the authenticated user (response.id == jwt.sub)"
+
+        - id: INV-002
+          type: security
+          rule: "Response body MUST NEVER contain fields: passwordHash, ssn, internalId"
+
+        - id: INV-003
+          type: security
+          rule: "No response may include stack traces, internal exception details, or database query information"
+
+        - id: INV-004
+          type: performance
+          rule: "p99 response time MUST be below 500ms"
+
+        - id: INV-005
+          type: idempotency
+          rule: "GET requests MUST be safe — identical sequential requests return identical responses with no side effects"
+
+        - id: INV-006
+          type: observability
+          rule: "All profile access MUST be logged with user_id, action, timestamp, source_ip, response_status"
+
+        - id: INV-007
+          type: compliance
+          rule: "X-Data-Classification: PII-STANDARD header MUST be present on responses containing PII (email)"
+
+    # ═══════════════════════════════════════════════════════
+    # VERIFICATION ROUTING
+    # The router reads this. Zero AI. Pure lookup.
+    # ═══════════════════════════════════════════════════════
+    verification:
+      - refs: [success, FAIL-001, FAIL-002, FAIL-003, FAIL-004, FAIL-005, FAIL-006, FAIL-007, INV-001, INV-002, INV-003, INV-005]
+        skill: junit5_controller_test
+        pattern: controller_test
+        output: "src/test/java/com/example/controller/UserProfileVerificationTest.java"
+        framework: junit5
+
+      - refs: [success.schema]
+        skill: schema_contract_test
+        pattern: controller_test
+        output: "src/test/java/com/example/contract/UserProfileContractTest.java"
+        framework: junit5
+
+      - refs: [INV-004]
+        skill: newrelic_alert_config
+        pattern: null
+        output: "infra/alerts/user-profile-latency.json"
+        framework: null
+
+      - refs: [INV-006]
+        skill: audit_log_test
+        pattern: service_test
+        output: "src/test/java/com/example/audit/UserProfileAuditTest.java"
+        framework: junit5
+
+      - refs: [INV-007]
+        skill: compliance_header_test
+        pattern: controller_test
+        output: "src/test/java/com/example/compliance/UserProfileComplianceTest.java"
+        framework: junit5
+
+
+# ═══════════════════════════════════════════════════════════════
+# TRACEABILITY MAP
+# This is the ONLY section the evaluator and Jira updater read.
+# It defines the many-to-many mapping between AC checkboxes
+# and verification results, with explicit pass/fail evaluation logic.
+# ═══════════════════════════════════════════════════════════════
+
+traceability:
+  ac_mappings:
+
+    # AC[0]: Functional correctness — all tests must pass
+    - ac_checkbox: 0
+      ac_text: "User can view their profile"
+      adf_local_id: "task-item-abc-001"  # For Jira checkbox update
+      pass_condition: ALL_PASS
+      required_verifications:
+        # Happy path
+        - ref: "REQ-001.success"
+          description: "Happy path returns correct profile data"
+          verification_type: test_result
+
+        # Error handling
+        - ref: "REQ-001.FAIL-001"
+          description: "No auth returns 401"
+          verification_type: test_result
+        - ref: "REQ-001.FAIL-002"
+          description: "Expired JWT returns 401"
+          verification_type: test_result
+        - ref: "REQ-001.FAIL-003"
+          description: "Malformed JWT returns 401"
+          verification_type: test_result
+        - ref: "REQ-001.FAIL-004"
+          description: "Non-existent user returns 404"
+          verification_type: test_result
+        - ref: "REQ-001.FAIL-005"
+          description: "Deleted user returns 404"
+          verification_type: test_result
+        - ref: "REQ-001.FAIL-006"
+          description: "Suspended account returns 403"
+          verification_type: test_result
+        - ref: "REQ-001.FAIL-007"
+          description: "Pending account returns 403"
+          verification_type: test_result
+
+        # Invariants (functional)
+        - ref: "REQ-001.INV-001"
+          description: "No cross-user data leakage"
+          verification_type: test_result
+        - ref: "REQ-001.INV-002"
+          description: "Forbidden fields never in response"
+          verification_type: test_result
+        - ref: "REQ-001.INV-005"
+          description: "GET is idempotent"
+          verification_type: test_result
+
+        # Schema contract
+        - ref: "REQ-001.schema"
+          description: "Response matches defined schema"
+          verification_type: test_result
+
+    # AC[1]: Performance SLA — config artifacts must exist
+    - ac_checkbox: 1
+      ac_text: "Profile endpoint responds within 500ms at p99"
+      adf_local_id: "task-item-abc-002"
+      pass_condition: ALL_PASS
+      required_verifications:
+        - ref: "REQ-001.INV-004.config"
+          description: "New Relic NRQL alert config exists and is valid"
+          verification_type: deployment_check
+          check_details:
+            file: "infra/alerts/user-profile-latency.json"
+            schema: "nrql_alert_schema"
+
+    # AC[2]: Security — shares tests with AC[0]
+    - ac_checkbox: 2
+      ac_text: "Profile data is never exposed to other users"
+      adf_local_id: "task-item-abc-003"
+      pass_condition: ALL_PASS
+      required_verifications:
+        - ref: "REQ-001.INV-001"
+          description: "No cross-user data leakage"
+          verification_type: test_result
+        - ref: "REQ-001.INV-002"
+          description: "Forbidden fields never in response"
+          verification_type: test_result
+        - ref: "REQ-001.INV-003"
+          description: "No stack traces in error responses"
+          verification_type: test_result
+        - ref: "REQ-001.INV-006"
+          description: "Audit logging present"
+          verification_type: test_result
+        - ref: "REQ-001.INV-007"
+          description: "PII classification header present"
+          verification_type: test_result
