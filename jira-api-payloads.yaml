@@ -1,0 +1,243 @@
+# Jira Cloud API Payloads
+# ═══════════════════════════════════════════════════════════════
+# Producer: Jira Updater (Person 1 - Maggie)
+# Consumer: Jira Cloud REST API v3
+# Auth: Basic auth (email + API token)
+# Base URL: https://{site}.atlassian.net/rest/api/3
+# ═══════════════════════════════════════════════════════════════
+
+# ─────────────────────────────────────────────────────────────
+# 1. READ TICKET
+# GET /rest/api/3/issue/{jira_key}
+# ─────────────────────────────────────────────────────────────
+read_ticket:
+  method: GET
+  url: "/rest/api/3/issue/PROJ-1234"
+  headers:
+    Authorization: "Basic {base64(email:api_token)}"
+    Accept: "application/json"
+  
+  response_fields_we_need:
+    - "fields.summary"           # Ticket title
+    - "fields.status.name"       # Current status
+    - "fields.assignee.displayName"
+    - "fields.description"       # ADF document containing AC checkboxes
+    - "fields.labels"
+    - "fields.components"
+
+  # The description field is in Atlassian Document Format (ADF).
+  # AC checkboxes are taskList > taskItem nodes.
+  description_adf_example:
+    type: doc
+    version: 1
+    content:
+      - type: paragraph
+        content:
+          - type: text
+            text: "As an authenticated user, I want to view my profile."
+      - type: taskList
+        attrs:
+          localId: "tasklist-001"
+        content:
+          - type: taskItem
+            attrs:
+              localId: "task-item-abc-001"
+              state: "TODO"           # ← This becomes "DONE" when we tick it
+            content:
+              - type: text
+                text: "User can view their profile"
+          - type: taskItem
+            attrs:
+              localId: "task-item-abc-002"
+              state: "TODO"
+            content:
+              - type: text
+                text: "Profile endpoint responds within 500ms at p99"
+          - type: taskItem
+            attrs:
+              localId: "task-item-abc-003"
+              state: "TODO"
+            content:
+              - type: text
+                text: "Profile data is never exposed to other users"
+
+# ─────────────────────────────────────────────────────────────
+# 2. UPDATE CHECKBOX (tick an AC)
+# PUT /rest/api/3/issue/{jira_key}
+# ─────────────────────────────────────────────────────────────
+update_checkbox:
+  method: PUT
+  url: "/rest/api/3/issue/PROJ-1234"
+  headers:
+    Authorization: "Basic {base64(email:api_token)}"
+    Content-Type: "application/json"
+  
+  # To tick checkbox 0:
+  # 1. GET the current description ADF
+  # 2. Find taskItem with localId matching the checkbox
+  # 3. Change state from "TODO" to "DONE"
+  # 4. PUT the entire updated description back
+  
+  body:
+    fields:
+      description:
+        type: doc
+        version: 1
+        content:
+          - type: paragraph
+            content:
+              - type: text
+                text: "As an authenticated user, I want to view my profile."
+          - type: taskList
+            attrs:
+              localId: "tasklist-001"
+            content:
+              - type: taskItem
+                attrs:
+                  localId: "task-item-abc-001"
+                  state: "DONE"            # ← CHANGED from "TODO" to "DONE"
+                content:
+                  - type: text
+                    text: "User can view their profile"
+              - type: taskItem
+                attrs:
+                  localId: "task-item-abc-002"
+                  state: "DONE"            # ← CHANGED
+                content:
+                  - type: text
+                    text: "Profile endpoint responds within 500ms at p99"
+              - type: taskItem
+                attrs:
+                  localId: "task-item-abc-003"
+                  state: "DONE"            # ← CHANGED
+                content:
+                  - type: text
+                    text: "Profile data is never exposed to other users"
+
+  notes: |
+    CRITICAL: You must PUT the ENTIRE description, not just the changed checkbox.
+    Jira doesn't support partial ADF updates. If you miss any content, it gets deleted.
+    
+    Algorithm:
+    1. GET /rest/api/3/issue/PROJ-1234?fields=description
+    2. Parse the ADF JSON
+    3. Walk the content tree, find taskItem nodes
+    4. Match by localId (from the verdicts.json adf_local_id field)
+    5. Set state = "DONE" for passed checkboxes
+    6. PUT the full modified description back
+
+# ─────────────────────────────────────────────────────────────
+# 3. POST EVIDENCE COMMENT
+# POST /rest/api/3/issue/{jira_key}/comment
+# ─────────────────────────────────────────────────────────────
+post_comment:
+  method: POST
+  url: "/rest/api/3/issue/PROJ-1234/comment"
+  headers:
+    Authorization: "Basic {base64(email:api_token)}"
+    Content-Type: "application/json"
+  
+  # Jira Cloud v3 uses ADF for comments too.
+  # But for simplicity, you can use the wiki markup renderer:
+  body:
+    body:
+      type: doc
+      version: 1
+      content:
+        - type: heading
+          attrs: { level: 3 }
+          content:
+            - type: text
+              text: "SPECify Verification Results"
+        - type: paragraph
+          content:
+            - type: text
+              text: "Spec: "
+            - type: text
+              text: ".verify/specs/PROJ-1234.yaml"
+              marks: [{ type: code }]
+        - type: paragraph
+          content:
+            - type: text
+              text: "Overall: "
+            - type: text
+              text: "ALL PASSED"
+              marks: [{ type: strong }]
+            - type: text
+              text: " (19/19 verifications)"
+        - type: rule  # Horizontal divider
+        - type: heading
+          attrs: { level: 4 }
+          content:
+            - type: text
+              text: "✅ AC: \"User can view their profile\" — 12/12 passed"
+        - type: table
+          attrs: { isNumberColumnEnabled: false, layout: default }
+          content:
+            - type: tableRow
+              content:
+                - type: tableHeader
+                  content: [{ type: paragraph, content: [{ type: text, text: "Ref" }] }]
+                - type: tableHeader
+                  content: [{ type: paragraph, content: [{ type: text, text: "Description" }] }]
+                - type: tableHeader
+                  content: [{ type: paragraph, content: [{ type: text, text: "Type" }] }]
+                - type: tableHeader
+                  content: [{ type: paragraph, content: [{ type: text, text: "Result" }] }]
+            - type: tableRow
+              content:
+                - type: tableCell
+                  content: [{ type: paragraph, content: [{ type: text, text: "REQ-001.success" }] }]
+                - type: tableCell
+                  content: [{ type: paragraph, content: [{ type: text, text: "Happy path returns 200" }] }]
+                - type: tableCell
+                  content: [{ type: paragraph, content: [{ type: text, text: "test" }] }]
+                - type: tableCell
+                  content: [{ type: paragraph, content: [{ type: text, text: "✅" }] }]
+  
+  notes: |
+    The ADF format for comments is verbose. For the hackathon, consider using 
+    the simpler v2 API which accepts wiki markup:
+    
+    POST /rest/api/2/issue/PROJ-1234/comment
+    { "body": "h3. SPECify Verification Results\n\n||Ref||Description||Result||\n|REQ-001.success|Happy path|(/)|" }
+    
+    Wiki markup is much easier to generate programmatically.
+
+# ─────────────────────────────────────────────────────────────
+# 4. TRANSITION TICKET
+# POST /rest/api/3/issue/{jira_key}/transitions
+# ─────────────────────────────────────────────────────────────
+transition_ticket:
+  
+  # Step 1: Get available transitions
+  get_transitions:
+    method: GET
+    url: "/rest/api/3/issue/PROJ-1234/transitions"
+    response_example:
+      transitions:
+        - id: "31"
+          name: "Done"
+        - id: "21"
+          name: "In Review"
+        - id: "11"
+          name: "In Progress"
+  
+  # Step 2: Execute the transition
+  execute_transition:
+    method: POST
+    url: "/rest/api/3/issue/PROJ-1234/transitions"
+    body:
+      transition:
+        id: "31"    # The ID for "Done" — varies per project workflow!
+    
+    notes: |
+      IMPORTANT: Transition IDs are NOT universal. They vary per Jira project
+      and workflow configuration. You MUST fetch available transitions first
+      (Step 1) and match by name, not by hardcoded ID.
+      
+      Algorithm:
+      1. GET transitions
+      2. Find the transition where name == target_status (e.g., "Done")
+      3. POST with that transition's id
+      4. If no matching transition exists, log error (don't crash)

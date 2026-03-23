@@ -1,0 +1,253 @@
+# Skill Agent Interface Contract
+# ═══════════════════════════════════════════════════════════════
+# Every skill agent (test generator, config generator, etc.)
+# must follow this interface. The skill router reads the spec's
+# verification[].skill field and dispatches to the matching skill.
+# ═══════════════════════════════════════════════════════════════
+
+# ─────────────────────────────────────────────────────────────
+# WHAT EVERY SKILL RECEIVES
+# ─────────────────────────────────────────────────────────────
+
+skill_input:
+  description: |
+    The skill router provides these inputs to every skill.
+    Skills receive ONLY what they need — not the full spec.
+    
+  fields:
+
+    spec_refs:
+      type: list[string]
+      description: |
+        The specific contract elements this skill is responsible for.
+        From spec.requirements[].verification[].refs
+      example: ["success", "FAIL-001", "FAIL-002", "INV-001", "INV-002"]
+
+    contract:
+      type: object
+      description: |
+        The relevant contract sections for the refs this skill handles.
+        Extracted from spec.requirements[].contract — only the sections
+        referenced by this skill's refs.
+      example:
+        success:
+          status: 200
+          schema:
+            required: [id, email, displayName]
+            properties:
+              id: { type: uuid, constraint: "equals jwt.sub" }
+        failures:
+          - id: FAIL-001
+            when: "No Authorization header"
+            status: 401
+            body: { error: unauthorized }
+        invariants:
+          - id: INV-001
+            type: security
+            rule: "Response only contains authenticated user data"
+
+    constitution_pattern:
+      type: object
+      description: |
+        The test pattern from the constitution that this skill should follow.
+        From constitution.testing.patterns[{pattern_id}]
+      example:
+        id: controller_test
+        annotations: ["@WebMvcTest", "@MockBean"]
+        imports:
+          - "org.springframework.test.web.servlet.MockMvc"
+        assertion_style: "mockMvc.perform(get(...)).andExpect(status().isOk())"
+        example_file: "src/test/java/com/example/controller/UserControllerTest.java"
+
+    output_path:
+      type: string
+      description: |
+        Where to write the generated artifact.
+        From spec.requirements[].verification[].output
+      example: "src/test/java/com/example/controller/UserProfileVerificationTest.java"
+
+    jira_key:
+      type: string
+      description: "Jira ticket key for tagging"
+      example: "PROJ-1234"
+
+    req_id:
+      type: string
+      description: "Requirement ID for tagging"
+      example: "REQ-001"
+
+# ─────────────────────────────────────────────────────────────
+# WHAT EVERY SKILL MUST RETURN
+# ─────────────────────────────────────────────────────────────
+
+skill_output:
+  description: |
+    Every skill must return this structure. The router validates it
+    before passing to the executor.
+
+  fields:
+
+    success:
+      type: boolean
+      description: "Whether the skill successfully generated its artifact"
+
+    output_path:
+      type: string
+      description: "Path where the artifact was written"
+
+    artifact_type:
+      type: enum
+      values: [test_file, config_file, feature_file, script_file]
+      description: "What kind of artifact was generated"
+
+    refs_covered:
+      type: list[string]
+      description: |
+        Which spec refs this artifact covers. Must match or be a subset
+        of the skill_input.spec_refs. The router validates this.
+      example: ["REQ-001.success", "REQ-001.FAIL-001", "REQ-001.INV-001"]
+
+    tag_validation:
+      type: object
+      description: |
+        For test_file artifacts: validation that every ref has a tagged test.
+        Skills MUST validate their own tag coverage before returning.
+      fields:
+        total_refs: integer
+        refs_with_tags: integer
+        missing_tags: list[string]    # Refs without a matching test tag
+      example:
+        total_refs: 12
+        refs_with_tags: 12
+        missing_tags: []
+
+    error:
+      type: string | null
+      description: "Error message if success is false"
+
+  example:
+    success: true
+    output_path: "src/test/java/com/example/controller/UserProfileVerificationTest.java"
+    artifact_type: test_file
+    refs_covered:
+      - "REQ-001.success"
+      - "REQ-001.FAIL-001"
+      - "REQ-001.FAIL-002"
+      - "REQ-001.FAIL-003"
+      - "REQ-001.FAIL-004"
+      - "REQ-001.FAIL-005"
+      - "REQ-001.FAIL-006"
+      - "REQ-001.FAIL-007"
+      - "REQ-001.INV-001"
+      - "REQ-001.INV-002"
+      - "REQ-001.INV-003"
+      - "REQ-001.INV-005"
+    tag_validation:
+      total_refs: 12
+      refs_with_tags: 12
+      missing_tags: []
+    error: null
+
+
+# ─────────────────────────────────────────────────────────────
+# SKILL REGISTRY
+# Maps skill IDs to their implementations.
+# The router uses this to dispatch.
+# ─────────────────────────────────────────────────────────────
+
+skill_registry:
+
+  junit5_controller_test:
+    type: ai_generated
+    description: "Generates JUnit 5 controller tests with @Tag annotations"
+    input_requirements:
+      - contract.interface (method, path, auth)
+      - contract.success (status, schema)
+      - contract.failures (all)
+      - contract.invariants (type: security, idempotency)
+      - constitution_pattern (controller_test)
+    output_type: test_file
+    output_format: java
+    execution: "gradle test --tests {classname}"
+    result_format: junit_xml
+
+  schema_contract_test:
+    type: ai_generated
+    description: "Generates JSON Schema validation tests"
+    input_requirements:
+      - contract.success.schema
+      - constitution_pattern (controller_test or integration_test)
+    output_type: test_file
+    output_format: java
+    execution: "gradle test --tests {classname}"
+    result_format: junit_xml
+
+  newrelic_alert_config:
+    type: ai_generated
+    description: "Generates NRQL alert condition JSON for New Relic"
+    input_requirements:
+      - contract.invariants (type: performance)
+      - contract.interface.path
+      - constitution.observability
+    output_type: config_file
+    output_format: json
+    execution: null  # No execution — file existence is the verification
+    result_format: null
+    evaluation_type: deployment_check
+
+  audit_log_test:
+    type: ai_generated
+    description: "Generates tests that assert audit log output"
+    input_requirements:
+      - contract.invariants (type: observability)
+      - constitution.observability.logging_framework
+    output_type: test_file
+    output_format: java
+    execution: "gradle test --tests {classname}"
+    result_format: junit_xml
+
+  compliance_header_test:
+    type: ai_generated
+    description: "Generates tests for compliance headers (data classification)"
+    input_requirements:
+      - contract.invariants (type: compliance)
+    output_type: test_file
+    output_format: java
+    execution: "gradle test --tests {classname}"
+    result_format: junit_xml
+
+  gherkin_scenario:
+    type: ai_generated
+    description: "Generates Gherkin .feature files from EARS statements"
+    input_requirements:
+      - ears (all statements)
+      - contract.success
+      - contract.failures
+    output_type: feature_file
+    output_format: gherkin
+    execution: "gradle test --tests {cucumber_runner}"
+    result_format: cucumber_json
+
+  dependency_audit:
+    type: cli_command
+    description: "Runs dependency vulnerability scan"
+    command: "npm audit --audit-level=critical"
+    expected_exit_code: 0
+    output_type: null
+    evaluation_type: cli_exit_code
+
+  secret_scan:
+    type: cli_command
+    description: "Scans for secrets in codebase"
+    command: "gitleaks detect --source . --no-banner"
+    expected_exit_code: 0
+    output_type: null
+    evaluation_type: cli_exit_code
+
+  openapi_diff:
+    type: cli_command
+    description: "Validates OpenAPI spec matches implementation"
+    command: "openapi-diff {spec_path} {live_endpoint}"
+    expected_exit_code: 0
+    output_type: null
+    evaluation_type: cli_exit_code

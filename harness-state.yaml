@@ -1,0 +1,80 @@
+# Harness State Contract
+# ═══════════════════════════════════════════════════════════════
+# This is the INTERNAL state of the negotiation harness.
+# It's not a file that gets passed between components — it's
+# the in-memory state that the harness uses to control the pipeline.
+# Serialized to .verify/checkpoints/{jira_key}.yaml for resumability.
+# ═══════════════════════════════════════════════════════════════
+
+session:
+  id: "sess-abc-123-def-456"
+  jira_key: "PROJ-1234"
+  started_at: "2026-03-22T14:25:00Z"
+  status: "negotiating"  # not_started | negotiating | approved | executing | complete | failed
+
+# ─── Phase Tracking ───
+phases:
+  current: "failure_modes"  # Which phase is active
+  completed:
+    - { name: "ac_ingestion",        completed_at: "2026-03-22T14:25:05Z", attempt: 1 }
+    - { name: "interface_discovery",  completed_at: "2026-03-22T14:26:30Z", attempt: 1 }
+    - { name: "happy_path",          completed_at: "2026-03-22T14:28:00Z", attempt: 1 }
+    - { name: "preconditions",       completed_at: "2026-03-22T14:29:15Z", attempt: 1 }
+  pending:
+    - "failure_modes"     # Currently active
+    - "invariants"
+    - "completeness"
+    - "formalization"
+  attempts:
+    ac_ingestion: 1
+    interface_discovery: 1
+    happy_path: 1
+    preconditions: 1
+    failure_modes: 1       # Currently on attempt 1
+
+# ─── Developer Approvals ───
+approvals:
+  interface_discovery: { approved: true, at: "2026-03-22T14:26:30Z", corrections: null }
+  happy_path: { approved: true, at: "2026-03-22T14:28:00Z", corrections: "Added 'role' field" }
+  preconditions: { approved: true, at: "2026-03-22T14:29:15Z", corrections: null }
+  failure_modes: null       # Not yet approved (phase in progress)
+
+# ─── Back-Pressure Metrics ───
+back_pressure:
+  total_api_calls: 8
+  max_api_calls: 50
+  total_input_tokens: 12450
+  total_output_tokens: 8320
+  max_total_tokens: 500000
+  runtime_seconds: 255
+  max_runtime_seconds: 600
+  consecutive_validation_failures: 0
+  max_consecutive_failures: 5
+
+# ─── Codebase Exploration ───
+codebase:
+  pre_scan_completed: true
+  deep_reads_performed: 2
+  max_deep_reads: 10
+  files_read:
+    - "src/main/java/com/example/entity/UserEntity.java"
+    - "src/main/java/com/example/dto/UserProfileResponse.java"
+
+# ─── Negotiation Log Summary ───
+negotiation_log:
+  total_exchanges: 12
+  log_file: ".verify/logs/PROJ-1234-negotiation.md"
+  phases_logged:
+    - { phase: "interface_discovery", ai_messages: 1, human_messages: 1 }
+    - { phase: "happy_path",         ai_messages: 2, human_messages: 2 }
+    - { phase: "preconditions",      ai_messages: 1, human_messages: 1 }
+    - { phase: "failure_modes",      ai_messages: 2, human_messages: 1 }  # In progress
+
+# ─── Execution Pipeline State (populated after approval) ───
+execution:
+  status: null  # null | generating | running | evaluating | updating_jira | complete
+  skills_dispatched: []
+  skills_completed: []
+  test_results_path: null
+  verdicts_path: null
+  jira_updated: false

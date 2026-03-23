@@ -1,0 +1,229 @@
+# Web UI ↔ Backend API Contract
+# ═══════════════════════════════════════════════════════════════
+# Producer: Backend (FastAPI — Person 2 Danny, Person 4 Mike)
+# Consumer: Frontend (HTML/Alpine.js — Person 5 Joe)
+#
+# LOCK THIS IN FIRST. The UI person builds against mock responses.
+# The backend team implements the real logic. They integrate when
+# both sides are ready.
+# ═══════════════════════════════════════════════════════════════
+
+endpoints:
+
+  # ─────────────────────────────────────────────────────────
+  # START: Initialize a session from a Jira ticket
+  # ─────────────────────────────────────────────────────────
+  - method: POST
+    path: /api/start
+    description: "Fetch a Jira ticket and start a negotiation session"
+    request:
+      content_type: application/json
+      body:
+        jira_key: string  # e.g., "PROJ-1234"
+    response:
+      status: 200
+      body:
+        session_id: string          # UUID for this session
+        jira_key: string
+        jira_summary: string
+        jira_url: string
+        acceptance_criteria:        # Extracted AC checkboxes
+          - index: integer
+            text: string
+            checked: boolean
+        current_phase:
+          number: integer           # 1-7
+          name: string              # "Interface Discovery"
+          total: integer            # 7
+        codebase_summary:           # From pre-scan
+          endpoints_found: integer
+          entities_found: integer
+          existing_tests_found: integer
+    error_responses:
+      400: { error: "invalid_jira_key", message: "Jira key format invalid" }
+      404: { error: "ticket_not_found", message: "Jira ticket not found" }
+      500: { error: "jira_connection_failed", message: "Cannot connect to Jira" }
+
+  # ─────────────────────────────────────────────────────────
+  # MESSAGE: Send developer response, get AI's next output
+  # ─────────────────────────────────────────────────────────
+  - method: POST
+    path: /api/message
+    description: "Send developer's response to the AI negotiator"
+    request:
+      content_type: application/json
+      body:
+        session_id: string
+        content: string             # Developer's free-text response
+    response:
+      status: 200
+      body:
+        ai_message: string          # AI's response text (formatted markdown)
+        current_phase:
+          number: integer
+          name: string
+          total: integer
+        spec_preview: string        # Current YAML spec state (for right pane)
+        questions:                  # Clarifying questions from the AI
+          - string
+        phase_complete: boolean     # True if AI thinks this phase is done
+        security_insights:          # Highlighted security findings
+          - string
+    error_responses:
+      400: { error: "invalid_session", message: "Session not found or expired" }
+      429: { error: "rate_limited", message: "Too many messages, slow down" }
+
+  # ─────────────────────────────────────────────────────────
+  # APPROVE: Developer approves the spec, triggers execution
+  # ─────────────────────────────────────────────────────────
+  - method: POST
+    path: /api/approve
+    description: "Developer approves the negotiated spec"
+    request:
+      content_type: application/json
+      body:
+        session_id: string
+    response:
+      status: 200
+      body:
+        spec_path: string           # Where the YAML was saved
+        spec_content: string        # Full YAML content
+        routing_summary:            # What skills will run
+          - skill: string           # e.g., "junit5_controller_test"
+            ref_count: integer      # How many spec refs this covers
+            output: string          # Output file path
+        traceability_summary:
+          ac_checkboxes: integer    # Total checkboxes
+          total_verifications: integer  # Total verification refs
+          verification_types:       # Breakdown by type
+            test_result: integer
+            deployment_check: integer
+            cli_exit_code: integer
+            config_validation: integer
+    error_responses:
+      400: { error: "incomplete_negotiation", message: "Not all phases completed" }
+      409: { error: "already_approved", message: "Spec already approved for this session" }
+
+  # ─────────────────────────────────────────────────────────
+  # EXECUTE: Run the pipeline (streamed via SSE)
+  # ─────────────────────────────────────────────────────────
+  - method: POST
+    path: /api/execute
+    description: "Execute the full pipeline: generate → run → evaluate → update Jira"
+    request:
+      content_type: application/json
+      body:
+        session_id: string
+    response:
+      status: 200
+      content_type: text/event-stream  # Server-Sent Events
+      # See sse_events section below
+
+  # ─────────────────────────────────────────────────────────
+  # SPEC: Get the current spec state
+  # ─────────────────────────────────────────────────────────
+  - method: GET
+    path: /api/spec/{session_id}
+    description: "Get the current spec YAML content"
+    response:
+      status: 200
+      body:
+        spec_content: string        # Current YAML (or empty if not yet generated)
+        status: string              # "draft" | "approved" | "not_started"
+        phases_completed: [string]  # ["classifications", "postconditions", ...]
+
+
+# ═══════════════════════════════════════════════════════════════
+# SERVER-SENT EVENTS (SSE) — Streamed during /api/execute
+# ═══════════════════════════════════════════════════════════════
+
+sse_events:
+  description: |
+    The /api/execute endpoint returns a stream of SSE events.
+    The frontend uses EventSource to consume them and update 
+    the execution view in real-time.
+    
+    JavaScript client:
+      const es = new EventSource('/api/execute?session_id=abc123');
+      es.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        updateUI(data);
+      };
+
+  event_types:
+
+    - stage: "generating"
+      description: "A skill agent is generating a verification artifact"
+      payload:
+        skill: string               # "junit5_controller_test"
+        output: string              # "src/test/.../UserProfileVerificationTest.java"
+        status: string              # "started" | "complete" | "failed"
+        error: string | null        # Error message if failed
+      example:
+        stage: generating
+        skill: junit5_controller_test
+        output: "src/test/java/com/example/controller/UserProfileVerificationTest.java"
+        status: complete
+
+    - stage: "running_tests"
+      description: "Test suite is executing"
+      payload:
+        runner: string               # "gradle test"
+        progress: string             # "8/12"
+        current_test: string         # "should_return_401_when_jwt_expired"
+        status: string               # "running" | "complete" | "failed"
+      example:
+        stage: running_tests
+        runner: "gradle test"
+        progress: "12/12"
+        status: complete
+
+    - stage: "evaluating"
+      description: "Evaluator is checking results against the traceability map"
+      payload:
+        ac_checkbox: integer
+        ac_text: string
+        passed: boolean
+        summary: string              # "12/12"
+        pass_condition: string       # "ALL_PASS"
+      example:
+        stage: evaluating
+        ac_checkbox: 0
+        ac_text: "User can view their profile"
+        passed: true
+        summary: "12/12 verifications passed"
+
+    - stage: "updating_jira"
+      description: "Jira is being updated"
+      payload:
+        action: string               # "checkbox_ticked" | "comment_posted" | "transitioned"
+        ac_checkbox: integer | null   # For checkbox_ticked
+        target_status: string | null  # For transitioned
+      example:
+        stage: updating_jira
+        action: checkbox_ticked
+        ac_checkbox: 0
+
+    - stage: "complete"
+      description: "Pipeline finished"
+      payload:
+        all_passed: boolean
+        verdicts_path: string        # ".verify/results/PROJ-1234-verdicts.json"
+        jira_comment_url: string     # Direct link to the evidence comment
+        total_duration_ms: integer
+      example:
+        stage: complete
+        all_passed: true
+        total_duration_ms: 15200
+
+    - stage: "error"
+      description: "Pipeline error (non-recoverable)"
+      payload:
+        error: string
+        phase: string                # Which phase/stage failed
+        details: string
+      example:
+        stage: error
+        error: "test_execution_failed"
+        phase: "running_tests"
+        details: "gradle test returned exit code 1"

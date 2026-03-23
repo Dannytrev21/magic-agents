@@ -1,0 +1,82 @@
+# Codebase Index Contract
+# Producer: Codebase Scanner (pre-scan at negotiation start)
+# Consumer: Each negotiation phase (via ContextCurator)
+# Format: Built in-memory, serializable to YAML for debugging
+
+endpoints:
+  - method: GET
+    path: "/api/v1/users/me"
+    handler_class: UserController
+    handler_method: getUserProfile
+    auth_annotations: ["@PreAuthorize('isAuthenticated()')"]
+    file_path: "src/main/java/com/example/controller/UserController.java"
+
+  - method: PUT
+    path: "/api/v1/users/me"
+    handler_class: UserController
+    handler_method: updateUserProfile
+    auth_annotations: ["@PreAuthorize('isAuthenticated()')"]
+    file_path: "src/main/java/com/example/controller/UserController.java"
+
+entities:
+  - class_name: UserEntity
+    file_path: "src/main/java/com/example/entity/UserEntity.java"
+    fields:
+      - { name: id, type: UUID, annotations: [Id, GeneratedValue], sensitive: false }
+      - { name: email, type: String, annotations: [Column, NotNull], sensitive: false }
+      - { name: displayName, type: String, annotations: [Column], sensitive: false }
+      - { name: role, type: String, annotations: [Column, NotNull], sensitive: false }
+      - { name: createdAt, type: Instant, annotations: [Column], sensitive: false }
+      - { name: avatar, type: String, annotations: [Column, Nullable], sensitive: false }
+      - { name: passwordHash, type: String, annotations: [Column], sensitive: true }
+      - { name: ssn, type: String, annotations: [Column, Encrypted], sensitive: true }
+      - { name: internalId, type: Long, annotations: [Column], sensitive: true }
+      - { name: status, type: String, annotations: [Column, Enumerated], sensitive: false }
+
+dtos:
+  - class_name: UserProfileResponse
+    file_path: "src/main/java/com/example/dto/UserProfileResponse.java"
+    fields:
+      - { name: id, type: UUID }
+      - { name: email, type: String }
+      - { name: displayName, type: String }
+      - { name: role, type: String }
+      - { name: createdAt, type: Instant }
+      - { name: avatar, type: String }
+
+error_handlers:
+  - exception_class: UserNotFoundException
+    status_code: "NOT_FOUND"
+    file_path: "src/main/java/com/example/exception/GlobalExceptionHandler.java"
+  - exception_class: AccessDeniedException
+    status_code: "FORBIDDEN"
+    file_path: "src/main/java/com/example/exception/GlobalExceptionHandler.java"
+  - exception_class: AuthenticationException
+    status_code: "UNAUTHORIZED"
+    file_path: "src/main/java/com/example/exception/GlobalExceptionHandler.java"
+
+security_config:
+  file_path: "src/main/java/com/example/config/SecurityConfig.java"
+  has_jwt: true
+  has_oauth2: false
+  public_paths: ["/api/v1/health", "/api/v1/docs"]
+
+existing_tests:
+  - test_class: UserControllerTest
+    tested_class: UserController
+    test_count: 3
+    file_path: "src/test/java/com/example/controller/UserControllerTest.java"
+    has_tags: false
+    # Note: only 3 tests — happy path, no auth failure tests
+
+  - test_class: UserServiceTest
+    tested_class: UserService
+    test_count: 5
+    file_path: "src/test/java/com/example/service/UserServiceTest.java"
+    has_tags: false
+
+infra_configs:
+  - { type: newrelic, file_path: "newrelic.yml" }
+  - { type: docker, file_path: "Dockerfile" }
+  - { type: github_actions, file_path: ".github/workflows/ci.yml" }
+  - { type: application, file_path: "src/main/resources/application.yml" }
