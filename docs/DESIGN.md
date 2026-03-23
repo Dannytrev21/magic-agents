@@ -372,13 +372,10 @@ sequenceDiagram
     participant D as Developer
     participant H as Harness
 
-    AI->>D: "5 ACs: 3 API behaviors, 1 perf SLA, 1 security invariant.
-AC[0] and AC[4] are related (same endpoint).
-Estimated: ~8 preconditions, ~15 failure modes.
-Questions: [...]"
-    D->>AI: "AC[3] is actually a data constraint, not perf SLA"
-    AI->>H: Revised plan (configures state machine)
-    H->>H: Execute plan (phases 1-4 per AC group)
+    AI->>D: 5 ACs found - 3 API, 1 perf, 1 security. AC0 and AC4 related.
+    D->>AI: AC3 is actually a data constraint, not perf SLA
+    AI->>H: Revised plan configures state machine
+    H->>H: Execute plan - phases 1-4 per AC group
 ```
 
 **Implementation:** A new Agent Skill at `.claude/skills/negotiation-planner/SKILL.md`. The harness runs it as "Phase -1" before classification. The plan output configures which phases each AC flows through. Maps to Sherpa's "treat state machines as configurable data" principle ([reference-library.md §1](../reference-library.md#1-sherpa--model-driven-agent-orchestration-via-state-machines)).
