@@ -124,10 +124,12 @@ sequenceDiagram
     O->>O: Build context string<br/>(story + AC + constitution + repo structure)
     O->>UI: Display story + AC
 
-    rect rgb(40, 40, 60)
-        Note over O,C: Phase: Spec Generation (single Claude call)
-        O->>C: POST /messages<br/>system: negotiation prompt<br/>user: full context string
-        C-->>O: JSON response<br/>(classifications, postconditions,<br/>preconditions, failure_modes)
+    rect rgba(108, 92, 231, 0.1)
+        Note over O,C: Phase 1 — Spec Generation (single Claude call)
+        O->>C: POST /messages
+        Note right of C: system: negotiation prompt
+        Note right of C: user: full context string
+        C-->>O: JSON (classifications, postconditions, preconditions, failure_modes)
         O->>V: Validate spec JSON
         V-->>O: valid / errors
         O->>Comp: Compile JSON to YAML
@@ -135,24 +137,26 @@ sequenceDiagram
         O->>UI: Display compiled spec
     end
 
-    rect rgb(40, 60, 40)
-        Note over O,C: Phase: Proof-of-Correctness Generation
-        O->>C: POST /messages<br/>system: test generation skill prompt<br/>user: spec YAML + constitution
+    rect rgba(0, 184, 148, 0.1)
+        Note over O,C: Phase 2 — Proof-of-Correctness Generation
+        O->>C: POST /messages
+        Note right of C: system: test gen skill prompt
+        Note right of C: user: spec YAML + constitution
         C-->>O: Java test source code
         O->>O: Write .java file to repo
         O->>R: Run Gradle test
         R-->>O: JUnit XML results
-        O->>E: Evaluate results against spec traceability
+        O->>E: Evaluate results vs spec traceability
         E-->>O: AC verdicts
         O->>UI: Display test results + verdict
     end
 
-    rect rgb(60, 40, 40)
-        Note over O,J: Phase: Jira Feedback
-        O->>J: PUT /issue/{key} — tick AC checkbox
-        O->>J: POST /issue/{key}/comment — evidence
+    rect rgba(253, 203, 110, 0.1)
+        Note over O,J: Phase 3 — Jira Feedback
+        O->>J: PUT /issue/{key} (tick AC checkbox)
+        O->>J: POST /issue/{key}/comment (evidence)
         J-->>O: 200 OK
-        O->>UI: Display: complete
+        O->>UI: Display complete
     end
 ```
 
