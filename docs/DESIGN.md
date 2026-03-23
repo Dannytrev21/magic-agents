@@ -752,3 +752,366 @@ flowchart TD
     GHF2 -->|"spec drift /<br/>requirements changed"| RENEG
     FIX -->|"re-triggers CI"| CI1
 ```
+
+---
+
+## 12. Production Vision: AC-to-Spec Detailed Flow
+
+Four connected flowcharts showing the full production negotiation protocol from [`specify-production-spec.md`](../specify-production-spec.md) — all 9 phases, the harness inner loop, codebase intelligence, multi-agent generation, and spec formation. Reuses the [color legend from Section 11](#color-legend).
+
+### Diagram D: Ingestion + Codebase Intelligence (Phases 0-0.5)
+
+```mermaid
+flowchart TD
+    classDef jira fill:#0984e3,color:#fff,stroke:#0984e3
+    classDef ui fill:#00cec9,color:#000,stroke:#00cec9
+    classDef acspec fill:#6c5ce7,color:#fff,stroke:#6c5ce7
+    classDef orch fill:#e17055,color:#fff,stroke:#e17055
+    classDef user fill:#00b894,color:#fff,stroke:#00b894
+    classDef artifact fill:#fdcb6e,color:#000,stroke:#fdcb6e
+
+    DEV["Developer opens SPECify UI<br/>enters Jira ticket key"]:::user
+
+    subgraph phase0["PHASE 0: AC INGESTION (Deterministic, No AI)"]
+        J1["Jira REST API v3<br/>GET /rest/api/3/issue/KEY<br/>fields=description,summary,status"]:::jira
+        J2["Parse Atlassian Document Format<br/>Walk ADF content tree<br/>Find taskList + taskItem nodes"]:::orch
+        J3["Extract AC checkboxes<br/>index, text, checked, adf_local_id"]:::orch
+        AC_OUT["VerificationContext.raw_ac =<br/>index, text, checked, adf_local_id"]:::artifact
+
+        J1 -->|"ADF document"| J2
+        J2 -->|"taskItem nodes"| J3
+        J3 --> AC_OUT
+    end
+
+    DEV -->|"jira_key"| J1
+
+    subgraph phase05["PHASE 0.5: CODEBASE PRE-SCAN (Deterministic, No AI)"]
+        DETECT["Detect language + framework<br/>from project files"]:::orch
+        SCAN_SEL{"Select scanner"}:::orch
+
+        JAVA["JavaSpringScanner<br/>@GetMapping, @Entity,<br/>@ControllerAdvice,<br/>SecurityFilterChain"]:::orch
+        NODE["NodeExpressScanner<br/>router.get, mongoose.Schema,<br/>errorMiddleware,<br/>passport.authenticate"]:::orch
+        PY["PythonFastAPIScanner<br/>@app.get, SQLAlchemy Base,<br/>@app.exception_handler,<br/>Depends get_current_user"]:::orch
+
+        EP["endpoints<br/>method + path + file + auth"]:::artifact
+        ENT["entities<br/>class + fields + sensitive flags"]:::artifact
+        DTO["dtos<br/>response/request objects"]:::artifact
+        ERR["error_handlers<br/>exception to status code map"]:::artifact
+        SEC["security_config<br/>auth mechanism + protected paths"]:::artifact
+        TST["existing_tests<br/>test files + count + coverage"]:::artifact
+        INF["infra_configs<br/>NR, OTel, Docker, K8s, CI"]:::artifact
+
+        IDX["CodebaseIndex<br/>structural index, no file contents<br/>saved to .verify/logs/KEY-codebase-index.yaml"]:::artifact
+
+        DETECT --> SCAN_SEL
+        SCAN_SEL -->|"Java/Spring"| JAVA
+        SCAN_SEL -->|"Node/Express"| NODE
+        SCAN_SEL -->|"Python/FastAPI"| PY
+        JAVA & NODE & PY --> EP & ENT & DTO & ERR & SEC & TST & INF
+        EP & ENT & DTO & ERR & SEC & TST & INF --> IDX
+    end
+
+    AC_OUT -->|"raw_ac loaded"| DETECT
+
+    subgraph deep_reads["DEEP READS (AI-Requested, Constrained)"]
+        DR_RULES["Constraints:<br/>Max 10 files per session<br/>Allowed extensions only<br/>Max 100 lines per file<br/>No .env / secrets / .git<br/>Cached: re-reads free"]:::orch
+        DR_FLOW["Pass 1: AI sees index summary<br/>may request specific files<br/>Pass 2: AI gets file contents<br/>produces refined output"]:::acspec
+    end
+
+    IDX -->|"Available during<br/>Phases 1-7"| DR_FLOW
+    DR_RULES -.->|"enforced by<br/>BackPressure"| DR_FLOW
+
+    IDX --> CONN_D["Continue to Diagram E:<br/>AI Negotiation Protocol"]:::orch
+```
+
+### Diagram E: AI Negotiation Protocol (Phases 1-5)
+
+```mermaid
+flowchart TD
+    classDef jira fill:#0984e3,color:#fff,stroke:#0984e3
+    classDef ui fill:#00cec9,color:#000,stroke:#00cec9
+    classDef acspec fill:#6c5ce7,color:#fff,stroke:#6c5ce7
+    classDef orch fill:#e17055,color:#fff,stroke:#e17055
+    classDef user fill:#00b894,color:#fff,stroke:#00b894
+    classDef artifact fill:#fdcb6e,color:#000,stroke:#fdcb6e
+
+    CONN_IN["From Diagram D:<br/>raw_ac + CodebaseIndex ready"]:::orch
+
+    subgraph bp["HARNESS INFRASTRUCTURE (applies to every phase)"]
+        BP1["BackPressure Controller<br/>MAX_API_CALLS=50<br/>MAX_TOKENS=500K<br/>MAX_RUNTIME=600s<br/>MAX_RETRIES=3/phase<br/>MAX_DEEP_READS=10"]:::orch
+        OBS["HarnessObserver<br/>Structured JSONL logging<br/>phase_started, llm_called,<br/>validation_result,<br/>developer_interaction,<br/>checkpoint_saved"]:::orch
+        DET["DeterministicBoundary<br/>AI allowed = True<br/>enforced: no AI below spec"]:::orch
+    end
+
+    subgraph harness_loop["HARNESS INNER LOOP (repeated per phase)"]
+        direction TB
+        H1["1. Entry Condition<br/>Guard: prerequisites met?"]:::orch
+        H2["2. Context Curation<br/>ContextCurator builds<br/>phase-specific view"]:::orch
+        H3["3. Execute<br/>Raw Anthropic API call<br/>system prompt + curated context"]:::acspec
+        H4["4. Validate<br/>OutputValidator checks<br/>structural validity"]:::orch
+        H5{"5. Valid?"}:::orch
+        H5R["Retry: append errors<br/>up to max_retries"]:::acspec
+        H6["6. Human Gate<br/>Developer reviews<br/>approves or corrects"]:::user
+        H6R["Multi-turn revision<br/>messages = prompt + output<br/>+ corrections"]:::acspec
+        H7["7. Checkpoint<br/>Save to .verify/checkpoints/"]:::orch
+        H8["8. Advance<br/>harness decision, not AI"]:::orch
+
+        H1 --> H2 --> H3 --> H4 --> H5
+        H5 -->|"invalid"| H5R --> H3
+        H5 -->|"valid"| H6
+        H6 -->|"corrections"| H6R --> H4
+        H6 -->|"approve"| H7 --> H8
+    end
+
+    CONN_IN --> P1
+
+    subgraph phase1["PHASE 1: INTERFACE + ACTOR DISCOVERY"]
+        P1["Entry: raw_ac + codebase_index"]:::orch
+        P1C["ContextCurator:<br/>raw_ac + endpoints<br/>+ project config<br/>+ api_base_path"]:::orch
+        P1A["AI classifies each AC:<br/>type, actor, interface<br/>+ codebase evidence"]:::acspec
+        P1O["classifications =<br/>ac_index, type, actor,<br/>interface, evidence"]:::artifact
+        P1D["Dimensions:<br/>Actors, Boundaries partial"]:::acspec
+
+        P1 --> P1C --> P1A --> P1O
+        P1D -.-> P1A
+    end
+
+    subgraph phase2["PHASE 2: HAPPY PATH CONTRACT"]
+        P2["Entry: classifications confirmed"]:::orch
+        P2C["ContextCurator:<br/>api_requirements<br/>+ relevant_entity + relevant_dto<br/>+ sensitive_fields + auth_config<br/>+ security_invariants"]:::orch
+        P2A["AI proposes success response<br/>informed by actual entity<br/>fields and existing DTOs"]:::acspec
+        P2O["postconditions =<br/>status, schema, constraints,<br/>forbidden_fields, source_dto"]:::artifact
+        P2D["Dimensions:<br/>Boundaries full"]:::acspec
+
+        P2 --> P2C --> P2A --> P2O
+        P2D -.-> P2A
+    end
+
+    subgraph phase3["PHASE 3: PRECONDITION FORMALIZATION"]
+        P3["Entry: postconditions confirmed"]:::orch
+        P3C["ContextCurator:<br/>success_contracts<br/>+ security_config<br/>+ auth_mechanism<br/>+ entity_constraints"]:::orch
+        P3A["Design by Contract +<br/>codebase security analysis"]:::acspec
+        P3O["preconditions =<br/>PRE-NNN, formal, category,<br/>codebase_evidence"]:::artifact
+        P3D["Dimensions:<br/>Preconditions"]:::acspec
+
+        P3 --> P3C --> P3A --> P3O
+        P3D -.-> P3A
+    end
+
+    subgraph phase4["PHASE 4: FAILURE MODE ENUMERATION"]
+        P4["Entry: preconditions confirmed"]:::orch
+        P4C["ContextCurator:<br/>preconditions + error_handlers<br/>+ error_format<br/>+ common_status_codes"]:::orch
+        P4A["FMEA + error handler analysis<br/>+ security analysis:<br/>status code info leakage"]:::acspec
+        P4O["failure_modes =<br/>FAIL-NNN, violates PRE-NNN,<br/>status, body +<br/>security_questions"]:::artifact
+        P4D["Dimensions:<br/>Failure Modes"]:::acspec
+
+        P4 --> P4C --> P4A --> P4O
+        P4D -.-> P4A
+    end
+
+    subgraph phase5["PHASE 5: INVARIANT EXTRACTION"]
+        P5["Entry: failure_modes confirmed"]:::orch
+        P5C["ContextCurator:<br/>response_fields +<br/>existing_test_coverage<br/>+ infra_configs<br/>+ sensitive_fields<br/>+ security_invariants<br/>+ observability_config"]:::orch
+        P5A["Three sources:<br/>1. AC text explicit invariants<br/>2. Constitution standards<br/>3. Data model inference"]:::acspec
+        P5O["invariants =<br/>INV-NNN, type, rule,<br/>source, verification_type"]:::artifact
+        P5D["Dimensions: Invariants,<br/>Non-Functional Constraints"]:::acspec
+
+        P5 --> P5C --> P5A --> P5O
+        P5D -.-> P5A
+    end
+
+    P1O -->|"advance_phase"| P2
+    P2O -->|"advance_phase"| P3
+    P3O -->|"advance_phase"| P4
+    P4O -->|"advance_phase"| P5
+
+    CB["CodebaseIndex<br/>from Phase 0.5"]:::artifact
+    CB -.->|"endpoints"| P1C
+    CB -.->|"entities + DTOs<br/>+ sensitive fields"| P2C
+    CB -.->|"security_config"| P3C
+    CB -.->|"error_handlers"| P4C
+    CB -.->|"tests + infra"| P5C
+
+    P5O --> CONN_E["Continue to Diagram F:<br/>Completeness + Formalization"]:::orch
+```
+
+### Diagram F: Completeness + Formalization + Spec Compilation (Phases 6-7)
+
+```mermaid
+flowchart TD
+    classDef jira fill:#0984e3,color:#fff,stroke:#0984e3
+    classDef ui fill:#00cec9,color:#000,stroke:#00cec9
+    classDef acspec fill:#6c5ce7,color:#fff,stroke:#6c5ce7
+    classDef orch fill:#e17055,color:#fff,stroke:#e17055
+    classDef user fill:#00b894,color:#fff,stroke:#00b894
+    classDef artifact fill:#fdcb6e,color:#000,stroke:#fdcb6e
+
+    CONN_IN["From Diagram E:<br/>Phases 1-5 outputs confirmed"]:::orch
+
+    subgraph phase6["PHASE 6: COMPLETENESS SWEEP + VERIFICATION ROUTING (AI)"]
+        P6S["Entry: invariants confirmed<br/>+ all prior phases complete"]:::orch
+        P6A["15-dimension checklist scan<br/>For each: COVERED /<br/>DEFERRED / NOT_ADDRESSED"]:::acspec
+
+        CK["auth, authz, input validation,<br/>output schema, errors,<br/>rate limiting, pagination,<br/>caching, versioning, idempotency,<br/>observability, security,<br/>data classification,<br/>deprecation, documentation"]:::orch
+
+        P6R["Assign verification type + skill<br/>per requirement"]:::orch
+        P6O["completeness_checklist +<br/>verification_routing =<br/>refs, skill, pattern, output, framework"]:::artifact
+
+        P6S --> P6A --> CK --> P6R --> P6O
+    end
+
+    CONN_IN --> P6S
+
+    subgraph phase7["PHASE 7: EARS FORMALIZATION + HUMAN APPROVAL (AI)"]
+        P7S["Entry: all prior phases confirmed<br/>+ completeness sweep done"]:::orch
+        P7A["Synthesize all outputs<br/>into EARS statements"]:::acspec
+
+        EP1["UBIQUITOUS<br/>The system SHALL..."]:::acspec
+        EP2["EVENT_DRIVEN<br/>WHEN trigger, system SHALL..."]:::acspec
+        EP3["STATE_DRIVEN<br/>WHILE state, system SHALL..."]:::acspec
+        EP4["UNWANTED<br/>IF condition, THEN system SHALL..."]:::acspec
+        EP5["OPTIONAL<br/>WHERE feature, system SHALL..."]:::acspec
+
+        P7SUM["EARS Summary<br/>every verifiable assertion<br/>as one human-readable sentence"]:::ui
+        P7REV{"Developer reviews<br/>full EARS summary"}:::user
+        P7COR["Developer provides<br/>corrections"]:::user
+        P7APP["Developer approves"]:::user
+        P7O["ears_statements +<br/>approved = True"]:::artifact
+
+        P7S --> P7A
+        P7A --> EP1 & EP2 & EP3 & EP4 & EP5
+        EP1 & EP2 & EP3 & EP4 & EP5 --> P7SUM
+        P7SUM --> P7REV
+        P7REV -->|"corrections"| P7COR
+        P7COR -->|"multi-turn revision"| P7A
+        P7REV -->|"approve"| P7APP --> P7O
+    end
+
+    P6O -->|"advance_phase"| P7S
+
+    subgraph compile["SPEC COMPILATION (Deterministic, Zero AI)"]
+        CC_CROSS["Cross-reference validation<br/>Every FAIL refs valid PRE<br/>Every AC index has mapping<br/>Every classification refs valid AC"]:::orch
+        CC_BUILD["compile_spec context<br/>build_meta + build_requirements<br/>+ build_traceability"]:::orch
+
+        S_META["meta:<br/>jira_key, approval_info,<br/>constitution_ref,<br/>codebase_index_ref,<br/>status: approved"]:::artifact
+        S_CTX["context:<br/>relevant_source_files,<br/>relevant_test_files,<br/>related_specs"]:::artifact
+        S_REQ["requirements:<br/>id, ac_checkbox, title, type<br/>+ ears pattern + when/shall<br/>+ contract: interface,<br/>preconditions, success,<br/>failures, invariants<br/>+ verification: refs, skill,<br/>pattern, output, framework"]:::artifact
+        S_TRACE["traceability:<br/>ac_mappings: ac_checkbox,<br/>adf_local_id, pass_condition,<br/>threshold, required_verifications<br/>ref, description,<br/>verification_type, confidence"]:::artifact
+
+        CC_WRITE["write_spec<br/>.verify/specs/KEY.yaml<br/>+ fingerprint to<br/>.verify/fingerprints/"]:::orch
+
+        CC_CROSS --> CC_BUILD
+        CC_BUILD --> S_META & S_CTX & S_REQ & S_TRACE
+        S_META & S_CTX & S_REQ & S_TRACE --> CC_WRITE
+    end
+
+    P7O -->|"triggers spec compilation"| CC_CROSS
+
+    DET["DETERMINISTIC BOUNDARY<br/>AI allowed = False from here<br/>No more LLM calls in pipeline"]:::orch
+
+    CC_WRITE --> DET
+    DET --> CONN_F["Continue to Diagram G:<br/>Multi-Agent Generation"]:::orch
+```
+
+### Diagram G: Multi-Agent Generation (Post-Approval)
+
+```mermaid
+flowchart TD
+    classDef jira fill:#0984e3,color:#fff,stroke:#0984e3
+    classDef spectest fill:#4834d4,color:#fff,stroke:#4834d4
+    classDef orch fill:#e17055,color:#fff,stroke:#e17055
+    classDef user fill:#00b894,color:#fff,stroke:#00b894
+    classDef tests fill:#d63031,color:#fff,stroke:#d63031
+    classDef artifact fill:#fdcb6e,color:#000,stroke:#fdcb6e
+    classDef eval fill:#e84393,color:#fff,stroke:#e84393
+
+    CONN_IN["From Diagram F:<br/>Spec YAML approved + saved"]:::orch
+
+    subgraph gen["GENERATION ZONE (Claude Agent SDK)"]
+        ORCH["Orchestrator Agent<br/>Reads spec.verification.skill<br/>for each requirement<br/>Determines subagents to spawn"]:::spectest
+
+        RT1["api_behavior to junit"]:::orch
+        RT2["performance_sla to nrql"]:::orch
+        RT3["security_invariant to junit"]:::orch
+        RT4["observability to otel"]:::orch
+        RT5["compliance to gherkin"]:::orch
+        RT6["data_constraint to junit"]:::orch
+
+        ORCH --> RT1 & RT2 & RT3 & RT4 & RT5 & RT6
+
+        SA1["junit-generator<br/>Model: Sonnet<br/>SKILL.md loaded on-demand<br/>Tools: Read, Write, Bash, Skill"]:::spectest
+        SA2["nrql-generator<br/>Model: Haiku<br/>SKILL.md loaded on-demand<br/>Tools: Read, Write, Skill"]:::spectest
+        SA3["gherkin-generator<br/>Model: Haiku<br/>SKILL.md loaded on-demand<br/>Tools: Read, Write, Skill"]:::spectest
+        SA4["otel-generator<br/>Model: Haiku<br/>SKILL.md loaded on-demand<br/>Tools: Read, Write, Skill"]:::spectest
+
+        RT1 & RT3 & RT6 -->|"spawn parallel"| SA1
+        RT2 -->|"spawn"| SA2
+        RT5 -->|"spawn"| SA3
+        RT4 -->|"spawn"| SA4
+
+        PRE["pre_tool_hook:<br/>Block dangerous bash<br/>Block sensitive reads<br/>Write only to allowed dirs<br/>Enforce back-pressure"]:::orch
+        POST["post_tool_hook:<br/>Log every tool call<br/>Track token usage<br/>Update harness state"]:::orch
+
+        PRE & POST -.->|"intercept every<br/>tool call"| SA1 & SA2 & SA3 & SA4
+
+        SK1["generate-junit/SKILL.md<br/>Tag contract + mapping rules<br/>+ references/tag-contract.md"]:::spectest
+        SK2["generate-nrql/SKILL.md<br/>NRQL schema + alert format<br/>+ references/nrql-schema.json"]:::spectest
+        SK3["generate-gherkin/SKILL.md<br/>Given/When/Then patterns<br/>+ @TAG annotations"]:::spectest
+        SK4["generate-otel/SKILL.md<br/>OTel config schema<br/>+ instrumentation rules"]:::spectest
+
+        SA1 -.->|"loads on demand"| SK1
+        SA2 -.->|"loads on demand"| SK2
+        SA3 -.->|"loads on demand"| SK3
+        SA4 -.->|"loads on demand"| SK4
+
+        A1[".verify/generated/test_KEY.py<br/>@Tag per spec ref<br/>@DisplayName per element"]:::artifact
+        A2[".verify/generated/KEY_alerts.json<br/>NRQL alert configs"]:::artifact
+        A3[".verify/generated/KEY.feature<br/>@TAG Gherkin scenarios"]:::artifact
+        A4[".verify/generated/KEY_otel.yaml<br/>OTel instrumentation"]:::artifact
+
+        SA1 --> A1
+        SA2 --> A2
+        SA3 --> A3
+        SA4 --> A4
+    end
+
+    CONN_IN --> ORCH
+
+    subgraph tag_enforce["TAG ENFORCEMENT (Deterministic)"]
+        TE1["tag_enforcer.py<br/>For every spec ref:<br/>find matching @Tag in artifacts"]:::orch
+        TE_CHK{"Coverage<br/>gaps?"}:::orch
+        TE_RERUN["Re-run missing subagent<br/>for uncovered refs"]:::spectest
+        TE_PASS["All spec refs covered<br/>by tagged artifacts"]:::orch
+
+        TE1 --> TE_CHK
+        TE_CHK -->|"gaps found"| TE_RERUN
+        TE_RERUN -->|"re-validate"| TE1
+        TE_CHK -->|"100% coverage"| TE_PASS
+    end
+
+    A1 & A2 & A3 & A4 --> TE1
+
+    subgraph det_pipe["DETERMINISTIC PIPELINE (Zero AI)"]
+        RUN["Test Runner<br/>subprocess: gradle test /<br/>npm test / pytest --junitxml"]:::tests
+        PARSE["Result Parsers<br/>JUnit XML / Jest JSON /<br/>Cucumber JSON to unified format"]:::tests
+        EVAL_ENG["Evaluator<br/>traceability map to verdicts<br/>ALL_PASS / ANY_PASS / PERCENTAGE"]:::eval
+        VERD["Verdicts per AC checkbox<br/>ac_checkbox, passed, summary,<br/>evidence: ref, passed, details"]:::artifact
+    end
+
+    TE_PASS --> RUN --> PARSE --> EVAL_ENG --> VERD
+
+    subgraph jira_up["JIRA FEEDBACK (Deterministic)"]
+        JU1["Tick checkboxes<br/>ADF taskItem state: DONE<br/>matched by adf_local_id"]:::jira
+        JU2["Post evidence comment<br/>per-AC breakdown + per-ref<br/>evidence + spec path"]:::jira
+        JU3{"All ACs<br/>passed?"}:::jira
+        JU4["Transition to Done"]:::jira
+        JU5["Transition to In Review<br/>or unchanged"]:::jira
+    end
+
+    VERD --> JU1 --> JU2 --> JU3
+    JU3 -->|"yes"| JU4
+    JU3 -->|"no"| JU5
+
+    JU4 --> DONE["Pipeline Complete<br/>Jira ticket verified"]:::jira
+    JU5 --> PARTIAL["Partial pass<br/>Developer fixes code<br/>or re-enters negotiation"]:::user
+```
