@@ -430,3 +430,328 @@ flowchart LR
 | **UI** | `static/index.html` | Web UI (Jira picker, negotiation, traceability) |
 | **Spec Skills** | `.claude/skills/phase*-*/SKILL.md` | Negotiation phase skill definitions |
 | **Verification Skills** | `.claude/skills/verify-*/SKILL.md` | Proof-of-correctness generator skills (Epic 4) |
+
+---
+
+## 11. Detailed Implementation Flow
+
+Three connected flowcharts showing every step, interface, and data shape in the pipeline — color-coded by actor/system.
+
+### Color Legend
+
+| Color | Actor/System | Description |
+|-------|-------------|-------------|
+| **Blue** | Jira Cloud API | External ticket system — fetch stories, extract ACs, write back verdicts |
+| **Teal** | Web UI | Frontend screens — story picker, AC overview, negotiation chat, traceability |
+| **Purple** | AC→Spec (Negotiation) | LLM-powered phases 1-4 with constitutional prompts |
+| **Indigo** | Spec→Test (Verification Skills) | Agent Skills that generate tests, configs, and scenarios |
+| **Orange** | Orchestrator | Harness (state machine + guards), Pipeline, deterministic synthesis/compilation |
+| **Dark Gray** | GitHub | PR creation, CI/CD workflows, Actions |
+| **Green** | User | Human developer decisions — approve, feedback, review, fix |
+| **Red** | Tests | Test runner, pytest execution, JUnit parsing |
+| **Gold** | Artifacts | Files produced at each stage (.verify/specs, generated, results) |
+| **Pink** | Evaluator | Maps test results to AC verdicts via traceability |
+
+### Diagram A: Entry + AI Negotiation
+
+```mermaid
+flowchart TD
+    classDef jira fill:#0984e3,color:#fff,stroke:#0984e3
+    classDef ui fill:#00cec9,color:#000,stroke:#00cec9
+    classDef acspec fill:#6c5ce7,color:#fff,stroke:#6c5ce7
+    classDef orch fill:#e17055,color:#fff,stroke:#e17055
+    classDef user fill:#00b894,color:#fff,stroke:#00b894
+    classDef artifact fill:#fdcb6e,color:#000,stroke:#fdcb6e
+
+    subgraph entry["JIRA INGESTION"]
+        J1["Jira Cloud REST API v3"]:::jira
+        J2["JiraClient.fetch_ticket(key)<br/>+ extract_acceptance_criteria()"]:::jira
+        J3["JiraClient.get_in_progress_stories()<br/>JQL: status = In Progress"]:::jira
+        J1 -->|"GET /rest/api/3/issue/{key}"| J2
+        J1 -->|"GET /rest/api/3/search/jql"| J3
+    end
+
+    subgraph webui["WEB UI"]
+        UI1["Story Picker<br/>GET /api/jira/stories"]:::ui
+        U1["User selects story<br/>or enters manual ACs"]:::user
+        UI2["AC Overview Screen<br/>display acceptance criteria"]:::ui
+        UI3["Begin Negotiation<br/>button click"]:::user
+    end
+
+    J3 -->|"stories[]"| UI1
+    UI1 --> U1
+    U1 -->|"GET /api/jira/ticket/{key}"| J2
+    J2 -->|"{key, summary, acceptance_criteria[]}"| UI2
+    UI2 --> UI3
+
+    subgraph init["ORCHESTRATOR INIT"]
+        START["POST /api/start<br/>Create VerificationContext<br/>+ NegotiationHarness<br/>+ LLMClient"]:::orch
+    end
+
+    UI3 -->|"{jira_key, summary,<br/>acceptance_criteria[], constitution}"| START
+
+    subgraph phase1["PHASE 1: INTERFACE & ACTOR DISCOVERY"]
+        P1_LLM["run_phase1(ctx, llm)<br/>Constitutional system prompt<br/>+ raw ACs → Claude API"]:::acspec
+        P1_VAL{"validate_classifications()<br/>type ∈ VALID_TYPES?<br/>actor ∈ VALID_ACTORS?<br/>all ACs covered?"}:::orch
+        P1_CTX["ctx.classifications =<br/>{ac_index, type, actor, interface}"]:::artifact
+        P1_UI["Present results +<br/>clarifying questions"]:::ui
+        P1_DEC{"Developer<br/>decision"}:::user
+        P1_FB["chat_multi() revision<br/>prev output + feedback<br/>→ revised classifications"]:::acspec
+        P1_GUARD{"Guard: _phase_0_ok()<br/>every AC classified?"}:::orch
+
+        P1_LLM --> P1_VAL
+        P1_VAL -->|"invalid → retry up to 2x<br/>with errors appended"| P1_LLM
+        P1_VAL -->|"valid"| P1_CTX
+        P1_CTX --> P1_UI
+        P1_UI --> P1_DEC
+        P1_DEC -->|"feedback text"| P1_FB
+        P1_FB --> P1_VAL
+        P1_DEC -->|"approve"| P1_GUARD
+    end
+
+    START -->|"harness.phase = phase_0"| P1_LLM
+
+    subgraph phase2["PHASE 2: HAPPY PATH CONTRACT"]
+        P2_LLM["run_phase2(ctx, llm)<br/>api_behavior classifications<br/>+ constitution → Claude API"]:::acspec
+        P2_VAL{"validate_postconditions()<br/>every api_behavior AC<br/>has postcondition?<br/>status is valid HTTP?"}:::orch
+        P2_CTX["ctx.postconditions =<br/>{ac_index, status, schema,<br/>constraints, forbidden_fields}"]:::artifact
+        P2_UI["Present postconditions +<br/>clarifying questions"]:::ui
+        P2_DEC{"Developer<br/>decision"}:::user
+        P2_FB["chat_multi() revision"]:::acspec
+        P2_GUARD{"Guard: _phase_1_ok()<br/>api_behavior ACs<br/>⊆ postcond indices?"}:::orch
+
+        P2_LLM --> P2_VAL
+        P2_VAL -->|"invalid → retry"| P2_LLM
+        P2_VAL -->|"valid"| P2_CTX
+        P2_CTX --> P2_UI
+        P2_UI --> P2_DEC
+        P2_DEC -->|"feedback"| P2_FB
+        P2_FB --> P2_VAL
+        P2_DEC -->|"approve"| P2_GUARD
+    end
+
+    P1_GUARD -->|"advance_phase()"| P2_LLM
+
+    subgraph phase3["PHASE 3: PRECONDITION FORMALIZATION"]
+        P3_LLM["run_phase3(ctx, llm)<br/>postconditions + auth context<br/>Design by Contract → Claude API"]:::acspec
+        P3_VAL{"validate_preconditions()<br/>IDs = PRE-NNN?<br/>category ∈ VALID?<br/>formal non-empty?"}:::orch
+        P3_CTX["ctx.preconditions =<br/>{id: PRE-NNN, description,<br/>formal, category}"]:::artifact
+        P3_UI["Present preconditions +<br/>clarifying questions"]:::ui
+        P3_DEC{"Developer<br/>decision"}:::user
+        P3_FB["chat_multi() revision"]:::acspec
+        P3_GUARD{"Guard: _phase_2_ok()<br/>preconditions exist?"}:::orch
+
+        P3_LLM --> P3_VAL
+        P3_VAL -->|"invalid → retry"| P3_LLM
+        P3_VAL -->|"valid"| P3_CTX
+        P3_CTX --> P3_UI
+        P3_UI --> P3_DEC
+        P3_DEC -->|"feedback"| P3_FB
+        P3_FB --> P3_VAL
+        P3_DEC -->|"approve"| P3_GUARD
+    end
+
+    P2_GUARD -->|"advance_phase()"| P3_LLM
+
+    subgraph phase4["PHASE 4: FAILURE MODE ENUMERATION"]
+        P4_LLM["run_phase4(ctx, llm)<br/>preconditions + error format<br/>FMEA-inspired → Claude API"]:::acspec
+        P4_VAL{"validate_failure_modes()<br/>IDs = FAIL-NNN?<br/>violates ∈ precond IDs?<br/>every PRE has ≥1 FAIL?"}:::orch
+        P4_CTX["ctx.failure_modes =<br/>{id: FAIL-NNN, violates: PRE-NNN,<br/>description, status, body}"]:::artifact
+        P4_UI["Present failure modes +<br/>security questions"]:::ui
+        P4_DEC{"Developer<br/>decision"}:::user
+        P4_FB["chat_multi() revision"]:::acspec
+        P4_GUARD{"Guard: _phase_3_ok()<br/>all failure modes<br/>ref valid preconditions?"}:::orch
+
+        P4_LLM --> P4_VAL
+        P4_VAL -->|"invalid → retry"| P4_LLM
+        P4_VAL -->|"valid"| P4_CTX
+        P4_CTX --> P4_UI
+        P4_UI --> P4_DEC
+        P4_DEC -->|"feedback"| P4_FB
+        P4_FB --> P4_VAL
+        P4_DEC -->|"approve"| P4_GUARD
+    end
+
+    P3_GUARD -->|"advance_phase()"| P4_LLM
+    P4_GUARD -->|"run_synthesis(ctx)"| CONN_A["▼ Continue to Diagram B:<br/>Synthesis & Compilation"]:::orch
+```
+
+### Diagram B: Synthesis + Spec Compilation + Skill Dispatch + PR
+
+```mermaid
+flowchart TD
+    classDef jira fill:#0984e3,color:#fff,stroke:#0984e3
+    classDef ui fill:#00cec9,color:#000,stroke:#00cec9
+    classDef acspec fill:#6c5ce7,color:#fff,stroke:#6c5ce7
+    classDef spectest fill:#4834d4,color:#fff,stroke:#4834d4
+    classDef orch fill:#e17055,color:#fff,stroke:#e17055
+    classDef gh fill:#636e72,color:#fff,stroke:#636e72
+    classDef user fill:#00b894,color:#fff,stroke:#00b894
+    classDef artifact fill:#fdcb6e,color:#000,stroke:#fdcb6e
+
+    CONN_IN["▲ From Diagram A:<br/>Phase 4 approved"]:::orch
+
+    subgraph synthesis["DETERMINISTIC SYNTHESIS (Zero AI)"]
+        SYN1["extract_invariants()<br/>constitution.security_invariants<br/>+ postcondition.forbidden_fields"]:::orch
+        SYN2["generate_ears_statements()<br/>WHEN/IF/WHILE patterns<br/>from all contract elements"]:::orch
+        SYN3["build_traceability_map()<br/>AC checkbox → required<br/>verification refs"]:::orch
+
+        SYN1_OUT["ctx.invariants =<br/>{id: INV-NNN, description, category}"]:::artifact
+        SYN2_OUT["ctx.ears_statements =<br/>WHEN event THEN system SHALL action<br/>IF condition THEN response<br/>WHILE state system SHALL property"]:::artifact
+        SYN3_OUT["ctx.traceability_map =<br/>{ac_mappings: [{ac_checkbox,<br/>pass_condition,<br/>required_verifications[]}]}"]:::artifact
+
+        SYN1 --> SYN1_OUT
+        SYN1_OUT --> SYN2
+        SYN2 --> SYN2_OUT
+        SYN2_OUT --> SYN3
+        SYN3 --> SYN3_OUT
+    end
+
+    CONN_IN -->|"run_synthesis(ctx)"| SYN1
+
+    subgraph compile["SPEC COMPILATION (Deterministic)"]
+        CC1["compile_spec(context)<br/>_build_meta()<br/>_build_requirements()<br/>_build_traceability()"]:::orch
+        CC2["ROUTING_TABLE lookup<br/>requirement type → skill"]:::orch
+        CC3["write_spec(spec, output_dir)<br/>YAML serialization"]:::orch
+        CC4[".verify/specs/{KEY}.yaml<br/>meta + requirements<br/>+ verification routing<br/>+ traceability"]:::artifact
+    end
+
+    SYN3_OUT -->|"compile_and_write(ctx)"| CC1
+    CC1 -->|"for each requirement:<br/>route = ROUTING_TABLE[type]"| CC2
+    CC2 --> CC3
+    CC3 --> CC4
+
+    subgraph routing["ROUTING TABLE (Zero AI)"]
+        R1["api_behavior → pytest_unit_test"]:::orch
+        R2["performance_sla → newrelic_alert_config"]:::orch
+        R3["security_invariant → pytest_unit_test"]:::orch
+        R4["observability → otel_config"]:::orch
+        R5["compliance → gherkin_scenario"]:::orch
+        R6["data_constraint → pytest_unit_test"]:::orch
+    end
+
+    CC2 -.->|"deterministic mapping"| routing
+
+    subgraph dispatch["VERIFICATION SKILL DISPATCH"]
+        SR["Skill Router<br/>reads spec.verification[].skill"]:::orch
+
+        SK1["verify-pytest<br/>SKILL.md + TEMPLATES.md<br/>Agent Skill"]:::spectest
+        SK2["verify-newrelic<br/>SKILL.md<br/>Agent Skill"]:::spectest
+        SK3["verify-otel<br/>SKILL.md<br/>Agent Skill"]:::spectest
+        SK4["verify-gherkin<br/>SKILL.md<br/>Agent Skill"]:::spectest
+
+        ART1[".verify/generated/test_{key}.py<br/>tagged [REQ-NNN.success]<br/>tagged [REQ-NNN.FAIL-NNN]<br/>tagged [REQ-NNN.INV-NNN]"]:::artifact
+        ART2[".verify/generated/<br/>{key}_alerts.json"]:::artifact
+        ART3[".verify/generated/<br/>{key}_otel.yaml"]:::artifact
+        ART4[".verify/generated/<br/>{key}.feature"]:::artifact
+
+        SR -->|"api_behavior /<br/>security / data"| SK1
+        SR -->|"performance_sla"| SK2
+        SR -->|"observability"| SK3
+        SR -->|"compliance"| SK4
+
+        SK1 --> ART1
+        SK2 --> ART2
+        SK3 --> ART3
+        SK4 --> ART4
+    end
+
+    CC4 -->|"spec YAML path"| SR
+
+    subgraph github["GITHUB PR CREATION"]
+        GH1["Create branch<br/>verify/{jira_key}"]:::gh
+        GH2["Commit spec YAML +<br/>all generated artifacts"]:::gh
+        GH3["gh pr create<br/>EARS statements +<br/>traceability table in body"]:::gh
+        GH4["Developer reviews PR"]:::user
+    end
+
+    ART1 & ART2 & ART3 & ART4 -->|"generated artifacts"| GH1
+    CC4 -->|"spec file"| GH2
+    GH1 --> GH2 --> GH3 --> GH4
+    GH4 -->|"PR triggers CI"| CONN_B["▼ Continue to Diagram C:<br/>CI + Evaluation"]:::gh
+```
+
+### Diagram C: CI Execution + Evaluation + Feedback Loop
+
+```mermaid
+flowchart TD
+    classDef jira fill:#0984e3,color:#fff,stroke:#0984e3
+    classDef orch fill:#e17055,color:#fff,stroke:#e17055
+    classDef gh fill:#636e72,color:#fff,stroke:#636e72
+    classDef user fill:#00b894,color:#fff,stroke:#00b894
+    classDef tests fill:#d63031,color:#fff,stroke:#d63031
+    classDef artifact fill:#fdcb6e,color:#000,stroke:#fdcb6e
+    classDef eval fill:#e84393,color:#fff,stroke:#e84393
+
+    CONN_IN["▲ From Diagram B:<br/>PR triggers CI"]:::gh
+
+    subgraph ci["GITHUB ACTIONS CI"]
+        CI1[".github/workflows/verify.yml<br/>on: pull_request<br/>paths: .verify/**"]:::gh
+        CI2["Pipeline Orchestrator<br/>python -m verify.pipeline<br/>.verify/specs/{KEY}.yaml"]:::orch
+    end
+
+    CONN_IN --> CI1
+    CI1 -->|"run pipeline"| CI2
+
+    subgraph testexec["TEST EXECUTION"]
+        TR1["run_tests(test_path, results_dir)<br/>pytest --junitxml -v"]:::tests
+        TR_TARGET["Execute against<br/>target application<br/>(dummy_app / real service)"]:::tests
+        TR2[".verify/results/results.xml<br/>JUnit XML output"]:::artifact
+        TR3["parse_junit_xml(xml_path)<br/>extract [REQ-NNN.*] tags<br/>from test names/docstrings"]:::tests
+        TR4[".verify/results/<br/>parsed_results.json<br/>{test_cases: [{name, tags,<br/>status, failure_message}]}"]:::artifact
+
+        TR1 --> TR_TARGET
+        TR_TARGET --> TR2
+        TR2 --> TR3
+        TR3 --> TR4
+    end
+
+    CI2 -->|"generate_and_write(spec)"| TR1
+
+    subgraph evaluation["EVALUATION"]
+        EV1["evaluate_spec(spec_path, results)<br/>read spec.traceability.ac_mappings"]:::eval
+        EV2["For each AC mapping:<br/>match verification refs<br/>to test case tags"]:::eval
+        EV3{"evaluate_pass_condition()<br/>ALL_PASS: all refs pass<br/>ANY_PASS: ≥1 ref passes<br/>PERCENTAGE: ≥N% pass"}:::eval
+        EV4["verdicts[] =<br/>{ac_checkbox, ac_text, passed,<br/>pass_condition, summary,<br/>evidence[{ref, passed, details}]}"]:::artifact
+
+        EV1 --> EV2
+        EV2 --> EV3
+        EV3 --> EV4
+    end
+
+    TR4 -->|"test results"| EV1
+
+    DEC{"All ACs<br/>passed?"}:::eval
+    EV4 --> DEC
+
+    subgraph pass_path["ALL PASS"]
+        JT1["JiraClient.tick_checkbox()<br/>for each passed AC index"]:::jira
+        JT2["JiraClient.post_comment()<br/>format_evidence_comment(verdicts)"]:::jira
+        JT3["JiraClient.transition_ticket()<br/>→ Done"]:::jira
+        GHP1["Post verdict summary<br/>as PR comment"]:::gh
+        GHP2["Merge PR"]:::gh
+        DONE["Jira Ticket Verified<br/>✓ AC checkboxes ticked<br/>✓ Evidence comment posted<br/>✓ Status: Done<br/>✓ PR merged"]:::jira
+    end
+
+    DEC -->|"yes"| JT1
+    JT1 --> JT2 --> JT3 --> DONE
+    DEC -->|"yes"| GHP1
+    GHP1 --> GHP2 --> DONE
+
+    subgraph fail_path["FAILURES DETECTED"]
+        JF1["JiraClient.tick_checkbox()<br/>only for passed ACs"]:::jira
+        JF2["JiraClient.post_comment()<br/>failure evidence + which ACs violated"]:::jira
+        GHF1["Post failure summary<br/>as PR comment<br/>which REQ-NNN refs failed"]:::gh
+        GHF2{"Developer<br/>decides"}:::user
+        FIX["Fix code<br/>push to PR branch"]:::user
+        RENEG["Re-enter negotiation<br/>spec needs revision<br/>→ Diagram A"]:::orch
+    end
+
+    DEC -->|"no"| JF1
+    JF1 --> JF2
+    DEC -->|"no"| GHF1
+    GHF1 --> GHF2
+    GHF2 -->|"code fix needed"| FIX
+    GHF2 -->|"spec drift /<br/>requirements changed"| RENEG
+    FIX -->|"re-triggers CI"| CI1
+```
