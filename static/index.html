@@ -119,6 +119,37 @@
   .ears-section { margin-top:24px; }
   .ears-item { font-size:12px; font-style:italic; color:var(--blue); padding:8px 12px; background:var(--surface); border:1px solid var(--border); border-radius:6px; margin-bottom:6px; line-height:1.5; }
 
+  /* Scan panel */
+  .scan-panel { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px 20px; margin-bottom:16px; }
+  .scan-panel h3 { font-size:13px; color:var(--accent); margin-bottom:8px; }
+  .scan-summary { font-size:12px; color:var(--text); white-space:pre-wrap; line-height:1.5; max-height:200px; overflow-y:auto; padding:8px 12px; background:var(--surface-2); border-radius:6px; }
+  .scan-badge { display:inline-block; background:rgba(0,184,148,0.15); color:var(--green); font-size:10px; padding:2px 8px; border-radius:4px; margin-left:8px; }
+
+  /* Action buttons row */
+  .action-bar { display:flex; gap:12px; margin:24px 0; padding:20px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); align-items:center; }
+  .action-bar .btn { min-width:160px; }
+  .action-status { font-size:12px; color:var(--text-dim); margin-left:12px; }
+  .action-status.ok { color:var(--green); }
+  .action-status.fail { color:var(--red); }
+
+  /* Spec display */
+  .spec-panel { margin-top:20px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+  .spec-panel-header { padding:12px 20px; border-bottom:1px solid var(--border); font-size:12px; color:var(--accent); font-weight:600; display:flex; align-items:center; gap:8px; }
+  .spec-panel-body { padding:16px 20px; max-height:500px; overflow-y:auto; }
+  .spec-panel-body pre { font-size:12px; line-height:1.6; color:var(--text); white-space:pre-wrap; word-break:break-word; }
+
+  /* Verdict cards */
+  .verdict-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:12px; overflow:hidden; }
+  .verdict-header { padding:12px 20px; display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--border); }
+  .verdict-icon { font-size:14px; font-weight:700; }
+  .verdict-icon.pass { color:var(--green); }
+  .verdict-icon.fail { color:var(--red); }
+  .verdict-body { padding:12px 20px; }
+  .evidence-row { font-size:12px; padding:4px 0; display:flex; gap:8px; align-items:center; }
+  .evidence-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .evidence-dot.pass { background:var(--green); }
+  .evidence-dot.fail { background:var(--red); }
+
   .spinner { display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.6s linear infinite; margin-right:8px; vertical-align:middle; }
   @keyframes spin { to{transform:rotate(360deg)} }
   .hidden { display:none !important; }
@@ -174,7 +205,18 @@ User profile never exposes password or internal fields</textarea>
         <span class="tag tag-id" id="acKey"></span>
       </div>
       <div class="ac-grid" id="acGrid"></div>
-      <div style="margin-top:20px">
+      <!-- Codebase Scanner Panel -->
+      <div class="scan-panel" id="scanPanel" style="margin-top:20px">
+        <h3>Codebase Scanner <span id="scanBadge" class="scan-badge hidden">scanned</span></h3>
+        <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px;">
+          <button class="btn btn-outline" id="btnScan" onclick="scanCodebase()" style="font-size:12px;padding:8px 16px;">Scan dog-service</button>
+          <span class="action-status" id="scanStatus"></span>
+        </div>
+        <div id="scanSummaryBox" class="hidden">
+          <div class="scan-summary" id="scanSummary"></div>
+        </div>
+      </div>
+      <div style="margin-top:16px">
         <button class="btn" onclick="beginNegotiation()">Begin Negotiation</button>
       </div>
     </div>
@@ -187,6 +229,38 @@ User profile never exposes password or internal fields</textarea>
     <!-- Screen 4: Traceability / Summary -->
     <div class="screen" id="screen-traceability">
       <div id="traceContent"></div>
+      <!-- EARS Approval Gate -->
+      <div id="earsApproval" class="action-bar hidden" style="flex-direction:column;align-items:stretch;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+          <h3 style="font-size:14px;color:var(--accent);margin:0;">Approval Gate</h3>
+          <span style="font-size:12px;color:var(--text-dim);">Review the EARS statements above, then approve to emit the spec.</span>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;">
+          <button class="btn" id="btnApproveEars" onclick="approveEars()">Approve &amp; Continue</button>
+          <span class="action-status" id="earsStatus"></span>
+        </div>
+      </div>
+
+      <div id="specActions" class="action-bar hidden">
+        <button class="btn" id="btnCompile" onclick="compileSpec()">Generate Spec</button>
+        <span class="action-status" id="compileStatus"></span>
+        <button class="btn btn-outline" id="btnTests" onclick="generateTests()" disabled>Generate Tests</button>
+        <span class="action-status" id="testStatus"></span>
+        <button class="btn btn-outline" id="btnPipeline" onclick="runPipeline()" disabled>Run Full Pipeline</button>
+        <span class="action-status" id="pipelineStatus"></span>
+      </div>
+      <div id="specPanel" class="hidden"></div>
+      <div id="testPanel" class="hidden"></div>
+
+      <!-- Pipeline SSE Progress -->
+      <div id="pipelinePanel" class="hidden">
+        <div class="spec-panel" style="margin-top:20px">
+          <div class="spec-panel-header">PIPELINE EXECUTION</div>
+          <div class="spec-panel-body" id="pipelineLog" style="max-height:300px;overflow-y:auto;"></div>
+        </div>
+      </div>
+
+      <div id="verdictPanel" class="hidden"></div>
     </div>
   </main>
 
@@ -294,6 +368,54 @@ function showACOverview() {
     </div>`;
   });
   showScreen('ac-overview');
+}
+
+// Codebase Scanner
+async function scanCodebase() {
+  const btn = document.getElementById('btnScan');
+  const status = document.getElementById('scanStatus');
+  btn.disabled = true;
+  status.textContent = 'Scanning...';
+  status.className = 'action-status';
+
+  try {
+    const res = await fetch('/api/scan', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ project_root: 'dog-service' }),
+    });
+    const data = await res.json();
+    if (data.scanned) {
+      status.textContent = 'Scan complete';
+      status.className = 'action-status ok';
+      document.getElementById('scanBadge').classList.remove('hidden');
+      document.getElementById('scanSummaryBox').classList.remove('hidden');
+      document.getElementById('scanSummary').textContent = data.summary;
+    } else {
+      status.textContent = data.error || 'Scan failed';
+      status.className = 'action-status fail';
+      btn.disabled = false;
+    }
+  } catch(e) {
+    status.textContent = 'Error: ' + e.message;
+    status.className = 'action-status fail';
+    btn.disabled = false;
+  }
+}
+
+// Check if scan already done
+async function checkScan() {
+  try {
+    const res = await fetch('/api/scan/status');
+    const data = await res.json();
+    if (data.scanned) {
+      document.getElementById('scanBadge').classList.remove('hidden');
+      document.getElementById('scanSummaryBox').classList.remove('hidden');
+      document.getElementById('scanSummary').textContent = data.summary;
+      document.getElementById('btnScan').disabled = true;
+      document.getElementById('scanStatus').textContent = 'Scan complete';
+      document.getElementById('scanStatus').className = 'action-status ok';
+    }
+  } catch(e) { /* ignore */ }
 }
 
 // Negotiation
@@ -478,6 +600,24 @@ function renderTraceability() {
   }
 
   document.getElementById('traceContent').innerHTML = html;
+
+  // Show EARS approval gate first; spec actions shown after approval
+  document.getElementById('earsApproval').classList.remove('hidden');
+  document.getElementById('btnApproveEars').disabled = false;
+  document.getElementById('earsStatus').textContent = '';
+  document.getElementById('specActions').classList.add('hidden');
+
+  // Reset panels for fresh run
+  document.getElementById('specPanel').className = 'hidden';
+  document.getElementById('testPanel').className = 'hidden';
+  document.getElementById('verdictPanel').className = 'hidden';
+  document.getElementById('pipelinePanel').className = 'hidden';
+  document.getElementById('btnCompile').disabled = false;
+  document.getElementById('btnTests').disabled = true;
+  document.getElementById('btnPipeline').disabled = true;
+  document.getElementById('compileStatus').textContent = '';
+  document.getElementById('testStatus').textContent = '';
+  document.getElementById('pipelineStatus').textContent = '';
 }
 
 // Helpers
@@ -503,8 +643,237 @@ function removeLoading() {
   if (last && (last.textContent.includes('Running') || last.textContent.includes('Revising'))) last.remove();
 }
 
+// Spec Compilation & Test Generation
+async function compileSpec() {
+  const btn = document.getElementById('btnCompile');
+  const status = document.getElementById('compileStatus');
+  btn.disabled = true;
+  status.textContent = 'Compiling...';
+  status.className = 'action-status';
+
+  try {
+    const res = await fetch('/api/compile', { method: 'POST' });
+    const data = await res.json();
+    if (data.error) {
+      status.textContent = 'Error: ' + data.error;
+      status.className = 'action-status fail';
+      btn.disabled = false;
+      return;
+    }
+    status.textContent = 'Spec saved to ' + data.spec_path;
+    status.className = 'action-status ok';
+
+    // Show spec YAML
+    const panel = document.getElementById('specPanel');
+    panel.className = 'spec-panel';
+    panel.innerHTML = `
+      <div class="spec-panel-header">SPEC YAML &mdash; ${data.spec_path}</div>
+      <div class="spec-panel-body"><pre>${escapeHtml(data.spec_content)}</pre></div>`;
+
+    // Enable test generation and pipeline
+    document.getElementById('btnTests').disabled = false;
+    document.getElementById('btnPipeline').disabled = false;
+  } catch(e) {
+    status.textContent = 'Error: ' + e.message;
+    status.className = 'action-status fail';
+    btn.disabled = false;
+  }
+}
+
+async function generateTests() {
+  const btn = document.getElementById('btnTests');
+  const status = document.getElementById('testStatus');
+  btn.disabled = true;
+  status.textContent = 'Copying verification skill to target repo...';
+  status.className = 'action-status';
+
+  try {
+    const res = await fetch('/api/generate-tests', { method: 'POST' });
+    const data = await res.json();
+    if (data.error) {
+      status.textContent = 'Error: ' + data.error;
+      status.className = 'action-status fail';
+      btn.disabled = false;
+      return;
+    }
+
+    status.textContent = 'Skill copied to ' + data.skill_dest;
+    status.className = 'action-status ok';
+
+    const testPanel = document.getElementById('testPanel');
+    let html = '';
+
+    // Success message with instructions
+    html += `<div style="margin-top:20px;padding:16px 20px;background:rgba(0,184,148,0.08);border:1px solid rgba(0,184,148,0.25);border-radius:var(--radius);">
+      <div style="font-size:13px;font-weight:600;color:var(--green);margin-bottom:8px;">Skill Deployed</div>
+      <div style="font-size:12px;color:var(--text);line-height:1.6;">
+        <strong>${data.skill_id}</strong> skill copied to <code>${data.skill_dest}</code><br>
+        Spec copied to <code>${data.spec_dest}</code><br><br>
+        <strong>Next step:</strong> Open the target repo in Claude Code and run the skill to generate Cucumber tests.<br>
+        The skill will use the spec + constitution to generate tagged .feature files and Java step definitions.
+      </div>
+    </div>`;
+
+    // Show copied files
+    const files = data.copied_files || {};
+    for (const [name, file] of Object.entries(files)) {
+      html += `<div class="spec-panel" style="margin-top:12px">
+        <div class="spec-panel-header">${name} &mdash; ${file.path}</div>
+        <div class="spec-panel-body"><pre>${escapeHtml(file.content)}</pre></div>
+      </div>`;
+    }
+
+    testPanel.className = '';
+    testPanel.innerHTML = html;
+  } catch(e) {
+    status.textContent = 'Error: ' + e.message;
+    status.className = 'action-status fail';
+    btn.disabled = false;
+  }
+}
+
+// EARS Approval Gate
+async function approveEars() {
+  const btn = document.getElementById('btnApproveEars');
+  const status = document.getElementById('earsStatus');
+  btn.disabled = true;
+  status.textContent = 'Approving...';
+
+  try {
+    const res = await fetch('/api/ears-approve', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ approved_by: 'developer' }),
+    });
+    const data = await res.json();
+    if (data.approved) {
+      status.textContent = `Approved by ${data.approved_by} at ${data.approved_at}`;
+      status.className = 'action-status ok';
+      document.getElementById('specActions').classList.remove('hidden');
+      document.getElementById('btnCompile').disabled = false;
+    }
+  } catch(e) {
+    status.textContent = 'Error: ' + e.message;
+    status.className = 'action-status fail';
+    btn.disabled = false;
+  }
+}
+
+// SSE Streaming Pipeline
+async function runPipeline() {
+  const btn = document.getElementById('btnPipeline');
+  const status = document.getElementById('pipelineStatus');
+  btn.disabled = true;
+  status.textContent = 'Starting pipeline...';
+  status.className = 'action-status';
+
+  const panel = document.getElementById('pipelinePanel');
+  panel.classList.remove('hidden');
+  const log = document.getElementById('pipelineLog');
+  log.innerHTML = '';
+
+  function addLogEntry(icon, message, className) {
+    const entry = document.createElement('div');
+    entry.className = 'evidence-row';
+    entry.innerHTML = `<span class="evidence-dot ${className}"></span> <span style="font-size:12px">${message}</span>`;
+    log.appendChild(entry);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  try {
+    const res = await fetch('/api/pipeline/stream', { method: 'POST' });
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        try {
+          const data = JSON.parse(line.slice(6));
+          if (data.type === 'step') {
+            const icons = { running: '', done: 'pass', error: 'fail', skipped: '' };
+            const prefix = data.status === 'running' ? '<span class="spinner"></span>' : '';
+            addLogEntry(
+              icons[data.status],
+              `${prefix}<strong>${data.step}</strong>: ${data.message}`,
+              icons[data.status] || ''
+            );
+            status.textContent = `${data.step}: ${data.message}`;
+
+            // Show verdicts if available
+            if (data.step === 'evaluate' && data.status === 'done' && data.verdicts) {
+              renderVerdicts(data.verdicts, data.all_passed);
+            }
+          } else if (data.type === 'done') {
+            if (data.success) {
+              status.textContent = data.all_passed ? 'Pipeline complete — ALL PASSED' : 'Pipeline complete — SOME FAILED';
+              status.className = data.all_passed ? 'action-status ok' : 'action-status fail';
+              addLogEntry('', `<strong>Pipeline complete: ${data.all_passed ? 'ALL PASSED' : 'SOME FAILED'}</strong>`, data.all_passed ? 'pass' : 'fail');
+            } else {
+              status.textContent = 'Pipeline failed: ' + (data.error || 'unknown');
+              status.className = 'action-status fail';
+              addLogEntry('', `<strong>Pipeline failed</strong>: ${data.error}`, 'fail');
+            }
+          }
+        } catch(parseErr) { /* skip unparseable lines */ }
+      }
+    }
+  } catch(e) {
+    status.textContent = 'Error: ' + e.message;
+    status.className = 'action-status fail';
+    addLogEntry('', `<strong>Connection error</strong>: ${e.message}`, 'fail');
+  }
+
+  btn.disabled = false;
+}
+
+function renderVerdicts(verdicts, allPassed) {
+  const panel = document.getElementById('verdictPanel');
+  let html = `<div class="spec-panel" style="margin-top:20px">
+    <div class="spec-panel-header" style="color:${allPassed ? 'var(--green)' : 'var(--red)'}">
+      ${allPassed ? '(/) ALL AC CHECKBOXES PASSED' : '(x) SOME AC CHECKBOXES FAILED'}
+    </div>
+    <div class="spec-panel-body">`;
+
+  verdicts.forEach(v => {
+    html += `<div class="verdict-card">
+      <div class="verdict-header">
+        <span class="verdict-icon ${v.passed ? 'pass' : 'fail'}">${v.passed ? 'PASS' : 'FAIL'}</span>
+        <span style="font-size:13px">AC[${v.ac_checkbox}]: ${v.ac_text}</span>
+        <span style="font-size:11px;color:var(--text-dim);margin-left:auto">${v.summary} (${v.pass_condition})</span>
+      </div>
+      <div class="verdict-body">`;
+    (v.evidence || []).forEach(ev => {
+      html += `<div class="evidence-row">
+        <span class="evidence-dot ${ev.passed ? 'pass' : 'fail'}"></span>
+        <span class="trace-ref">${ev.ref}</span>
+        <span>${ev.details || ev.description || ''}</span>
+      </div>`;
+    });
+    html += '</div></div>';
+  });
+
+  html += '</div></div>';
+  panel.classList.remove('hidden');
+  panel.innerHTML = html;
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
 // Init
 checkJira();
+checkScan();
 </script>
 </body>
 </html>

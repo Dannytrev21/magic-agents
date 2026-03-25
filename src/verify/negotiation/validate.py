@@ -17,6 +17,15 @@ VALID_CATEGORIES = frozenset({
     "data_state", "rate_limit", "system_health",
 })
 
+VALID_INVARIANT_TYPES = frozenset({
+    "security", "performance", "data_integrity",
+    "compliance", "idempotency", "observability",
+})
+
+VALID_EARS_PATTERNS = frozenset({
+    "UBIQUITOUS", "EVENT_DRIVEN", "STATE_DRIVEN", "UNWANTED", "OPTIONAL",
+})
+
 
 def validate_classifications(
     classifications: list[dict], total_acs: int,
@@ -127,5 +136,86 @@ def validate_failure_modes(
         status = f.get("status")
         if not isinstance(status, int) or status < 100 or status > 599:
             errors.append(f"{fid}: invalid status '{status}'")
+
+    return len(errors) == 0, errors
+
+
+def validate_invariants(invariants: list[dict]) -> tuple[bool, list[str]]:
+    """Validate Phase 5 output — invariant extraction."""
+    errors: list[str] = []
+    if not invariants:
+        errors.append("No invariants produced")
+        return False, errors
+
+    ids_seen: set[str] = set()
+    for inv in invariants:
+        iid = inv.get("id", "")
+        if not iid.startswith("INV-"):
+            errors.append(f"Invariant id '{iid}' must start with INV-")
+        if iid in ids_seen:
+            errors.append(f"Duplicate invariant id: {iid}")
+        ids_seen.add(iid)
+
+        inv_type = inv.get("type")
+        if inv_type not in VALID_INVARIANT_TYPES:
+            errors.append(f"{iid}: invalid type '{inv_type}'. Must be one of {VALID_INVARIANT_TYPES}")
+
+        if not inv.get("rule"):
+            errors.append(f"{iid}: missing rule")
+
+        if not inv.get("source"):
+            errors.append(f"{iid}: missing source")
+
+    return len(errors) == 0, errors
+
+
+def validate_routing(routing: list[dict]) -> tuple[bool, list[str]]:
+    """Validate Phase 6 output — verification routing entries."""
+    errors: list[str] = []
+    if not routing:
+        errors.append("No routing entries produced")
+        return False, errors
+
+    for entry in routing:
+        req_id = entry.get("req_id", "")
+        if not req_id.startswith("REQ-"):
+            errors.append(f"Routing entry req_id '{req_id}' must start with REQ-")
+
+        skill = entry.get("skill", "")
+        if not skill:
+            errors.append(f"{req_id}: missing skill")
+
+        refs = entry.get("refs", [])
+        if not refs:
+            errors.append(f"{req_id}: missing refs")
+
+    return len(errors) == 0, errors
+
+
+def validate_ears_statements(ears: list[dict]) -> tuple[bool, list[str]]:
+    """Validate Phase 7 output — EARS statements."""
+    errors: list[str] = []
+    if not ears:
+        errors.append("No EARS statements produced")
+        return False, errors
+
+    ids_seen: set[str] = set()
+    for stmt in ears:
+        eid = stmt.get("id", "")
+        if not eid.startswith("EARS-"):
+            errors.append(f"EARS id '{eid}' must start with EARS-")
+        if eid in ids_seen:
+            errors.append(f"Duplicate EARS id: {eid}")
+        ids_seen.add(eid)
+
+        pattern = stmt.get("pattern")
+        if pattern not in VALID_EARS_PATTERNS:
+            errors.append(f"{eid}: invalid pattern '{pattern}'. Must be one of {VALID_EARS_PATTERNS}")
+
+        if not stmt.get("statement"):
+            errors.append(f"{eid}: missing statement")
+
+        if not stmt.get("traces_to"):
+            errors.append(f"{eid}: missing traces_to")
 
     return len(errors) == 0, errors

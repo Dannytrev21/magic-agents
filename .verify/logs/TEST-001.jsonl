@@ -1,0 +1,142 @@
+{"timestamp": "2026-03-25T10:09:32.534576+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T10:09:32.535559+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmpd4t9ulwk/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T10:09:32.536740+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T10:09:32.537378+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmpk3ufmjku/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T10:09:32.537863+00:00", "event_type": "phase_started", "phase": "phase_2"}
+{"timestamp": "2026-03-25T10:09:32.538514+00:00", "event_type": "checkpoint_saved", "phase": "phase_2", "data": {"checkpoint_path": "/tmp/tmpk3ufmjku/TEST-001/checkpoint_phase_2.json"}}
+{"timestamp": "2026-03-25T10:09:53.684486+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T10:09:53.685306+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmpii_hfsuu/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T10:09:53.686532+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T10:09:53.686958+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmpj0yw70r_/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T10:09:53.687316+00:00", "event_type": "phase_started", "phase": "phase_2"}
+{"timestamp": "2026-03-25T10:09:53.687741+00:00", "event_type": "checkpoint_saved", "phase": "phase_2", "data": {"checkpoint_path": "/tmp/tmpj0yw70r_/TEST-001/checkpoint_phase_2.json"}}
+{"timestamp": "2026-03-25T10:10:29.020786+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T10:10:29.021874+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmpr3gj6y4_/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T10:10:29.023259+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T10:10:29.023815+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmpmaqetckx/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T10:10:29.024152+00:00", "event_type": "phase_started", "phase": "phase_2"}
+{"timestamp": "2026-03-25T10:10:29.024613+00:00", "event_type": "checkpoint_saved", "phase": "phase_2", "data": {"checkpoint_path": "/tmp/tmpmaqetckx/TEST-001/checkpoint_phase_2.json"}}
+{"timestamp": "2026-03-25T10:10:31.937713+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T10:10:31.938560+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmp0js8mxwy/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T10:10:31.939912+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T10:10:31.940596+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmpgeqlcenp/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T10:10:31.941130+00:00", "event_type": "phase_started", "phase": "phase_2"}
+{"timestamp": "2026-03-25T10:10:31.941727+00:00", "event_type": "checkpoint_saved", "phase": "phase_2", "data": {"checkpoint_path": "/tmp/tmpgeqlcenp/TEST-001/checkpoint_phase_2.json"}}
+{"timestamp": "2026-03-25T10:11:00.825564+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T10:11:00.826588+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmpmuqph1pt/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T10:11:00.827748+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T10:11:00.828277+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmpicwmrukh/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T10:11:00.828700+00:00", "event_type": "phase_started", "phase": "phase_2"}
+{"timestamp": "2026-03-25T10:11:00.829364+00:00", "event_type": "checkpoint_saved", "phase": "phase_2", "data": {"checkpoint_path": "/tmp/tmpicwmrukh/TEST-001/checkpoint_phase_2.json"}}
+{"timestamp": "2026-03-25T10:11:05.684101+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T10:11:05.684850+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmp39i979pf/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T10:11:05.686213+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T10:11:05.686636+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmp1iuusi32/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T10:11:05.686942+00:00", "event_type": "phase_started", "phase": "phase_2"}
+{"timestamp": "2026-03-25T10:11:05.687329+00:00", "event_type": "checkpoint_saved", "phase": "phase_2", "data": {"checkpoint_path": "/tmp/tmp1iuusi32/TEST-001/checkpoint_phase_2.json"}}
+{"timestamp": "2026-03-25T10:11:58.989561+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T10:11:58.991446+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmpggtl_g76/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T10:11:58.992911+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T10:11:58.993555+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmp943b4pbv/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T10:11:58.994104+00:00", "event_type": "phase_started", "phase": "phase_2"}
+{"timestamp": "2026-03-25T10:11:58.994812+00:00", "event_type": "checkpoint_saved", "phase": "phase_2", "data": {"checkpoint_path": "/tmp/tmp943b4pbv/TEST-001/checkpoint_phase_2.json"}}
+{"timestamp": "2026-03-25T10:13:44.635358+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T10:13:44.637286+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmpgru6571u/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T10:13:44.638420+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T10:13:44.639001+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmp3jmqi6wc/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T10:13:44.639486+00:00", "event_type": "phase_started", "phase": "phase_2"}
+{"timestamp": "2026-03-25T10:13:44.640137+00:00", "event_type": "checkpoint_saved", "phase": "phase_2", "data": {"checkpoint_path": "/tmp/tmp3jmqi6wc/TEST-001/checkpoint_phase_2.json"}}
+{"timestamp": "2026-03-25T11:06:37.885137+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T11:06:37.886232+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmpvzmuahjh/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T11:06:37.887713+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T11:06:37.888378+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmpue1est3v/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T11:06:37.889018+00:00", "event_type": "phase_started", "phase": "phase_2"}
+{"timestamp": "2026-03-25T11:06:37.890086+00:00", "event_type": "checkpoint_saved", "phase": "phase_2", "data": {"checkpoint_path": "/tmp/tmpue1est3v/TEST-001/checkpoint_phase_2.json"}}
+{"timestamp": "2026-03-25T11:11:25.789943+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T11:11:25.791085+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmpdrzajt_2/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T11:11:25.792514+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T11:11:25.793016+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmp5mu2wwil/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T11:11:25.793620+00:00", "event_type": "phase_started", "phase": "phase_2"}
+{"timestamp": "2026-03-25T11:11:25.794318+00:00", "event_type": "checkpoint_saved", "phase": "phase_2", "data": {"checkpoint_path": "/tmp/tmp5mu2wwil/TEST-001/checkpoint_phase_2.json"}}
+{"timestamp": "2026-03-25T11:12:02.987415+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T11:12:02.988566+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmp2vgftrts/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T11:12:02.989817+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T11:12:02.990341+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmpunfox2xe/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T11:12:02.990748+00:00", "event_type": "phase_started", "phase": "phase_2"}
+{"timestamp": "2026-03-25T11:12:02.991260+00:00", "event_type": "checkpoint_saved", "phase": "phase_2", "data": {"checkpoint_path": "/tmp/tmpunfox2xe/TEST-001/checkpoint_phase_2.json"}}
+{"timestamp": "2026-03-25T11:13:02.885997+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T11:13:02.887381+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmpiwyzffsy/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T11:13:02.889026+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T11:13:02.889615+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmp8g7eoxw7/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T11:13:02.890069+00:00", "event_type": "phase_started", "phase": "phase_2"}
+{"timestamp": "2026-03-25T11:13:02.890730+00:00", "event_type": "checkpoint_saved", "phase": "phase_2", "data": {"checkpoint_path": "/tmp/tmp8g7eoxw7/TEST-001/checkpoint_phase_2.json"}}
+{"timestamp": "2026-03-25T11:16:38.354322+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T11:16:38.356622+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmpf410u6bp/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T11:16:38.358348+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T11:16:38.358835+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmp213_zxq1/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T11:16:38.359291+00:00", "event_type": "phase_started", "phase": "phase_2"}
+{"timestamp": "2026-03-25T11:16:38.359851+00:00", "event_type": "checkpoint_saved", "phase": "phase_2", "data": {"checkpoint_path": "/tmp/tmp213_zxq1/TEST-001/checkpoint_phase_2.json"}}
+{"timestamp": "2026-03-25T11:20:23.928178+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T11:20:23.929656+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmpxl8_bm3e/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T11:20:23.930890+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T11:20:23.931445+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmpzkbjyu1l/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T11:20:23.931815+00:00", "event_type": "phase_started", "phase": "phase_2"}
+{"timestamp": "2026-03-25T11:20:23.932316+00:00", "event_type": "checkpoint_saved", "phase": "phase_2", "data": {"checkpoint_path": "/tmp/tmpzkbjyu1l/TEST-001/checkpoint_phase_2.json"}}
+{"timestamp": "2026-03-25T12:07:02.918641+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T12:07:02.919962+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmpz42rmq7z/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T12:07:02.921748+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T12:07:02.922358+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmp04hupirk/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T12:07:02.922765+00:00", "event_type": "phase_started", "phase": "phase_2"}
+{"timestamp": "2026-03-25T12:07:02.923338+00:00", "event_type": "checkpoint_saved", "phase": "phase_2", "data": {"checkpoint_path": "/tmp/tmp04hupirk/TEST-001/checkpoint_phase_2.json"}}
+{"timestamp": "2026-03-25T12:15:18.336752+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T12:15:18.338301+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmpxmgvw6jy/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T12:15:18.339925+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T12:15:18.340632+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmpzfw6aktu/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T12:15:18.341046+00:00", "event_type": "phase_started", "phase": "phase_2"}
+{"timestamp": "2026-03-25T12:15:18.341620+00:00", "event_type": "checkpoint_saved", "phase": "phase_2", "data": {"checkpoint_path": "/tmp/tmpzfw6aktu/TEST-001/checkpoint_phase_2.json"}}
+{"timestamp": "2026-03-25T12:15:26.222040+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T12:15:26.222982+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmp_kgwbhce/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T12:15:26.224301+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T12:15:26.224808+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmpwdp9e6_f/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T12:15:26.225219+00:00", "event_type": "phase_started", "phase": "phase_2"}
+{"timestamp": "2026-03-25T12:15:26.225775+00:00", "event_type": "checkpoint_saved", "phase": "phase_2", "data": {"checkpoint_path": "/tmp/tmpwdp9e6_f/TEST-001/checkpoint_phase_2.json"}}
+{"timestamp": "2026-03-25T14:06:53.125294+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T14:06:53.127538+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmpn5xyipb_/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T14:06:53.129085+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T14:06:53.129690+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmpm6fw9z9i/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T14:06:53.130195+00:00", "event_type": "phase_started", "phase": "phase_2"}
+{"timestamp": "2026-03-25T14:06:53.130795+00:00", "event_type": "checkpoint_saved", "phase": "phase_2", "data": {"checkpoint_path": "/tmp/tmpm6fw9z9i/TEST-001/checkpoint_phase_2.json"}}
+{"timestamp": "2026-03-25T14:06:53.480711+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T14:06:53.481067+00:00", "event_type": "phase_completed", "phase": "phase_1", "duration_ms": 100}
+{"timestamp": "2026-03-25T14:15:53.678609+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T14:15:53.680370+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmp6g6u07m3/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T14:15:53.682383+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T14:15:53.683178+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmphwzoudjo/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T14:15:53.683645+00:00", "event_type": "phase_started", "phase": "phase_2"}
+{"timestamp": "2026-03-25T14:15:53.684362+00:00", "event_type": "checkpoint_saved", "phase": "phase_2", "data": {"checkpoint_path": "/tmp/tmphwzoudjo/TEST-001/checkpoint_phase_2.json"}}
+{"timestamp": "2026-03-25T14:15:54.075813+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T14:15:54.076145+00:00", "event_type": "phase_completed", "phase": "phase_1", "duration_ms": 100}
+{"timestamp": "2026-03-25T14:17:19.813949+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T14:17:19.815370+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmpi1b6bx8s/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T14:17:19.816811+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T14:17:19.817365+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmp0ah5re4y/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T14:17:19.817746+00:00", "event_type": "phase_started", "phase": "phase_2"}
+{"timestamp": "2026-03-25T14:17:19.818480+00:00", "event_type": "checkpoint_saved", "phase": "phase_2", "data": {"checkpoint_path": "/tmp/tmp0ah5re4y/TEST-001/checkpoint_phase_2.json"}}
+{"timestamp": "2026-03-25T14:17:20.193392+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T14:17:20.193708+00:00", "event_type": "phase_completed", "phase": "phase_1", "duration_ms": 100}
+{"timestamp": "2026-03-25T14:18:35.966388+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T14:18:35.967919+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmp7946n4ff/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T14:18:35.969207+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T14:18:35.969710+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmpvt90th0w/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T14:18:35.970106+00:00", "event_type": "phase_started", "phase": "phase_2"}
+{"timestamp": "2026-03-25T14:18:35.970647+00:00", "event_type": "checkpoint_saved", "phase": "phase_2", "data": {"checkpoint_path": "/tmp/tmpvt90th0w/TEST-001/checkpoint_phase_2.json"}}
+{"timestamp": "2026-03-25T14:18:36.363315+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T14:18:36.363682+00:00", "event_type": "phase_completed", "phase": "phase_1", "duration_ms": 100}
+{"timestamp": "2026-03-25T14:27:36.873364+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T14:27:36.874787+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmp5dtqee5w/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T14:27:36.876458+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T14:27:36.876985+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": "/tmp/tmpy2lionrf/TEST-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T14:27:36.877621+00:00", "event_type": "phase_started", "phase": "phase_2"}
+{"timestamp": "2026-03-25T14:27:36.878202+00:00", "event_type": "checkpoint_saved", "phase": "phase_2", "data": {"checkpoint_path": "/tmp/tmpy2lionrf/TEST-001/checkpoint_phase_2.json"}}
+{"timestamp": "2026-03-25T14:27:37.276368+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T14:27:37.276664+00:00", "event_type": "phase_completed", "phase": "phase_1", "duration_ms": 100}

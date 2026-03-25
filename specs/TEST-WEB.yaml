@@ -1,0 +1,130 @@
+meta:
+  spec_version: '1.0'
+  jira_key: TEST-WEB
+  jira_summary: Web Integration Test
+  generated_at: '2026-03-25T14:27:38.299918+00:00'
+  approved_at: '2026-03-25T14:27:38Z'
+  approved_by: tester
+  status: approved
+requirements:
+- id: REQ-001
+  ac_checkbox: 0
+  ac_text: User can view their profile via GET /api/v1/users/me
+  title: User can view their profile via GET /api/v1/users/me
+  type: api_behavior
+  contract:
+    interface:
+      method: GET
+      path: /api/v1/users/me
+      auth: jwt_bearer
+    preconditions:
+    - id: PRE-001
+      description: Valid JWT bearer token is present
+      formal: jwt != null AND jwt.exp > now()
+      category: authentication
+    - id: PRE-002
+      description: Resource referenced by path exists
+      formal: db.resource.exists(path.id) == true
+      category: data_existence
+    - id: PRE-003
+      description: User has access to the resource
+      formal: resource.owner == jwt.sub OR jwt.role == 'admin'
+      category: authorization
+    success:
+      status: 200
+      content_type: application/json
+      schema:
+        type: object
+        required:
+        - id
+        - name
+        - breed
+        properties:
+          id:
+            type: integer
+          name:
+            type: string
+          breed:
+            type: string
+          age:
+            type: integer
+        forbidden_fields:
+        - password
+        - internalId
+        - ssn
+    failures:
+    - id: FAIL-001
+      when: No auth token provided
+      violates: PRE-001
+      status: 401
+      body:
+        error: unauthorized
+        message: Bearer token required
+    - id: FAIL-002
+      when: Auth token expired
+      violates: PRE-001
+      status: 401
+      body:
+        error: unauthorized
+        message: Token expired
+    - id: FAIL-003
+      when: Resource not found
+      violates: PRE-002
+      status: 404
+      body:
+        error: not_found
+        message: Resource not found
+    invariants:
+    - id: INV-001
+      type: security
+      rule: Response MUST NOT contain password field
+      formal: '''password'' not in response.keys() AND ''internalId'' not in response.keys()
+        AND ''ssn'' not in response.keys()'
+    - id: INV-002
+      type: security
+      rule: Response MUST NOT contain SSN field
+      formal: '''password'' not in response.keys() AND ''internalId'' not in response.keys()
+        AND ''ssn'' not in response.keys()'
+    - id: INV-003
+      type: security
+      rule: 'Response MUST NOT contain fields: password, ssn'
+      formal: '''password'' not in response.keys() AND ''internalId'' not in response.keys()
+        AND ''ssn'' not in response.keys()'
+  verification:
+  - refs:
+    - success
+    - FAIL-001
+    - FAIL-002
+    - FAIL-003
+    - INV-001
+    - INV-002
+    - INV-003
+    skill: cucumber_java
+    output: dog-service/src/test/resources/features/test_web.feature
+traceability:
+  ac_mappings:
+  - ac_checkbox: 0
+    ac_text: User can view their profile via GET /api/v1/users/me
+    pass_condition: ALL_PASS
+    required_verifications:
+    - ref: REQ-001.success
+      description: 'Happy path: HTTP 200'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-001
+      description: 'Failure: No auth token provided'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-002
+      description: 'Failure: Auth token expired'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-003
+      description: 'Failure: Resource not found'
+      verification_type: test_result
+    - ref: REQ-001.INV-001
+      description: 'Invariant: Response MUST NOT contain password field'
+      verification_type: test_result
+    - ref: REQ-001.INV-002
+      description: 'Invariant: Response MUST NOT contain SSN field'
+      verification_type: test_result
+    - ref: REQ-001.INV-003
+      description: 'Invariant: Response MUST NOT contain fields: password, ssn'
+      verification_type: test_result

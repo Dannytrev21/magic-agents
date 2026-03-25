@@ -1,0 +1,287 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Magic Agents Verification Spec",
+  "description": "JSON Schema for compiled verification specs produced by the compiler and consumed by generator/evaluator",
+  "type": "object",
+  "required": ["meta", "requirements", "traceability"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "description": "Metadata about the spec",
+      "required": ["jira_key", "spec_version", "generated_at", "status"],
+      "properties": {
+        "spec_version": {
+          "type": "string",
+          "description": "Semantic version of the spec format"
+        },
+        "jira_key": {
+          "type": "string",
+          "description": "JIRA issue key",
+          "pattern": "^[A-Z]+-[0-9]+$"
+        },
+        "jira_summary": {
+          "type": "string",
+          "description": "Human-readable summary from JIRA"
+        },
+        "generated_at": {
+          "type": "string",
+          "description": "ISO 8601 timestamp when spec was generated"
+        },
+        "approved_at": {
+          "type": "string",
+          "description": "ISO 8601 timestamp when spec was approved"
+        },
+        "approved_by": {
+          "type": "string",
+          "description": "User or system ID that approved the spec"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "approved", "executed"],
+          "description": "Current status of the spec"
+        }
+      }
+    },
+    "requirements": {
+      "type": "array",
+      "description": "List of compiled requirements derived from acceptance criteria",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "ac_checkbox", "ac_text", "title", "type", "contract", "verification"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^REQ-[0-9]+$",
+            "description": "Unique requirement ID"
+          },
+          "ac_checkbox": {
+            "type": "integer",
+            "description": "Index of the acceptance criterion this requirement came from"
+          },
+          "ac_text": {
+            "type": "string",
+            "description": "Text of the original acceptance criterion"
+          },
+          "title": {
+            "type": "string",
+            "description": "Human-readable requirement title"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "api_behavior",
+              "performance_sla",
+              "security_invariant",
+              "observability",
+              "compliance",
+              "data_constraint"
+            ],
+            "description": "Requirement classification type"
+          },
+          "contract": {
+            "type": "object",
+            "description": "Formal contract for this requirement",
+            "properties": {
+              "interface": {
+                "type": "object",
+                "description": "API interface specification (for api_behavior requirements)",
+                "properties": {
+                  "method": {
+                    "type": "string",
+                    "enum": ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"],
+                    "description": "HTTP method"
+                  },
+                  "path": {
+                    "type": "string",
+                    "description": "URL path (without domain)"
+                  },
+                  "auth": {
+                    "type": "string",
+                    "description": "Authentication mechanism"
+                  }
+                }
+              },
+              "preconditions": {
+                "type": "array",
+                "description": "Conditions that must be true before the contract applies",
+                "items": {
+                  "type": "object",
+                  "required": ["id", "description"],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^PRE-[0-9]+$"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "formal": {
+                      "type": "string",
+                      "description": "Semi-formal or formal expression"
+                    },
+                    "category": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "success": {
+                "type": "object",
+                "description": "Success case specification",
+                "properties": {
+                  "status": {
+                    "type": "integer",
+                    "description": "Expected HTTP status code"
+                  },
+                  "content_type": {
+                    "type": "string",
+                    "description": "Expected content type"
+                  },
+                  "schema": {
+                    "type": "object",
+                    "description": "JSON schema for success response"
+                  }
+                }
+              },
+              "failures": {
+                "type": "array",
+                "description": "Failure modes and their specifications",
+                "items": {
+                  "type": "object",
+                  "required": ["id", "when", "violates", "status"],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^FAIL-[0-9]+$"
+                    },
+                    "when": {
+                      "type": "string",
+                      "description": "Condition triggering this failure"
+                    },
+                    "violates": {
+                      "type": "string",
+                      "description": "Which precondition is violated"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "description": "Expected HTTP status code on failure"
+                    },
+                    "body": {
+                      "type": "object",
+                      "description": "Expected response body on failure"
+                    }
+                  }
+                }
+              },
+              "invariants": {
+                "type": "array",
+                "description": "Invariants that must always hold",
+                "items": {
+                  "type": "object",
+                  "required": ["id", "rule"],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^INV-[0-9]+$"
+                    },
+                    "type": {
+                      "type": "string",
+                      "description": "Invariant type/category"
+                    },
+                    "rule": {
+                      "type": "string",
+                      "description": "Natural language rule"
+                    },
+                    "formal": {
+                      "type": "string",
+                      "description": "Semi-formal or formal expression"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "verification": {
+            "type": "array",
+            "minItems": 1,
+            "description": "Verification configuration",
+            "items": {
+              "type": "object",
+              "required": ["skill", "output"],
+              "properties": {
+                "refs": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "References to contract elements (success, FAIL-*, INV-*)"
+                },
+                "skill": {
+                  "type": "string",
+                  "description": "Skill ID for test generation"
+                },
+                "output": {
+                  "type": "string",
+                  "description": "Output file path for generated artifacts"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "traceability": {
+      "type": "object",
+      "description": "Traceability mappings from ACs to verifications",
+      "required": ["ac_mappings"],
+      "properties": {
+        "ac_mappings": {
+          "type": "array",
+          "description": "Mappings from acceptance criteria to required verifications",
+          "items": {
+            "type": "object",
+            "required": ["ac_checkbox", "ac_text", "pass_condition", "required_verifications"],
+            "properties": {
+              "ac_checkbox": {
+                "type": "integer",
+                "description": "Index of the acceptance criterion"
+              },
+              "ac_text": {
+                "type": "string",
+                "description": "Text of the acceptance criterion"
+              },
+              "pass_condition": {
+                "type": "string",
+                "enum": ["ALL_PASS", "ANY_PASS"],
+                "description": "How many required verifications must pass"
+              },
+              "required_verifications": {
+                "type": "array",
+                "description": "Verifications required to satisfy this AC",
+                "items": {
+                  "type": "object",
+                  "required": ["ref", "description", "verification_type"],
+                  "properties": {
+                    "ref": {
+                      "type": "string",
+                      "description": "Reference to a contract element (REQ-*.success, REQ-*.FAIL-*, REQ-*.INV-*)"
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "Human-readable description of the verification"
+                    },
+                    "verification_type": {
+                      "type": "string",
+                      "description": "Type of verification (test_result, config_validation, deployment_check, etc.)"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -61,6 +61,10 @@ def _build_constitution_context(constitution: dict) -> str:
     testing = constitution.get("testing", {})
     if testing:
         parts.append(f"Test framework: {testing.get('unit_framework', 'unknown')}")
+    # Include codebase scan results if available
+    codebase = constitution.get("_codebase_index", "")
+    if codebase:
+        parts.append(f"\nCodebase scan results:\n{codebase}")
     return "Project context:\n  " + "\n  ".join(parts) if parts else "No project constitution provided."
 
 

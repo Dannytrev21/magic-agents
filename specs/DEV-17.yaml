@@ -1,0 +1,419 @@
+meta:
+  spec_version: '1.0'
+  jira_key: DEV-17
+  jira_summary: Dog Service CRUD API
+  generated_at: '2026-03-25T22:39:21.785973+00:00'
+  approved_at: '2026-03-25T22:39:07Z'
+  approved_by: developer
+  status: approved
+requirements:
+- id: REQ-001
+  ac_checkbox: 0
+  ac_text: User can list all dogs via GET /api/v1/dogs
+  title: User can list all dogs via GET /api/v1/dogs
+  type: api_behavior
+  contract:
+    interface:
+      method: GET
+      path: /api/v1/dogs
+      auth: jwt_bearer
+    preconditions:
+    - id: PRE-001
+      description: Valid JWT bearer token is present
+      formal: jwt != null AND jwt.exp > now()
+      category: authentication
+    - id: PRE-002
+      description: Request contains properly formatted Authorization header
+      formal: request.headers['Authorization'].startsWith('Bearer ')
+      category: authentication
+    - id: PRE-003
+      description: User referenced in JWT exists in the system
+      formal: db.users.exists(jwt.sub) == true
+      category: data_existence
+    - id: PRE-004
+      description: User account is in active state
+      formal: db.users.find(jwt.sub).status == 'active'
+      category: data_state
+    - id: PRE-005
+      description: User has authorization to access dog data
+      formal: jwt.scope.includes('read:dogs') OR user.permissions.includes('dogs:read')
+      category: authorization
+    - id: PRE-006
+      description: Database connection is available
+      formal: db.connection.status == 'healthy'
+      category: system_health
+    - id: PRE-007
+      description: Rate limit for user has not been exceeded
+      formal: rate_limiter.check(jwt.sub, 'get_dogs') == allowed
+      category: rate_limit
+    success:
+      status: 200
+      content_type: application/json
+      schema:
+        type: object
+        required:
+        - dogs
+        properties:
+          dogs:
+            type: array
+            items:
+              type: object
+              properties:
+                id:
+                  type: string
+                  required: true
+                name:
+                  type: string
+                  required: true
+                breed:
+                  type: string
+                  required: true
+                age:
+                  type: integer
+                  required: true
+                owner_id:
+                  type: string
+                  required: true
+        forbidden_fields:
+        - password
+        - password_hash
+        - ssn
+        - internalId
+    failures:
+    - id: FAIL-001
+      when: No Authorization header provided
+      violates: PRE-002
+      status: 401
+      body:
+        error: unauthorized
+        message: Authorization header required
+        timestamp: '2026-03-22T10:00:00Z'
+        path: /api/v1/dogs
+    - id: FAIL-002
+      when: Authorization header does not start with 'Bearer '
+      violates: PRE-002
+      status: 401
+      body:
+        error: unauthorized
+        message: Bearer token required
+        timestamp: '2026-03-22T10:00:00Z'
+        path: /api/v1/dogs
+    - id: FAIL-003
+      when: No JWT token provided in Bearer header
+      violates: PRE-001
+      status: 401
+      body:
+        error: unauthorized
+        message: Bearer token required
+        timestamp: '2026-03-22T10:00:00Z'
+        path: /api/v1/dogs
+    - id: FAIL-004
+      when: JWT token has expired
+      violates: PRE-001
+      status: 401
+      body:
+        error: token_expired
+        message: JWT token has expired
+        timestamp: '2026-03-22T10:00:00Z'
+        path: /api/v1/dogs
+    - id: FAIL-005
+      when: JWT token is malformed
+      violates: PRE-001
+      status: 401
+      body:
+        error: invalid_token
+        message: Invalid JWT token format
+        timestamp: '2026-03-22T10:00:00Z'
+        path: /api/v1/dogs
+    - id: FAIL-006
+      when: JWT token has wrong issuer
+      violates: PRE-001
+      status: 401
+      body:
+        error: invalid_token
+        message: JWT token from invalid issuer
+        timestamp: '2026-03-22T10:00:00Z'
+        path: /api/v1/dogs
+    - id: FAIL-007
+      when: JWT token has been revoked
+      violates: PRE-001
+      status: 401
+      body:
+        error: token_revoked
+        message: JWT token has been revoked
+        timestamp: '2026-03-22T10:00:00Z'
+        path: /api/v1/dogs
+    - id: FAIL-008
+      when: User referenced in JWT never existed
+      violates: PRE-003
+      status: 404
+      body:
+        error: not_found
+        message: User not found
+        timestamp: '2026-03-22T10:00:00Z'
+        path: /api/v1/dogs
+    - id: FAIL-009
+      when: User referenced in JWT has been soft-deleted
+      violates: PRE-003
+      status: 404
+      body:
+        error: not_found
+        message: User not found
+        timestamp: '2026-03-22T10:00:00Z'
+        path: /api/v1/dogs
+    - id: FAIL-010
+      when: User referenced in JWT has been hard-deleted
+      violates: PRE-003
+      status: 404
+      body:
+        error: not_found
+        message: User not found
+        timestamp: '2026-03-22T10:00:00Z'
+        path: /api/v1/dogs
+    - id: FAIL-011
+      when: User account is in inactive state
+      violates: PRE-004
+      status: 403
+      body:
+        error: account_inactive
+        message: User account is inactive
+        timestamp: '2026-03-22T10:00:00Z'
+        path: /api/v1/dogs
+    - id: FAIL-012
+      when: User account is in suspended state
+      violates: PRE-004
+      status: 403
+      body:
+        error: account_suspended
+        message: User account is suspended
+        timestamp: '2026-03-22T10:00:00Z'
+        path: /api/v1/dogs
+    - id: FAIL-013
+      when: User account is in pending state
+      violates: PRE-004
+      status: 403
+      body:
+        error: account_pending
+        message: User account is pending activation
+        timestamp: '2026-03-22T10:00:00Z'
+        path: /api/v1/dogs
+    - id: FAIL-014
+      when: User account is in locked state
+      violates: PRE-004
+      status: 403
+      body:
+        error: account_locked
+        message: User account is locked
+        timestamp: '2026-03-22T10:00:00Z'
+        path: /api/v1/dogs
+    - id: FAIL-015
+      when: JWT missing required scope for dog data
+      violates: PRE-005
+      status: 403
+      body:
+        error: insufficient_scope
+        message: 'Token does not have required scope: read:dogs'
+        timestamp: '2026-03-22T10:00:00Z'
+        path: /api/v1/dogs
+    - id: FAIL-016
+      when: User permissions missing dogs:read permission
+      violates: PRE-005
+      status: 403
+      body:
+        error: forbidden
+        message: Insufficient permissions to access dog data
+        timestamp: '2026-03-22T10:00:00Z'
+        path: /api/v1/dogs
+    - id: FAIL-017
+      when: User from wrong tenant attempting to access dog data
+      violates: PRE-005
+      status: 403
+      body:
+        error: forbidden
+        message: Access denied for this tenant
+        timestamp: '2026-03-22T10:00:00Z'
+        path: /api/v1/dogs
+    - id: FAIL-018
+      when: Database connection is down
+      violates: PRE-006
+      status: 500
+      body:
+        error: service_unavailable
+        message: Database connection unavailable
+        timestamp: '2026-03-22T10:00:00Z'
+        path: /api/v1/dogs
+    - id: FAIL-019
+      when: Database connection timeout
+      violates: PRE-006
+      status: 500
+      body:
+        error: service_timeout
+        message: Database connection timeout
+        timestamp: '2026-03-22T10:00:00Z'
+        path: /api/v1/dogs
+    - id: FAIL-020
+      when: Database connection refused
+      violates: PRE-006
+      status: 500
+      body:
+        error: service_unavailable
+        message: Database connection refused
+        timestamp: '2026-03-22T10:00:00Z'
+        path: /api/v1/dogs
+    - id: FAIL-021
+      when: Per-user rate limit exceeded
+      violates: PRE-007
+      status: 429
+      body:
+        error: rate_limit_exceeded
+        message: Request rate limit exceeded for user
+        timestamp: '2026-03-22T10:00:00Z'
+        path: /api/v1/dogs
+    - id: FAIL-022
+      when: Global rate limit exceeded
+      violates: PRE-007
+      status: 429
+      body:
+        error: rate_limit_exceeded
+        message: Global request rate limit exceeded
+        timestamp: '2026-03-22T10:00:00Z'
+        path: /api/v1/dogs
+    invariants:
+    - id: INV-001
+      type: security
+      rule: Never expose password, passwordHash, ssn, or internalId in API responses
+      formal: Never expose password, passwordHash, ssn, or internalId in API responses
+    - id: INV-002
+      type: security
+      rule: Never allow cross-tenant data access
+      formal: Never allow cross-tenant data access
+    - id: INV-003
+      type: security
+      rule: All PII fields must have X-Data-Classification header
+      formal: All PII fields must have X-Data-Classification header
+    - id: INV-004
+      type: security
+      rule: 'Response MUST NOT contain fields: internalId, password, password_hash,
+        ssn'
+      formal: '''password'' not in response.keys() AND ''password_hash'' not in response.keys()
+        AND ''ssn'' not in response.keys() AND ''internalId'' not in response.keys()'
+  verification:
+  - refs:
+    - success
+    - FAIL-001
+    - FAIL-002
+    - FAIL-003
+    - FAIL-004
+    - FAIL-005
+    - FAIL-006
+    - FAIL-007
+    - FAIL-008
+    - FAIL-009
+    - FAIL-010
+    - FAIL-011
+    - FAIL-012
+    - FAIL-013
+    - FAIL-014
+    - FAIL-015
+    - FAIL-016
+    - FAIL-017
+    - FAIL-018
+    - FAIL-019
+    - FAIL-020
+    - FAIL-021
+    - FAIL-022
+    - INV-001
+    - INV-002
+    - INV-003
+    - INV-004
+    skill: cucumber_java
+    output: dog-service/src/test/resources/features/dev_17.feature
+traceability:
+  ac_mappings:
+  - ac_checkbox: 0
+    ac_text: User can list all dogs via GET /api/v1/dogs
+    pass_condition: ALL_PASS
+    required_verifications:
+    - ref: REQ-001.success
+      description: 'Happy path: HTTP 200'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-001
+      description: 'Failure: No Authorization header provided'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-002
+      description: 'Failure: Authorization header does not start with ''Bearer '''
+      verification_type: test_result
+    - ref: REQ-001.FAIL-003
+      description: 'Failure: No JWT token provided in Bearer header'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-004
+      description: 'Failure: JWT token has expired'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-005
+      description: 'Failure: JWT token is malformed'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-006
+      description: 'Failure: JWT token has wrong issuer'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-007
+      description: 'Failure: JWT token has been revoked'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-008
+      description: 'Failure: User referenced in JWT never existed'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-009
+      description: 'Failure: User referenced in JWT has been soft-deleted'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-010
+      description: 'Failure: User referenced in JWT has been hard-deleted'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-011
+      description: 'Failure: User account is in inactive state'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-012
+      description: 'Failure: User account is in suspended state'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-013
+      description: 'Failure: User account is in pending state'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-014
+      description: 'Failure: User account is in locked state'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-015
+      description: 'Failure: JWT missing required scope for dog data'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-016
+      description: 'Failure: User permissions missing dogs:read permission'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-017
+      description: 'Failure: User from wrong tenant attempting to access dog data'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-018
+      description: 'Failure: Database connection is down'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-019
+      description: 'Failure: Database connection timeout'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-020
+      description: 'Failure: Database connection refused'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-021
+      description: 'Failure: Per-user rate limit exceeded'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-022
+      description: 'Failure: Global rate limit exceeded'
+      verification_type: test_result
+    - ref: REQ-001.INV-001
+      description: 'Invariant: Never expose password, passwordHash, ssn, or internalId
+        in API responses'
+      verification_type: test_result
+    - ref: REQ-001.INV-002
+      description: 'Invariant: Never allow cross-tenant data access'
+      verification_type: test_result
+    - ref: REQ-001.INV-003
+      description: 'Invariant: All PII fields must have X-Data-Classification header'
+      verification_type: test_result
+    - ref: REQ-001.INV-004
+      description: 'Invariant: Response MUST NOT contain fields: internalId, password,
+        password_hash, ssn'
+      verification_type: test_result

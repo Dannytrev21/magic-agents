@@ -2,7 +2,7 @@
 name = "magic-agents"
 version = "0.1.0"
 description = "Intent-to-Verification Spec Engine"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 dependencies = [
     "fastapi",
     "uvicorn",

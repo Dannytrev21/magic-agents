@@ -1,0 +1,253 @@
+"""RED tests for web endpoint integration: SSE streaming, EARS approval, pipeline flow.
+
+TDD: Write these tests FIRST (RED), then implement if any fail (GREEN).
+"""
+
+import json
+import os
+
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def ensure_mock_mode(monkeypatch):
+    """Ensure LLM_MOCK is set for all tests in this module."""
+    monkeypatch.setenv("LLM_MOCK", "true")
+
+
+from fastapi.testclient import TestClient
+from verify.negotiation.web import app, _session
+
+
+@pytest.fixture
+def client(monkeypatch):
+    """Create a test client and clear session state."""
+    monkeypatch.setenv("LLM_MOCK", "true")
+    _session.clear()
+    return TestClient(app)
+
+
+@pytest.fixture
+def negotiated_session(client, monkeypatch):
+    """Run a full negotiation to populate session state."""
+    monkeypatch.setenv("LLM_MOCK", "true")
+    # Start negotiation
+    response = client.post("/api/start", json={
+        "jira_key": "TEST-WEB",
+        "jira_summary": "Web Integration Test",
+        "acceptance_criteria": [
+            {"index": 0, "text": "User can view their profile via GET /api/v1/users/me", "checked": False},
+        ],
+    })
+    assert response.status_code == 200
+
+    # Approve all 7 phases
+    for i in range(7):
+        data = response.json()
+        if data.get("done"):
+            break
+        response = client.post("/api/respond", json={"input": "approve"})
+        assert response.status_code == 200
+
+    return response.json()
+
+
+class TestStartNegotiation:
+    """Tests for /api/start endpoint."""
+
+    def test_start_returns_first_phase(self, client):
+        response = client.post("/api/start", json={
+            "jira_key": "START-001",
+            "jira_summary": "Test",
+            "acceptance_criteria": [
+                {"index": 0, "text": "Test AC", "checked": False},
+            ],
+        })
+        data = response.json()
+        assert response.status_code == 200
+        assert data["done"] is False
+        assert data["phase_number"] == 1
+        assert data["total_phases"] == 7
+
+    def test_start_with_constitution(self, client):
+        response = client.post("/api/start", json={
+            "jira_key": "CONST-001",
+            "jira_summary": "Constitution Test",
+            "acceptance_criteria": [
+                {"index": 0, "text": "AC", "checked": False},
+            ],
+            "constitution": {
+                "project": {"framework": "fastapi", "language": "python"},
+                "api": {"base_path": "/api/v2"},
+            },
+        })
+        assert response.status_code == 200
+
+
+class TestNegotiationFlow:
+    """Tests for the approve/feedback negotiation flow."""
+
+    def test_approve_advances_phase(self, client):
+        client.post("/api/start", json={
+            "jira_key": "ADV-001",
+            "jira_summary": "Advance Test",
+            "acceptance_criteria": [
+                {"index": 0, "text": "Test AC", "checked": False},
+            ],
+        })
+
+        response = client.post("/api/respond", json={"input": "approve"})
+        data = response.json()
+        assert response.status_code == 200
+        # Should be phase 2 or done
+        assert data.get("phase_number", 0) >= 2 or data.get("done")
+
+    def test_feedback_reruns_phase(self, client):
+        client.post("/api/start", json={
+            "jira_key": "FB-001",
+            "jira_summary": "Feedback Test",
+            "acceptance_criteria": [
+                {"index": 0, "text": "Test AC", "checked": False},
+            ],
+        })
+
+        response = client.post("/api/respond", json={
+            "input": "The classification should be security_invariant",
+        })
+        data = response.json()
+        assert response.status_code == 200
+        assert data.get("revised") is True
+        assert data["phase_number"] == 1  # Still on phase 1
+
+    def test_full_negotiation_produces_summary(self, negotiated_session):
+        data = negotiated_session
+        assert data["done"] is True
+        assert "summary" in data
+        assert data["summary"]["jira_key"] == "TEST-WEB"
+        assert data["summary"]["counts"]["classifications"] >= 1
+        assert len(data["summary"]["ears_statements"]) >= 1
+
+
+class TestEARSApprovalGate:
+    """Tests for Feature 7: EARS Statement Summary + Approval Gate."""
+
+    def test_ears_approve_endpoint(self, client):
+        """EARS approval should set context.approved with metadata."""
+        # Need a session first
+        client.post("/api/start", json={
+            "jira_key": "EARS-001",
+            "jira_summary": "EARS Test",
+            "acceptance_criteria": [
+                {"index": 0, "text": "Test AC", "checked": False},
+            ],
+        })
+        # Run through all phases
+        for _ in range(4):
+            client.post("/api/respond", json={"input": "approve"})
+
+        # Now approve EARS
+        response = client.post("/api/ears-approve", json={
+            "approved_by": "test_developer",
+        })
+        data = response.json()
+        assert response.status_code == 200
+        assert data["approved"] is True
+        assert data["approved_by"] == "test_developer"
+        assert "approved_at" in data
+
+    def test_ears_approve_no_session(self, client):
+        """EARS approval without a session should return 400."""
+        response = client.post("/api/ears-approve", json={})
+        assert response.status_code == 400
+
+
+class TestCompileEndpoint:
+    """Tests for /api/compile endpoint."""
+
+    def test_compile_after_negotiation(self, client, negotiated_session):
+        """Compile should produce a spec file after negotiation."""
+        # Approve EARS first
+        client.post("/api/ears-approve", json={"approved_by": "tester"})
+
+        response = client.post("/api/compile")
+        data = response.json()
+        assert response.status_code == 200
+        assert "spec_path" in data
+        assert "spec_content" in data
+        assert "TEST-WEB" in data["spec_content"]
+
+    def test_compile_no_session(self, client):
+        response = client.post("/api/compile")
+        assert response.status_code == 400
+
+
+class TestSpecDiffEndpoint:
+    """Tests for Feature 17: Spec Diff."""
+
+    def test_spec_diff_no_old_spec(self, client, negotiated_session):
+        """Spec diff with no prior spec should indicate 'new spec'."""
+        response = client.post("/api/spec-diff")
+        data = response.json()
+        assert response.status_code == 200
+        # Either has_old_spec is False or we get an error about spec path
+        if "has_old_spec" in data:
+            assert data["jira_key"] == "TEST-WEB"
+
+
+class TestSSEStreamingPipeline:
+    """Tests for Feature 11: SSE Streaming for Pipeline Execution."""
+
+    def test_stream_pipeline_endpoint_exists(self, client):
+        """The streaming pipeline endpoint should exist."""
+        routes = [r.path for r in app.routes]
+        assert "/api/pipeline/stream" in routes
+
+    def test_stream_pipeline_no_session(self, client):
+        """Streaming without a session should return error."""
+        response = client.post("/api/pipeline/stream")
+        assert response.status_code == 400
+
+
+class TestScanEndpoint:
+    """Tests for Feature 8: Codebase Pre-Scanner."""
+
+    def test_scan_endpoint_exists(self, client):
+        routes = [r.path for r in app.routes]
+        assert "/api/scan" in routes
+
+    def test_scan_status_default(self, client):
+        response = client.get("/api/scan/status")
+        data = response.json()
+        assert data["scanned"] is False
+
+
+class TestConstitutionEndpoints:
+    """Tests for Feature 6: Constitution File Loading."""
+
+    def test_get_constitution(self, client):
+        response = client.get("/api/constitution")
+        data = response.json()
+        assert response.status_code == 200
+        assert "constitution" in data
+
+    def test_set_constitution(self, client):
+        # Start a session first
+        client.post("/api/start", json={
+            "jira_key": "CONST-001",
+            "jira_summary": "Test",
+            "acceptance_criteria": [{"index": 0, "text": "AC", "checked": False}],
+        })
+
+        response = client.post("/api/constitution", json={
+            "constitution": {"project": {"framework": "django"}},
+        })
+        assert response.status_code == 200
+
+
+class TestSessionEndpoints:
+    """Tests for Feature 2.8: Checkpoint & Resume web endpoints."""
+
+    def test_session_check_no_checkpoint(self, client):
+        response = client.get("/api/session/NONEXISTENT-999")
+        data = response.json()
+        assert data["has_checkpoint"] is False

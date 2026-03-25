@@ -26,8 +26,7 @@ python -m verify.pipeline .verify/specs/DEMO-001.yaml
 
 # Tests
 pytest tests/                             # all tests
-pytest tests/test_dummy_app.py -v         # single file
-pytest tests/test_dummy_app.py::test_get_profile_returns_200_with_auth -v  # single test
+cd dog-service && ./gradlew test          # run dog-service tests (Cucumber + JUnit)
 pytest --cov=src tests/                   # with coverage
 ```
 
@@ -52,7 +51,7 @@ pytest --cov=src tests/                   # with coverage
 - **`runner.py`** — Runs pytest with `--junitxml`, parses results.
 - **`evaluator.py`** — Maps test results back to AC verdicts via spec traceability.
 - **`jira_client.py`** — Jira Cloud REST API v3 (search, fetch, extract AC, update).
-- **`dummy_app/main.py`** — FastAPI demo target (`GET /api/v1/users/me` with JWT auth).
+- **`dog-service/`** — Spring Boot demo target (Dog CRUD API at `/api/v1/dogs` with Bearer auth, Lombok, Cucumber tests).
 
 ### Web UI
 

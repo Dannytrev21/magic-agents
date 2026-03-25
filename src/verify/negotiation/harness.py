@@ -6,6 +6,8 @@ Implements Sherpa's state machine pattern with guard conditions on every transit
 from datetime import datetime, timezone
 
 from verify.context import VerificationContext
+from verify.negotiation.checkpoint import save_checkpoint
+from verify.observability import HarnessLogger
 
 PHASES = [
     "phase_0",  # Intake & classification
@@ -24,6 +26,7 @@ class NegotiationHarness:
 
     def __init__(self, ctx: VerificationContext) -> None:
         self.ctx = ctx
+        self.logger = HarnessLogger(ctx.jira_key)
 
     # ------------------------------------------------------------------
     # Properties
@@ -57,6 +60,8 @@ class NegotiationHarness:
 
         Returns the new phase name, or the current phase if conditions are not met
         or we are already at the final phase.
+
+        Saves a checkpoint after advancing to the new phase.
         """
         current = self.ctx.current_phase
         if not self._exit_conditions_met(current):
@@ -68,6 +73,16 @@ class NegotiationHarness:
 
         next_phase = PHASES[idx + 1]
         self.ctx.current_phase = next_phase
+
+        # Log phase_started for the new phase
+        self.logger.log_phase_started(next_phase)
+
+        # Save a checkpoint after advancing to the new phase
+        checkpoint_path = save_checkpoint(self.ctx, next_phase)
+
+        # Log checkpoint_saved
+        self.logger.log_checkpoint_saved(next_phase, str(checkpoint_path))
+
         return next_phase
 
     # ------------------------------------------------------------------

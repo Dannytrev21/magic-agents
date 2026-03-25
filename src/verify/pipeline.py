@@ -1,10 +1,13 @@
 """End-to-end verification pipeline — single command from spec to verdicts."""
 
+import logging
 import sys
 
 from verify.evaluator import evaluate_spec
 from verify.generator import generate_and_write
 from verify.runner import run_and_parse
+
+logger = logging.getLogger(__name__)
 
 
 def run_pipeline(spec_path: str) -> list[dict]:
@@ -57,6 +60,40 @@ def run_pipeline(spec_path: str) -> list[dict]:
     print(f"{'=' * 60}\n")
 
     return verdicts
+
+
+def update_jira(
+    jira_key: str,
+    verdicts: list[dict],
+    jira_client,
+    spec_path: str = "",
+) -> None:
+    """Wire evaluator verdicts to Jira checkbox updates and evidence comments.
+
+    Feature 6.1: Tick AC checkboxes for passed verdicts.
+    Feature 6.2: Post evidence comment with full breakdown.
+
+    Args:
+        jira_key: The Jira ticket key (e.g., "DEV-17")
+        verdicts: List of verdict dicts from evaluate_spec
+        jira_client: A JiraClient instance
+        spec_path: Path to the spec file for evidence formatting
+    """
+    if not verdicts:
+        logger.info(f"No verdicts to update for {jira_key}")
+        return
+
+    # Feature 6.1: Tick checkboxes for passed verdicts
+    passed_indices = [v["ac_checkbox"] for v in verdicts if v["passed"]]
+    if passed_indices:
+        logger.info(f"Ticking checkboxes {passed_indices} on {jira_key}")
+        jira_client.tick_checkboxes(jira_key, passed_indices)
+
+    # Feature 6.2: Post evidence comment
+    if spec_path:
+        comment = jira_client.format_evidence_comment(verdicts, spec_path)
+        logger.info(f"Posting evidence comment to {jira_key}")
+        jira_client.post_comment(jira_key, comment)
 
 
 if __name__ == "__main__":

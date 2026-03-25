@@ -8,6 +8,40 @@ import sys
 import xml.etree.ElementTree as ET
 
 
+def run_gradle_tests(project_dir: str, results_dir: str) -> str:
+    """Run Gradle tests in a project directory and copy JUnit XML results.
+
+    Returns the path to the JUnit XML results file.
+    """
+    os.makedirs(results_dir, exist_ok=True)
+
+    gradlew = os.path.join(project_dir, "gradlew")
+    result = subprocess.run(
+        [gradlew, "test"],
+        cwd=project_dir,
+        capture_output=True,
+        text=True,
+    )
+
+    if result.returncode not in (0, 1):
+        print(f"gradle test stderr:\n{result.stderr}", file=sys.stderr)
+
+    # Find JUnit XML results from Gradle's output directory
+    gradle_results_dir = os.path.join(project_dir, "build", "test-results", "test")
+    xml_path = os.path.join(results_dir, "results.xml")
+
+    if os.path.isdir(gradle_results_dir):
+        # Merge all XML files from Gradle into one
+        import glob
+        xml_files = glob.glob(os.path.join(gradle_results_dir, "*.xml"))
+        if xml_files:
+            # Use the first XML file or merge multiple
+            import shutil
+            shutil.copy2(xml_files[0], xml_path)
+
+    return xml_path
+
+
 def run_tests(test_path: str, results_dir: str) -> str:
     """Run pytest on a test file and produce JUnit XML results.
 

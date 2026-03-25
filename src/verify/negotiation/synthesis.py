@@ -69,9 +69,10 @@ def generate_ears_statements(context: VerificationContext) -> list[str]:
 
     # Invariant EARS
     for inv in context.invariants:
+        inv_desc = inv.get('description', inv.get('rule', ''))
         ears.append(
             f"WHILE the system is operational, "
-            f"responses SHALL satisfy: {inv['description']}"
+            f"responses SHALL satisfy: {inv_desc}"
         )
 
     context.ears_statements = ears
@@ -112,10 +113,11 @@ def build_traceability_map(context: VerificationContext) -> dict:
 
         # Invariants
         for inv in context.invariants:
+            inv_desc = inv.get('description', inv.get('rule', ''))
             verifications.append({
                 "ref": f"{req_prefix}.{inv['id']}",
                 "verification_type": "test_result",
-                "description": f"Invariant: {inv['description']}",
+                "description": f"Invariant: {inv_desc}",
             })
 
         ac_mappings.append({

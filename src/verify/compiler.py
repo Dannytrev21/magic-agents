@@ -4,12 +4,16 @@ The output format matches DEMO-001.yaml and is consumed by generator.py and eval
 This module is 100% deterministic — zero AI.
 """
 
+import logging
 import os
 from datetime import datetime, timezone
 
 import yaml
 
 from verify.context import VerificationContext
+from verify.spec_validator import validate_spec
+
+logger = logging.getLogger(__name__)
 
 # ------------------------------------------------------------------
 # Verification Routing Table — deterministic dispatch, no AI
@@ -18,9 +22,9 @@ from verify.context import VerificationContext
 
 ROUTING_TABLE: dict[str, dict] = {
     "api_behavior": {
-        "skill": "pytest_unit_test",
-        "framework": "pytest",
-        "output_pattern": ".verify/generated/test_{key}.py",
+        "skill": "cucumber_java",
+        "framework": "cucumber",
+        "output_pattern": "dog-service/src/test/resources/features/{key}.feature",
     },
     "performance_sla": {
         "skill": "newrelic_alert_config",
@@ -50,9 +54,9 @@ ROUTING_TABLE: dict[str, dict] = {
 }
 
 DEFAULT_ROUTE = {
-    "skill": "pytest_unit_test",
-    "framework": "pytest",
-    "output_pattern": ".verify/generated/test_{key}.py",
+    "skill": "cucumber_java",
+    "framework": "cucumber",
+    "output_pattern": "dog-service/src/test/resources/features/{key}.feature",
 }
 
 
@@ -79,11 +83,19 @@ def compile_spec(context: VerificationContext) -> dict:
     traceability = _build_traceability(context, requirements)
     context.traceability_map = traceability
 
-    return {
+    spec = {
         "meta": _build_meta(context),
         "requirements": requirements,
         "traceability": traceability,
     }
+
+    # Validate spec against schema (logs warnings but doesn't block)
+    is_valid, errors = validate_spec(spec)
+    if not is_valid:
+        for error in errors:
+            logger.warning(f"Spec validation warning: {error}")
+
+    return spec
 
 
 def write_spec(spec: dict, output_dir: str = ".verify/specs") -> str:
@@ -259,8 +271,8 @@ def _build_invariants(ctx: VerificationContext, postcondition: dict) -> list[dic
     return [
         {
             "id": inv["id"],
-            "type": inv.get("category", "security"),
-            "rule": inv["description"],
+            "type": inv.get("type", inv.get("category", "security")),
+            "rule": inv.get("rule", inv.get("description", "")),
             "formal": _derive_formal(inv, forbidden),
         }
         for inv in ctx.invariants
@@ -269,7 +281,7 @@ def _build_invariants(ctx: VerificationContext, postcondition: dict) -> list[dic
 
 def _derive_formal(invariant: dict, forbidden_fields: list[str]) -> str:
     """Derive a semi-formal expression for an invariant."""
-    desc = invariant.get("description", "")
+    desc = invariant.get("description", invariant.get("rule", ""))
     if "MUST NOT contain" in desc and forbidden_fields:
         return " AND ".join(f"'{f}' not in response.keys()" for f in forbidden_fields)
     return desc
@@ -313,7 +325,7 @@ def _build_traceability(
     for inv in ctx.invariants:
         cross_cutting_inv_refs.append({
             "id": inv["id"],
-            "description": inv.get("description", ""),
+            "description": inv.get("description", inv.get("rule", "")),
         })
 
     ac_mappings: list[dict] = []

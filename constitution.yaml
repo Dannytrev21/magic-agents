@@ -5,7 +5,7 @@
 # Updated: Once per repo (or when stack changes)
 
 project:
-  name: "user-service"
+  name: "dog-service"
   language: java
   version: 17
   framework: spring-boot
@@ -13,24 +13,24 @@ project:
   build_tool: gradle
 
 source_structure:
-  main: "src/main/java"
-  test: "src/test/java"
-  resources: "src/main/resources"
-  package_root: "com.example.userservice"
+  main: "dog-service/src/main/java"
+  test: "dog-service/src/test/java"
+  resources: "dog-service/src/main/resources"
+  package_root: "com.example.dogservice"
 
 testing:
   unit_framework: junit5
   assertion_library: assertj
   mocking_library: mockito
-  test_runner: "gradle test"
-  result_format: "build/test-results/test/*.xml"  # JUnit XML output path
+  test_runner: "cd dog-service && ./gradlew test"
+  result_format: "dog-service/build/test-results/test/*.xml"
   naming_convention: "{ClassName}Test.java"
   method_naming: "should_{expected_behavior}_when_{condition}"
 
   patterns:
     - id: controller_test
       description: "REST controller tests using MockMvc"
-      example_file: "src/test/java/com/example/controller/UserControllerTest.java"
+      example_file: "dog-service/src/test/java/com/example/dogservice/controller/DogControllerTest.java"
       annotations: ["@WebMvcTest", "@MockBean"]
       imports:
         - "org.springframework.test.web.servlet.MockMvc"
@@ -40,9 +40,20 @@ testing:
         - "static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*"
       assertion_style: "mockMvc.perform(get(...)).andExpect(status().isOk())"
 
+    - id: cucumber_test
+      description: "Cucumber BDD feature tests with Spring Boot"
+      example_file: "dog-service/src/test/resources/features/dogs.feature"
+      annotations: ["@Suite", "@IncludeEngines(\"cucumber\")", "@CucumberContextConfiguration"]
+      imports:
+        - "io.cucumber.java.en.Given"
+        - "io.cucumber.java.en.When"
+        - "io.cucumber.java.en.Then"
+        - "org.springframework.boot.test.web.client.TestRestTemplate"
+      assertion_style: "assertThat(response.getStatusCode().value()).isEqualTo(200)"
+
     - id: service_test
       description: "Service layer unit tests with Mockito"
-      example_file: "src/test/java/com/example/service/UserServiceTest.java"
+      example_file: "dog-service/src/test/java/com/example/dogservice/service/DogServiceTest.java"
       annotations: ["@ExtendWith(MockitoExtension.class)", "@Mock", "@InjectMocks"]
       imports:
         - "org.mockito.junit.jupiter.MockitoExtension"
@@ -66,7 +77,7 @@ api:
         message: { type: string }
         timestamp: { type: string, format: iso8601 }
         path: { type: string }
-    example: '{"error":"not_found","message":"User not found","timestamp":"2026-03-22T10:00:00Z","path":"/api/v1/users/me"}'
+    example: '{"error":"not_found","message":"Dog not found with id: 99","timestamp":"2026-03-22T10:00:00Z","path":"/api/v1/dogs/99"}'
   common_status_codes: [200, 201, 204, 400, 401, 403, 404, 409, 422, 429, 500]
 
 observability:

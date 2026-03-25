@@ -15,6 +15,11 @@ from verify.negotiation.phase2 import run_phase2
 from verify.negotiation.phase3 import run_phase3
 from verify.negotiation.phase4 import run_phase4
 from verify.negotiation.synthesis import run_synthesis
+from verify.compiler import compile_and_write
+from verify.generator import generate_and_write
+from verify.runner import run_and_parse
+from verify.evaluator import evaluate_spec
+from verify.pipeline import update_jira
 
 app = FastAPI(title="Negotiation UI")
 
@@ -152,6 +157,106 @@ async def respond(request: Request):
         })
 
     return _run_current_phase()
+
+
+# ------------------------------------------------------------------
+# Spec Compilation & Test Generation
+# ------------------------------------------------------------------
+
+
+@app.post("/api/compile")
+async def compile_spec_endpoint():
+    """Compile the negotiated context into a YAML spec file."""
+    if "ctx" not in _session:
+        return JSONResponse({"error": "No active session"}, status_code=400)
+
+    ctx: VerificationContext = _session["ctx"]
+    try:
+        spec_path = compile_and_write(ctx, output_dir="specs")
+        with open(spec_path) as f:
+            spec_content = f.read()
+        return JSONResponse({
+            "spec_path": spec_path,
+            "spec_content": spec_content,
+        })
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@app.post("/api/generate-tests")
+async def generate_tests_endpoint():
+    """Generate tests from the compiled spec, run them, and evaluate."""
+    if "ctx" not in _session:
+        return JSONResponse({"error": "No active session"}, status_code=400)
+
+    ctx: VerificationContext = _session["ctx"]
+    if not ctx.spec_path:
+        return JSONResponse({"error": "No spec compiled yet. Call /api/compile first."}, status_code=400)
+
+    steps = []
+    try:
+        # Step 1: Generate tests
+        test_path = generate_and_write(ctx.spec_path)
+        with open(test_path) as f:
+            test_content = f.read()
+        steps.append({"step": "generate", "status": "ok", "path": test_path})
+
+        # Step 2: Run tests
+        results = run_and_parse(test_path, ".verify/results")
+        cases = results["test_cases"]
+        passed = sum(1 for c in cases if c["status"] == "passed")
+        steps.append({"step": "run", "status": "ok", "passed": passed, "total": len(cases)})
+
+        # Step 3: Evaluate against spec
+        verdicts = evaluate_spec(ctx.spec_path, results)
+        all_passed = all(v["passed"] for v in verdicts)
+        steps.append({"step": "evaluate", "status": "ok", "all_passed": all_passed})
+
+        # Store verdicts for Jira update
+        _session["verdicts"] = verdicts
+
+        return JSONResponse({
+            "steps": steps,
+            "test_path": test_path,
+            "test_content": test_content,
+            "verdicts": verdicts,
+            "all_passed": all_passed,
+        })
+    except Exception as e:
+        steps.append({"step": "error", "status": "failed", "message": str(e)})
+        return JSONResponse({"steps": steps, "error": str(e)}, status_code=500)
+
+
+# ------------------------------------------------------------------
+# Jira Feedback
+# ------------------------------------------------------------------
+
+
+@app.post("/api/jira/update")
+async def jira_update():
+    """Update Jira ticket with verdicts — tick checkboxes and post evidence."""
+    if "ctx" not in _session:
+        return JSONResponse({"error": "No active session"}, status_code=400)
+
+    ctx: VerificationContext = _session["ctx"]
+    verdicts = _session.get("verdicts")
+    if not verdicts:
+        return JSONResponse({"error": "No verdicts available. Run /api/generate-tests first."}, status_code=400)
+
+    try:
+        from verify.jira_client import JiraClient
+        jira = JiraClient()
+        update_jira(ctx.jira_key, verdicts, jira, spec_path=ctx.spec_path)
+
+        passed_count = sum(1 for v in verdicts if v["passed"])
+        return JSONResponse({
+            "status": "ok",
+            "jira_key": ctx.jira_key,
+            "checkboxes_ticked": passed_count,
+            "evidence_posted": True,
+        })
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
 
 
 # ------------------------------------------------------------------
