@@ -119,6 +119,31 @@
   .ears-section { margin-top:24px; }
   .ears-item { font-size:12px; font-style:italic; color:var(--blue); padding:8px 12px; background:var(--surface); border:1px solid var(--border); border-radius:6px; margin-bottom:6px; line-height:1.5; }
 
+  /* Action buttons row */
+  .action-bar { display:flex; gap:12px; margin:24px 0; padding:20px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); align-items:center; }
+  .action-bar .btn { min-width:160px; }
+  .action-status { font-size:12px; color:var(--text-dim); margin-left:12px; }
+  .action-status.ok { color:var(--green); }
+  .action-status.fail { color:var(--red); }
+
+  /* Spec display */
+  .spec-panel { margin-top:20px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+  .spec-panel-header { padding:12px 20px; border-bottom:1px solid var(--border); font-size:12px; color:var(--accent); font-weight:600; display:flex; align-items:center; gap:8px; }
+  .spec-panel-body { padding:16px 20px; max-height:500px; overflow-y:auto; }
+  .spec-panel-body pre { font-size:12px; line-height:1.6; color:var(--text); white-space:pre-wrap; word-break:break-word; }
+
+  /* Verdict cards */
+  .verdict-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:12px; overflow:hidden; }
+  .verdict-header { padding:12px 20px; display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--border); }
+  .verdict-icon { font-size:14px; font-weight:700; }
+  .verdict-icon.pass { color:var(--green); }
+  .verdict-icon.fail { color:var(--red); }
+  .verdict-body { padding:12px 20px; }
+  .evidence-row { font-size:12px; padding:4px 0; display:flex; gap:8px; align-items:center; }
+  .evidence-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .evidence-dot.pass { background:var(--green); }
+  .evidence-dot.fail { background:var(--red); }
+
   .spinner { display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.6s linear infinite; margin-right:8px; vertical-align:middle; }
   @keyframes spin { to{transform:rotate(360deg)} }
   .hidden { display:none !important; }
@@ -187,6 +212,15 @@ User profile never exposes password or internal fields</textarea>
     <!-- Screen 4: Traceability / Summary -->
     <div class="screen" id="screen-traceability">
       <div id="traceContent"></div>
+      <div id="specActions" class="action-bar hidden">
+        <button class="btn" id="btnCompile" onclick="compileSpec()">Generate Spec</button>
+        <span class="action-status" id="compileStatus"></span>
+        <button class="btn btn-outline" id="btnTests" onclick="generateTests()" disabled>Generate Tests</button>
+        <span class="action-status" id="testStatus"></span>
+      </div>
+      <div id="specPanel" class="hidden"></div>
+      <div id="testPanel" class="hidden"></div>
+      <div id="verdictPanel" class="hidden"></div>
     </div>
   </main>
 
@@ -501,6 +535,110 @@ function removeLoading() {
   const msgs = document.querySelectorAll('#chat .message.system');
   const last = msgs[msgs.length-1];
   if (last && (last.textContent.includes('Running') || last.textContent.includes('Revising'))) last.remove();
+}
+
+// Spec Compilation & Test Generation
+async function compileSpec() {
+  const btn = document.getElementById('btnCompile');
+  const status = document.getElementById('compileStatus');
+  btn.disabled = true;
+  status.textContent = 'Compiling...';
+  status.className = 'action-status';
+
+  try {
+    const res = await fetch('/api/compile', { method: 'POST' });
+    const data = await res.json();
+    if (data.error) {
+      status.textContent = 'Error: ' + data.error;
+      status.className = 'action-status fail';
+      btn.disabled = false;
+      return;
+    }
+    status.textContent = 'Spec saved to ' + data.spec_path;
+    status.className = 'action-status ok';
+
+    // Show spec YAML
+    const panel = document.getElementById('specPanel');
+    panel.className = 'spec-panel';
+    panel.innerHTML = `
+      <div class="spec-panel-header">SPEC YAML &mdash; ${data.spec_path}</div>
+      <div class="spec-panel-body"><pre>${escapeHtml(data.spec_content)}</pre></div>`;
+
+    // Enable test generation
+    document.getElementById('btnTests').disabled = false;
+  } catch(e) {
+    status.textContent = 'Error: ' + e.message;
+    status.className = 'action-status fail';
+    btn.disabled = false;
+  }
+}
+
+async function generateTests() {
+  const btn = document.getElementById('btnTests');
+  const status = document.getElementById('testStatus');
+  btn.disabled = true;
+  status.textContent = 'Generating tests, running, evaluating...';
+  status.className = 'action-status';
+
+  try {
+    const res = await fetch('/api/generate-tests', { method: 'POST' });
+    const data = await res.json();
+    if (data.error) {
+      status.textContent = 'Error: ' + data.error;
+      status.className = 'action-status fail';
+      btn.disabled = false;
+      return;
+    }
+
+    // Show status
+    const allPassed = data.all_passed;
+    status.textContent = allPassed ? 'All tests passed!' : 'Some tests failed';
+    status.className = allPassed ? 'action-status ok' : 'action-status fail';
+
+    // Show generated test code
+    const testPanel = document.getElementById('testPanel');
+    testPanel.className = 'spec-panel';
+    testPanel.innerHTML = `
+      <div class="spec-panel-header">GENERATED TESTS &mdash; ${data.test_path}</div>
+      <div class="spec-panel-body"><pre>${escapeHtml(data.test_content)}</pre></div>`;
+
+    // Show verdicts
+    const verdictPanel = document.getElementById('verdictPanel');
+    verdictPanel.className = '';
+    let vhtml = '<div style="margin-top:20px"><div class="trace-section-title">Verdicts</div>';
+    (data.verdicts || []).forEach(v => {
+      const passed = v.passed;
+      vhtml += `<div class="verdict-card">
+        <div class="verdict-header">
+          <span class="verdict-icon ${passed?'pass':'fail'}">${passed?'PASS':'FAIL'}</span>
+          <span class="tag tag-id">AC[${v.ac_checkbox}]</span>
+          <span style="font-size:13px;flex:1">${v.ac_text}</span>
+          <span style="font-size:11px;color:var(--text-dim)">${v.summary}</span>
+        </div>
+        <div class="verdict-body">`;
+      (v.evidence || []).forEach(ev => {
+        vhtml += `<div class="evidence-row">
+          <span class="evidence-dot ${ev.passed?'pass':'fail'}"></span>
+          <span class="trace-ref">${ev.ref}</span>
+          <span style="color:var(--text-dim)">${ev.description}</span>
+          <span style="margin-left:auto;font-size:11px;color:${ev.passed?'var(--green)':'var(--red)'}">${ev.passed?'passed':'failed'}</span>
+        </div>`;
+      });
+      vhtml += '</div></div>';
+    });
+    vhtml += '</div>';
+    verdictPanel.innerHTML = vhtml;
+  } catch(e) {
+    status.textContent = 'Error: ' + e.message;
+    status.className = 'action-status fail';
+    btn.disabled = false;
+  }
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 // Init
