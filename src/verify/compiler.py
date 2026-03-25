@@ -18,9 +18,9 @@ from verify.context import VerificationContext
 
 ROUTING_TABLE: dict[str, dict] = {
     "api_behavior": {
-        "skill": "pytest_unit_test",
-        "framework": "pytest",
-        "output_pattern": ".verify/generated/test_{key}.py",
+        "skill": "cucumber_java",
+        "framework": "cucumber",
+        "output_pattern": "dog-service/src/test/resources/features/{key}.feature",
     },
     "performance_sla": {
         "skill": "newrelic_alert_config",
@@ -50,9 +50,9 @@ ROUTING_TABLE: dict[str, dict] = {
 }
 
 DEFAULT_ROUTE = {
-    "skill": "pytest_unit_test",
-    "framework": "pytest",
-    "output_pattern": ".verify/generated/test_{key}.py",
+    "skill": "cucumber_java",
+    "framework": "cucumber",
+    "output_pattern": "dog-service/src/test/resources/features/{key}.feature",
 }
 
 

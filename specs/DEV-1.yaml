@@ -1,0 +1,451 @@
+meta:
+  spec_version: '1.0'
+  jira_key: DEV-1
+  jira_summary: Design the technical specifications for the feature release
+  generated_at: '2026-03-25T05:25:25.749063+00:00'
+  approved_at: '2026-03-25T05:25:25.749063+00:00'
+  approved_by: auto
+  status: draft
+requirements:
+- id: REQ-001
+  ac_checkbox: 0
+  ac_text: User can view their profile via GET /api/v1/users/me
+  title: User can view their profile via GET /api/v1/users/me
+  type: api_behavior
+  contract:
+    interface:
+      method: GET
+      path: /api/v1/users/me
+      auth: jwt_bearer
+    preconditions:
+    - id: PRE-001
+      description: Valid JWT bearer token is present
+      formal: jwt != null AND jwt.exp > now()
+      category: authentication
+    - id: PRE-002
+      description: JWT contains a valid sub claim
+      formal: jwt.sub != null AND jwt.sub != ''
+      category: authentication
+    - id: PRE-003
+      description: User record exists for the JWT sub claim
+      formal: db.users.exists(jwt.sub) == true
+      category: data_existence
+    - id: PRE-004
+      description: User account is in active state
+      formal: db.users.find(jwt.sub).status == 'active'
+      category: data_state
+    success:
+      status: 200
+      content_type: application/json
+      schema:
+        type: object
+        required:
+        - id
+        - email
+        - username
+        - first_name
+        - last_name
+        - created_at
+        - updated_at
+        properties:
+          id:
+            type: string
+          email:
+            type: string
+          username:
+            type: string
+          first_name:
+            type: string
+          last_name:
+            type: string
+          created_at:
+            type: string
+          updated_at:
+            type: string
+        forbidden_fields:
+        - password
+        - password_hash
+        - password_salt
+        - refresh_token
+        - reset_token
+        - verification_token
+        - internal_id
+        - admin_notes
+    failures:
+    - id: FAIL-001
+      when: No JWT bearer token provided
+      violates: PRE-001
+      status: 401
+      body:
+        error: unauthorized
+        message: Bearer token required
+    - id: FAIL-002
+      when: JWT token has expired
+      violates: PRE-001
+      status: 401
+      body:
+        error: unauthorized
+        message: Token has expired
+    - id: FAIL-003
+      when: JWT token is malformed
+      violates: PRE-001
+      status: 401
+      body:
+        error: unauthorized
+        message: Invalid token format
+    - id: FAIL-004
+      when: JWT token has wrong issuer
+      violates: PRE-001
+      status: 401
+      body:
+        error: unauthorized
+        message: Invalid token issuer
+    - id: FAIL-005
+      when: JWT token has been revoked
+      violates: PRE-001
+      status: 401
+      body:
+        error: unauthorized
+        message: Token has been revoked
+    - id: FAIL-006
+      when: JWT sub claim is missing
+      violates: PRE-002
+      status: 401
+      body:
+        error: unauthorized
+        message: 'Invalid token: missing subject'
+    - id: FAIL-007
+      when: JWT sub claim is empty string
+      violates: PRE-002
+      status: 401
+      body:
+        error: unauthorized
+        message: 'Invalid token: empty subject'
+    - id: FAIL-008
+      when: User record never existed
+      violates: PRE-003
+      status: 404
+      body:
+        error: not_found
+        message: User not found
+    - id: FAIL-009
+      when: User record is soft-deleted
+      violates: PRE-003
+      status: 404
+      body:
+        error: not_found
+        message: User not found
+    - id: FAIL-010
+      when: User record is hard-deleted
+      violates: PRE-003
+      status: 404
+      body:
+        error: not_found
+        message: User not found
+    - id: FAIL-011
+      when: User account is inactive
+      violates: PRE-004
+      status: 403
+      body:
+        error: forbidden
+        message: Account is inactive
+    - id: FAIL-012
+      when: User account is suspended
+      violates: PRE-004
+      status: 403
+      body:
+        error: forbidden
+        message: Account is suspended
+    - id: FAIL-013
+      when: User account is pending
+      violates: PRE-004
+      status: 403
+      body:
+        error: forbidden
+        message: Account is pending activation
+    - id: FAIL-014
+      when: User account is locked
+      violates: PRE-004
+      status: 423
+      body:
+        error: locked
+        message: Account is locked
+    - id: FAIL-015
+      when: Per-user rate limit exceeded
+      violates: PRE-001
+      status: 429
+      body:
+        error: rate_limit_exceeded
+        message: Too many requests
+    - id: FAIL-016
+      when: Global rate limit exceeded
+      violates: PRE-001
+      status: 429
+      body:
+        error: rate_limit_exceeded
+        message: Service temporarily unavailable
+    - id: FAIL-017
+      when: Database dependency is down
+      violates: PRE-003
+      status: 503
+      body:
+        error: service_unavailable
+        message: Database temporarily unavailable
+    - id: FAIL-018
+      when: Database connection timeout
+      violates: PRE-003
+      status: 504
+      body:
+        error: timeout
+        message: Request timeout
+    - id: FAIL-019
+      when: Database connection refused
+      violates: PRE-003
+      status: 503
+      body:
+        error: service_unavailable
+        message: Unable to connect to database
+    - id: FAIL-020
+      when: JWT validation service timeout
+      violates: PRE-001
+      status: 504
+      body:
+        error: timeout
+        message: Authentication service timeout
+    invariants:
+    - id: INV-001
+      type: security
+      rule: 'Response MUST NOT contain fields: admin_notes, internal_id, password,
+        password_hash, password_salt, refresh_token, reset_token, verification_token'
+      formal: '''password'' not in response.keys() AND ''password_hash'' not in response.keys()
+        AND ''password_salt'' not in response.keys() AND ''refresh_token'' not in
+        response.keys() AND ''reset_token'' not in response.keys() AND ''verification_token''
+        not in response.keys() AND ''internal_id'' not in response.keys() AND ''admin_notes''
+        not in response.keys()'
+  verification:
+  - refs:
+    - success
+    - FAIL-001
+    - FAIL-002
+    - FAIL-003
+    - FAIL-004
+    - FAIL-005
+    - FAIL-006
+    - FAIL-007
+    - FAIL-008
+    - FAIL-009
+    - FAIL-010
+    - FAIL-011
+    - FAIL-012
+    - FAIL-013
+    - FAIL-014
+    - FAIL-015
+    - FAIL-016
+    - FAIL-017
+    - FAIL-018
+    - FAIL-019
+    - FAIL-020
+    - INV-001
+    skill: cucumber_java
+    output: dog-service/src/test/resources/features/dev_1.feature
+- id: REQ-002
+  ac_checkbox: 1
+  ac_text: Profile endpoint responds within 500ms p99
+  title: Profile endpoint responds within 500ms p99
+  type: performance_sla
+  contract:
+    invariants:
+    - id: INV-001
+      type: security
+      rule: 'Response MUST NOT contain fields: admin_notes, internal_id, password,
+        password_hash, password_salt, refresh_token, reset_token, verification_token'
+      formal: 'Response MUST NOT contain fields: admin_notes, internal_id, password,
+        password_hash, password_salt, refresh_token, reset_token, verification_token'
+    preconditions:
+    - id: PRE-001
+      description: Valid JWT bearer token is present
+      formal: jwt != null AND jwt.exp > now()
+      category: authentication
+    - id: PRE-002
+      description: JWT contains a valid sub claim
+      formal: jwt.sub != null AND jwt.sub != ''
+      category: authentication
+    - id: PRE-003
+      description: User record exists for the JWT sub claim
+      formal: db.users.exists(jwt.sub) == true
+      category: data_existence
+    - id: PRE-004
+      description: User account is in active state
+      formal: db.users.find(jwt.sub).status == 'active'
+      category: data_state
+  verification:
+  - refs:
+    - success
+    - FAIL-001
+    - FAIL-002
+    - FAIL-003
+    - FAIL-004
+    - FAIL-005
+    - FAIL-006
+    - FAIL-007
+    - FAIL-008
+    - FAIL-009
+    - FAIL-010
+    - FAIL-011
+    - FAIL-012
+    - FAIL-013
+    - FAIL-014
+    - FAIL-015
+    - FAIL-016
+    - FAIL-017
+    - FAIL-018
+    - FAIL-019
+    - FAIL-020
+    - INV-001
+    skill: newrelic_alert_config
+    output: .verify/generated/dev_1_alerts.json
+- id: REQ-003
+  ac_checkbox: 2
+  ac_text: Profile data is never exposed to other users
+  title: Profile data is never exposed to other users
+  type: security_invariant
+  contract:
+    invariants:
+    - id: INV-001
+      type: security
+      rule: 'Response MUST NOT contain fields: admin_notes, internal_id, password,
+        password_hash, password_salt, refresh_token, reset_token, verification_token'
+      formal: 'Response MUST NOT contain fields: admin_notes, internal_id, password,
+        password_hash, password_salt, refresh_token, reset_token, verification_token'
+    preconditions:
+    - id: PRE-001
+      description: Valid JWT bearer token is present
+      formal: jwt != null AND jwt.exp > now()
+      category: authentication
+    - id: PRE-002
+      description: JWT contains a valid sub claim
+      formal: jwt.sub != null AND jwt.sub != ''
+      category: authentication
+    - id: PRE-003
+      description: User record exists for the JWT sub claim
+      formal: db.users.exists(jwt.sub) == true
+      category: data_existence
+    - id: PRE-004
+      description: User account is in active state
+      formal: db.users.find(jwt.sub).status == 'active'
+      category: data_state
+  verification:
+  - refs:
+    - success
+    - FAIL-001
+    - FAIL-002
+    - FAIL-003
+    - FAIL-004
+    - FAIL-005
+    - FAIL-006
+    - FAIL-007
+    - FAIL-008
+    - FAIL-009
+    - FAIL-010
+    - FAIL-011
+    - FAIL-012
+    - FAIL-013
+    - FAIL-014
+    - FAIL-015
+    - FAIL-016
+    - FAIL-017
+    - FAIL-018
+    - FAIL-019
+    - FAIL-020
+    - INV-001
+    skill: pytest_unit_test
+    output: .verify/generated/test_dev_1_security.py
+traceability:
+  ac_mappings:
+  - ac_checkbox: 0
+    ac_text: User can view their profile via GET /api/v1/users/me
+    pass_condition: ALL_PASS
+    required_verifications:
+    - ref: REQ-001.success
+      description: 'Happy path: HTTP 200'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-001
+      description: 'Failure: No JWT bearer token provided'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-002
+      description: 'Failure: JWT token has expired'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-003
+      description: 'Failure: JWT token is malformed'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-004
+      description: 'Failure: JWT token has wrong issuer'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-005
+      description: 'Failure: JWT token has been revoked'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-006
+      description: 'Failure: JWT sub claim is missing'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-007
+      description: 'Failure: JWT sub claim is empty string'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-008
+      description: 'Failure: User record never existed'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-009
+      description: 'Failure: User record is soft-deleted'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-010
+      description: 'Failure: User record is hard-deleted'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-011
+      description: 'Failure: User account is inactive'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-012
+      description: 'Failure: User account is suspended'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-013
+      description: 'Failure: User account is pending'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-014
+      description: 'Failure: User account is locked'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-015
+      description: 'Failure: Per-user rate limit exceeded'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-016
+      description: 'Failure: Global rate limit exceeded'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-017
+      description: 'Failure: Database dependency is down'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-018
+      description: 'Failure: Database connection timeout'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-019
+      description: 'Failure: Database connection refused'
+      verification_type: test_result
+    - ref: REQ-001.FAIL-020
+      description: 'Failure: JWT validation service timeout'
+      verification_type: test_result
+    - ref: REQ-001.INV-001
+      description: 'Invariant: Response MUST NOT contain fields: admin_notes, internal_id,
+        password, password_hash, password_salt, refresh_token, reset_token, verification_token'
+      verification_type: test_result
+  - ac_checkbox: 1
+    ac_text: Profile endpoint responds within 500ms p99
+    pass_condition: ALL_PASS
+    required_verifications:
+    - ref: REQ-002.INV-001
+      description: 'Invariant: Response MUST NOT contain fields: admin_notes, internal_id,
+        password, password_hash, password_salt, refresh_token, reset_token, verification_token'
+      verification_type: config_validation
+  - ac_checkbox: 2
+    ac_text: Profile data is never exposed to other users
+    pass_condition: ALL_PASS
+    required_verifications:
+    - ref: REQ-003.INV-001
+      description: 'Invariant: Response MUST NOT contain fields: admin_notes, internal_id,
+        password, password_hash, password_salt, refresh_token, reset_token, verification_token'
+      verification_type: test_result
