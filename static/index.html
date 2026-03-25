@@ -684,7 +684,7 @@ async function generateTests() {
   const btn = document.getElementById('btnTests');
   const status = document.getElementById('testStatus');
   btn.disabled = true;
-  status.textContent = 'Calling Claude API to generate Cucumber tests...';
+  status.textContent = 'Copying verification skill to target repo...';
   status.className = 'action-status';
 
   try {
@@ -697,42 +697,30 @@ async function generateTests() {
       return;
     }
 
-    const files = data.generated_files || {};
-    const paths = data.all_paths || [];
-    status.textContent = `Generated ${paths.length} files`;
+    status.textContent = 'Skill copied to ' + data.skill_dest;
     status.className = 'action-status ok';
 
-    // Show generated files
     const testPanel = document.getElementById('testPanel');
     let html = '';
 
-    // Feature file
-    if (files.feature) {
-      html += `<div class="spec-panel" style="margin-top:20px">
-        <div class="spec-panel-header">GHERKIN FEATURE &mdash; ${files.feature.path}</div>
-        <div class="spec-panel-body"><pre>${escapeHtml(files.feature.content)}</pre></div>
-      </div>`;
-    }
+    // Success message with instructions
+    html += `<div style="margin-top:20px;padding:16px 20px;background:rgba(0,184,148,0.08);border:1px solid rgba(0,184,148,0.25);border-radius:var(--radius);">
+      <div style="font-size:13px;font-weight:600;color:var(--green);margin-bottom:8px;">Skill Deployed</div>
+      <div style="font-size:12px;color:var(--text);line-height:1.6;">
+        <strong>${data.skill_id}</strong> skill copied to <code>${data.skill_dest}</code><br>
+        Spec copied to <code>${data.spec_dest}</code><br><br>
+        <strong>Next step:</strong> Open the target repo in Claude Code and run the skill to generate Cucumber tests.<br>
+        The skill will use the spec + constitution to generate tagged .feature files and Java step definitions.
+      </div>
+    </div>`;
 
-    // Step definition
-    if (files.step_definition) {
+    // Show copied files
+    const files = data.copied_files || {};
+    for (const [name, file] of Object.entries(files)) {
       html += `<div class="spec-panel" style="margin-top:12px">
-        <div class="spec-panel-header">JAVA STEP DEFINITIONS &mdash; ${files.step_definition.path}</div>
-        <div class="spec-panel-body"><pre>${escapeHtml(files.step_definition.content)}</pre></div>
+        <div class="spec-panel-header">${name} &mdash; ${file.path}</div>
+        <div class="spec-panel-body"><pre>${escapeHtml(file.content)}</pre></div>
       </div>`;
-    }
-
-    // Validation warnings
-    const warnings = (data.steps || []).filter(s => s.status === 'warning');
-    if (warnings.length) {
-      html += '<div style="margin-top:12px;padding:12px 16px;background:rgba(253,203,110,0.08);border:1px solid rgba(253,203,110,0.25);border-radius:8px;">';
-      html += '<div style="font-size:11px;color:var(--orange);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Validation Warnings</div>';
-      warnings.forEach(w => {
-        (w.errors || []).forEach(e => {
-          html += `<div style="font-size:12px;color:var(--text);margin-bottom:4px;">&mdash; ${e}</div>`;
-        });
-      });
-      html += '</div>';
     }
 
     testPanel.className = '';

@@ -1,0 +1,86 @@
+{"timestamp": "2026-03-25T11:10:22.798509+00:00", "event_type": "llm_called", "phase": "phase_0", "data": {"prompt_length": 41, "phase_title": "Phase 1 of 4: Interface & Actor Discovery"}}
+{"timestamp": "2026-03-25T11:10:22.799062+00:00", "event_type": "llm_responded", "phase": "phase_0", "data": {"response_length": 132, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T11:10:22.800687+00:00", "event_type": "developer_interaction", "phase": "phase_0", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T11:10:22.801022+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T11:10:22.802486+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": ".verify/sessions/ADV-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T11:10:22.802876+00:00", "event_type": "llm_called", "phase": "phase_1", "data": {"prompt_length": 33, "phase_title": "Phase 2 of 4: Happy Path Contract"}}
+{"timestamp": "2026-03-25T11:10:22.803291+00:00", "event_type": "llm_responded", "phase": "phase_1", "data": {"response_length": 363, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T11:11:26.985068+00:00", "event_type": "llm_called", "phase": "phase_0", "data": {"prompt_length": 41, "phase_title": "Phase 1 of 4: Interface & Actor Discovery"}}
+{"timestamp": "2026-03-25T11:12:03.715705+00:00", "event_type": "llm_called", "phase": "phase_0", "data": {"prompt_length": 41, "phase_title": "Phase 1 of 4: Interface & Actor Discovery"}}
+{"timestamp": "2026-03-25T11:13:03.470453+00:00", "event_type": "llm_called", "phase": "phase_0", "data": {"prompt_length": 41, "phase_title": "Phase 1 of 4: Interface & Actor Discovery"}}
+{"timestamp": "2026-03-25T11:13:03.471196+00:00", "event_type": "llm_responded", "phase": "phase_0", "data": {"response_length": 132, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T11:13:03.472938+00:00", "event_type": "developer_interaction", "phase": "phase_0", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T11:13:03.473371+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T11:13:03.474863+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": ".verify/sessions/ADV-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T11:13:03.475260+00:00", "event_type": "llm_called", "phase": "phase_1", "data": {"prompt_length": 33, "phase_title": "Phase 2 of 4: Happy Path Contract"}}
+{"timestamp": "2026-03-25T11:13:03.475566+00:00", "event_type": "llm_responded", "phase": "phase_1", "data": {"response_length": 363, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T11:16:38.993947+00:00", "event_type": "llm_called", "phase": "phase_0", "data": {"prompt_length": 41, "phase_title": "Phase 1 of 4: Interface & Actor Discovery"}}
+{"timestamp": "2026-03-25T11:16:38.994511+00:00", "event_type": "llm_responded", "phase": "phase_0", "data": {"response_length": 132, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T11:16:38.995922+00:00", "event_type": "developer_interaction", "phase": "phase_0", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T11:16:38.996270+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T11:16:38.997840+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": ".verify/sessions/ADV-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T11:16:38.998708+00:00", "event_type": "llm_called", "phase": "phase_1", "data": {"prompt_length": 33, "phase_title": "Phase 2 of 4: Happy Path Contract"}}
+{"timestamp": "2026-03-25T11:16:38.999083+00:00", "event_type": "llm_responded", "phase": "phase_1", "data": {"response_length": 363, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T11:20:24.523621+00:00", "event_type": "llm_called", "phase": "phase_0", "data": {"prompt_length": 41, "phase_title": "Phase 1 of 4: Interface & Actor Discovery"}}
+{"timestamp": "2026-03-25T11:20:24.524173+00:00", "event_type": "llm_responded", "phase": "phase_0", "data": {"response_length": 132, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T11:20:24.525773+00:00", "event_type": "developer_interaction", "phase": "phase_0", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T11:20:24.526120+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T11:20:24.527462+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": ".verify/sessions/ADV-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T11:20:24.527901+00:00", "event_type": "llm_called", "phase": "phase_1", "data": {"prompt_length": 33, "phase_title": "Phase 2 of 4: Happy Path Contract"}}
+{"timestamp": "2026-03-25T11:20:24.528295+00:00", "event_type": "llm_responded", "phase": "phase_1", "data": {"response_length": 363, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T12:07:03.549604+00:00", "event_type": "llm_called", "phase": "phase_0", "data": {"prompt_length": 41, "phase_title": "Phase 1 of 4: Interface & Actor Discovery"}}
+{"timestamp": "2026-03-25T12:07:03.550119+00:00", "event_type": "llm_responded", "phase": "phase_0", "data": {"response_length": 132, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T12:07:03.551956+00:00", "event_type": "developer_interaction", "phase": "phase_0", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T12:07:03.552402+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T12:07:03.553860+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": ".verify/sessions/ADV-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T12:07:03.554242+00:00", "event_type": "llm_called", "phase": "phase_1", "data": {"prompt_length": 33, "phase_title": "Phase 2 of 4: Happy Path Contract"}}
+{"timestamp": "2026-03-25T12:07:03.554589+00:00", "event_type": "llm_responded", "phase": "phase_1", "data": {"response_length": 363, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T12:15:19.333807+00:00", "event_type": "llm_called", "phase": "phase_0", "data": {"prompt_length": 41, "phase_title": "Phase 1 of 4: Interface & Actor Discovery"}}
+{"timestamp": "2026-03-25T12:15:19.334422+00:00", "event_type": "llm_responded", "phase": "phase_0", "data": {"response_length": 132, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T12:15:19.336188+00:00", "event_type": "developer_interaction", "phase": "phase_0", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T12:15:19.336694+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T12:15:19.338147+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": ".verify/sessions/ADV-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T12:15:19.338572+00:00", "event_type": "llm_called", "phase": "phase_1", "data": {"prompt_length": 33, "phase_title": "Phase 2 of 4: Happy Path Contract"}}
+{"timestamp": "2026-03-25T12:15:19.338942+00:00", "event_type": "llm_responded", "phase": "phase_1", "data": {"response_length": 363, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T12:15:27.207033+00:00", "event_type": "llm_called", "phase": "phase_0", "data": {"prompt_length": 41, "phase_title": "Phase 1 of 4: Interface & Actor Discovery"}}
+{"timestamp": "2026-03-25T12:15:27.207370+00:00", "event_type": "llm_responded", "phase": "phase_0", "data": {"response_length": 132, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T12:15:27.208722+00:00", "event_type": "developer_interaction", "phase": "phase_0", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T12:15:27.209049+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T12:15:27.210081+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": ".verify/sessions/ADV-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T12:15:27.210505+00:00", "event_type": "llm_called", "phase": "phase_1", "data": {"prompt_length": 33, "phase_title": "Phase 2 of 4: Happy Path Contract"}}
+{"timestamp": "2026-03-25T12:15:27.210856+00:00", "event_type": "llm_responded", "phase": "phase_1", "data": {"response_length": 363, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:06:54.205566+00:00", "event_type": "llm_called", "phase": "phase_0", "data": {"prompt_length": 41, "phase_title": "Phase 1 of 4: Interface & Actor Discovery"}}
+{"timestamp": "2026-03-25T14:06:54.206225+00:00", "event_type": "llm_responded", "phase": "phase_0", "data": {"response_length": 132, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:06:54.207598+00:00", "event_type": "developer_interaction", "phase": "phase_0", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:06:54.207890+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T14:06:54.209288+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": ".verify/sessions/ADV-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T14:06:54.209963+00:00", "event_type": "llm_called", "phase": "phase_1", "data": {"prompt_length": 33, "phase_title": "Phase 2 of 4: Happy Path Contract"}}
+{"timestamp": "2026-03-25T14:06:54.210303+00:00", "event_type": "llm_responded", "phase": "phase_1", "data": {"response_length": 363, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:15:54.997391+00:00", "event_type": "llm_called", "phase": "phase_0", "data": {"prompt_length": 41, "phase_title": "Phase 1 of 7: Interface & Actor Discovery"}}
+{"timestamp": "2026-03-25T14:15:54.997964+00:00", "event_type": "llm_responded", "phase": "phase_0", "data": {"response_length": 132, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:15:54.998950+00:00", "event_type": "developer_interaction", "phase": "phase_0", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:15:54.999284+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T14:15:55.000326+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": ".verify/sessions/ADV-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T14:15:55.000835+00:00", "event_type": "llm_called", "phase": "phase_1", "data": {"prompt_length": 33, "phase_title": "Phase 2 of 7: Happy Path Contract"}}
+{"timestamp": "2026-03-25T14:15:55.001119+00:00", "event_type": "llm_responded", "phase": "phase_1", "data": {"response_length": 363, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:17:21.116748+00:00", "event_type": "llm_called", "phase": "phase_0", "data": {"prompt_length": 41, "phase_title": "Phase 1 of 7: Interface & Actor Discovery"}}
+{"timestamp": "2026-03-25T14:17:21.117426+00:00", "event_type": "llm_responded", "phase": "phase_0", "data": {"response_length": 132, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:17:21.118642+00:00", "event_type": "developer_interaction", "phase": "phase_0", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:17:21.119019+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T14:17:21.121035+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": ".verify/sessions/ADV-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T14:17:21.121351+00:00", "event_type": "llm_called", "phase": "phase_1", "data": {"prompt_length": 33, "phase_title": "Phase 2 of 7: Happy Path Contract"}}
+{"timestamp": "2026-03-25T14:17:21.121630+00:00", "event_type": "llm_responded", "phase": "phase_1", "data": {"response_length": 363, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:18:37.302183+00:00", "event_type": "llm_called", "phase": "phase_0", "data": {"prompt_length": 41, "phase_title": "Phase 1 of 7: Interface & Actor Discovery"}}
+{"timestamp": "2026-03-25T14:18:37.302952+00:00", "event_type": "llm_responded", "phase": "phase_0", "data": {"response_length": 132, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:18:37.304919+00:00", "event_type": "developer_interaction", "phase": "phase_0", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:18:37.305396+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T14:18:37.306749+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": ".verify/sessions/ADV-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T14:18:37.307213+00:00", "event_type": "llm_called", "phase": "phase_1", "data": {"prompt_length": 33, "phase_title": "Phase 2 of 7: Happy Path Contract"}}
+{"timestamp": "2026-03-25T14:18:37.307631+00:00", "event_type": "llm_responded", "phase": "phase_1", "data": {"response_length": 363, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:27:38.211751+00:00", "event_type": "llm_called", "phase": "phase_0", "data": {"prompt_length": 41, "phase_title": "Phase 1 of 7: Interface & Actor Discovery"}}
+{"timestamp": "2026-03-25T14:27:38.212315+00:00", "event_type": "llm_responded", "phase": "phase_0", "data": {"response_length": 132, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:27:38.213470+00:00", "event_type": "developer_interaction", "phase": "phase_0", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:27:38.213805+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T14:27:38.215021+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": ".verify/sessions/ADV-001/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T14:27:38.215457+00:00", "event_type": "llm_called", "phase": "phase_1", "data": {"prompt_length": 33, "phase_title": "Phase 2 of 7: Happy Path Contract"}}
+{"timestamp": "2026-03-25T14:27:38.215860+00:00", "event_type": "llm_responded", "phase": "phase_1", "data": {"response_length": 363, "result_count": 1}, "duration_ms": 0}

@@ -1,0 +1,216 @@
+{"timestamp": "2026-03-25T14:11:20.527396+00:00", "event_type": "llm_called", "phase": "phase_0", "data": {"prompt_length": 41, "phase_title": "Phase 1 of 4: Interface & Actor Discovery"}}
+{"timestamp": "2026-03-25T14:11:20.528176+00:00", "event_type": "llm_responded", "phase": "phase_0", "data": {"response_length": 132, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:11:20.530199+00:00", "event_type": "developer_interaction", "phase": "phase_0", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:11:20.530543+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T14:11:20.532070+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T14:11:20.532485+00:00", "event_type": "llm_called", "phase": "phase_1", "data": {"prompt_length": 33, "phase_title": "Phase 2 of 4: Happy Path Contract"}}
+{"timestamp": "2026-03-25T14:11:20.532828+00:00", "event_type": "llm_responded", "phase": "phase_1", "data": {"response_length": 363, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:11:20.533884+00:00", "event_type": "developer_interaction", "phase": "phase_1", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:11:20.534214+00:00", "event_type": "phase_started", "phase": "phase_2"}
+{"timestamp": "2026-03-25T14:11:20.535395+00:00", "event_type": "checkpoint_saved", "phase": "phase_2", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_2.json"}}
+{"timestamp": "2026-03-25T14:11:20.535823+00:00", "event_type": "llm_called", "phase": "phase_2", "data": {"prompt_length": 40, "phase_title": "Phase 3 of 4: Precondition Formalization"}}
+{"timestamp": "2026-03-25T14:11:20.536200+00:00", "event_type": "llm_responded", "phase": "phase_2", "data": {"response_length": 457, "result_count": 3}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:11:20.537249+00:00", "event_type": "developer_interaction", "phase": "phase_2", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:11:20.537588+00:00", "event_type": "llm_called", "phase": "phase_2", "data": {"prompt_length": 38, "phase_title": "Phase 4 of 4: Failure Mode Enumeration"}}
+{"timestamp": "2026-03-25T14:11:20.537938+00:00", "event_type": "llm_responded", "phase": "phase_2", "data": {"response_length": 488, "result_count": 3}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:11:20.538896+00:00", "event_type": "developer_interaction", "phase": "phase_2", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:11:20.539227+00:00", "event_type": "phase_started", "phase": "phase_3"}
+{"timestamp": "2026-03-25T14:11:20.540598+00:00", "event_type": "checkpoint_saved", "phase": "phase_3", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_3.json"}}
+{"timestamp": "2026-03-25T14:14:56.976638+00:00", "event_type": "llm_called", "phase": "phase_0", "data": {"prompt_length": 41, "phase_title": "Phase 1 of 7: Interface & Actor Discovery"}}
+{"timestamp": "2026-03-25T14:14:56.977223+00:00", "event_type": "llm_responded", "phase": "phase_0", "data": {"response_length": 132, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:14:56.978962+00:00", "event_type": "developer_interaction", "phase": "phase_0", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:14:56.979308+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T14:14:56.980799+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T14:14:56.981232+00:00", "event_type": "llm_called", "phase": "phase_1", "data": {"prompt_length": 33, "phase_title": "Phase 2 of 7: Happy Path Contract"}}
+{"timestamp": "2026-03-25T14:14:56.981572+00:00", "event_type": "llm_responded", "phase": "phase_1", "data": {"response_length": 363, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:14:56.982879+00:00", "event_type": "developer_interaction", "phase": "phase_1", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:14:56.983259+00:00", "event_type": "phase_started", "phase": "phase_2"}
+{"timestamp": "2026-03-25T14:14:56.984489+00:00", "event_type": "checkpoint_saved", "phase": "phase_2", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_2.json"}}
+{"timestamp": "2026-03-25T14:14:56.984896+00:00", "event_type": "llm_called", "phase": "phase_2", "data": {"prompt_length": 40, "phase_title": "Phase 3 of 7: Precondition Formalization"}}
+{"timestamp": "2026-03-25T14:14:56.985275+00:00", "event_type": "llm_responded", "phase": "phase_2", "data": {"response_length": 457, "result_count": 3}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:14:56.986319+00:00", "event_type": "developer_interaction", "phase": "phase_2", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:14:56.986638+00:00", "event_type": "llm_called", "phase": "phase_2", "data": {"prompt_length": 38, "phase_title": "Phase 4 of 7: Failure Mode Enumeration"}}
+{"timestamp": "2026-03-25T14:14:56.986918+00:00", "event_type": "llm_responded", "phase": "phase_2", "data": {"response_length": 488, "result_count": 3}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:14:56.987820+00:00", "event_type": "developer_interaction", "phase": "phase_2", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:14:56.988107+00:00", "event_type": "phase_started", "phase": "phase_3"}
+{"timestamp": "2026-03-25T14:14:56.989677+00:00", "event_type": "checkpoint_saved", "phase": "phase_3", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_3.json"}}
+{"timestamp": "2026-03-25T14:14:56.989978+00:00", "event_type": "llm_called", "phase": "phase_3", "data": {"prompt_length": 34, "phase_title": "Phase 5 of 7: Invariant Extraction"}}
+{"timestamp": "2026-03-25T14:14:56.990312+00:00", "event_type": "llm_responded", "phase": "phase_3", "data": {"response_length": 361, "result_count": 3}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:14:56.991409+00:00", "event_type": "developer_interaction", "phase": "phase_3", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:14:56.991700+00:00", "event_type": "phase_started", "phase": "phase_4"}
+{"timestamp": "2026-03-25T14:14:56.992874+00:00", "event_type": "checkpoint_saved", "phase": "phase_4", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_4.json"}}
+{"timestamp": "2026-03-25T14:14:56.993204+00:00", "event_type": "llm_called", "phase": "phase_4", "data": {"prompt_length": 42, "phase_title": "Phase 6 of 7: Completeness Sweep & Routing"}}
+{"timestamp": "2026-03-25T14:14:56.993500+00:00", "event_type": "llm_responded", "phase": "phase_4", "data": {"response_length": 1481, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:14:56.994508+00:00", "event_type": "developer_interaction", "phase": "phase_4", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:14:56.994823+00:00", "event_type": "phase_started", "phase": "phase_5"}
+{"timestamp": "2026-03-25T14:14:56.996133+00:00", "event_type": "checkpoint_saved", "phase": "phase_5", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_5.json"}}
+{"timestamp": "2026-03-25T14:14:56.996478+00:00", "event_type": "llm_called", "phase": "phase_5", "data": {"prompt_length": 32, "phase_title": "Phase 7 of 7: EARS Formalization"}}
+{"timestamp": "2026-03-25T14:14:56.996803+00:00", "event_type": "llm_responded", "phase": "phase_5", "data": {"response_length": 822, "result_count": 4}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:14:56.997863+00:00", "event_type": "developer_interaction", "phase": "phase_5", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:14:56.998148+00:00", "event_type": "phase_started", "phase": "phase_6"}
+{"timestamp": "2026-03-25T14:14:56.999551+00:00", "event_type": "checkpoint_saved", "phase": "phase_6", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_6.json"}}
+{"timestamp": "2026-03-25T14:15:19.958676+00:00", "event_type": "llm_called", "phase": "phase_0", "data": {"prompt_length": 41, "phase_title": "Phase 1 of 7: Interface & Actor Discovery"}}
+{"timestamp": "2026-03-25T14:15:19.960253+00:00", "event_type": "llm_responded", "phase": "phase_0", "data": {"response_length": 132, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:15:19.962803+00:00", "event_type": "developer_interaction", "phase": "phase_0", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:15:19.963541+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T14:15:19.965025+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T14:15:19.965424+00:00", "event_type": "llm_called", "phase": "phase_1", "data": {"prompt_length": 33, "phase_title": "Phase 2 of 7: Happy Path Contract"}}
+{"timestamp": "2026-03-25T14:15:19.965803+00:00", "event_type": "llm_responded", "phase": "phase_1", "data": {"response_length": 363, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:15:19.967342+00:00", "event_type": "developer_interaction", "phase": "phase_1", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:15:19.967804+00:00", "event_type": "phase_started", "phase": "phase_2"}
+{"timestamp": "2026-03-25T14:15:19.968945+00:00", "event_type": "checkpoint_saved", "phase": "phase_2", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_2.json"}}
+{"timestamp": "2026-03-25T14:15:19.969324+00:00", "event_type": "llm_called", "phase": "phase_2", "data": {"prompt_length": 40, "phase_title": "Phase 3 of 7: Precondition Formalization"}}
+{"timestamp": "2026-03-25T14:15:19.969648+00:00", "event_type": "llm_responded", "phase": "phase_2", "data": {"response_length": 457, "result_count": 3}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:15:19.971171+00:00", "event_type": "developer_interaction", "phase": "phase_2", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:15:19.971514+00:00", "event_type": "llm_called", "phase": "phase_2", "data": {"prompt_length": 38, "phase_title": "Phase 4 of 7: Failure Mode Enumeration"}}
+{"timestamp": "2026-03-25T14:15:19.971913+00:00", "event_type": "llm_responded", "phase": "phase_2", "data": {"response_length": 488, "result_count": 3}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:15:19.973225+00:00", "event_type": "developer_interaction", "phase": "phase_2", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:15:19.973557+00:00", "event_type": "phase_started", "phase": "phase_3"}
+{"timestamp": "2026-03-25T14:15:19.974946+00:00", "event_type": "checkpoint_saved", "phase": "phase_3", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_3.json"}}
+{"timestamp": "2026-03-25T14:15:19.975879+00:00", "event_type": "llm_called", "phase": "phase_3", "data": {"prompt_length": 34, "phase_title": "Phase 5 of 7: Invariant Extraction"}}
+{"timestamp": "2026-03-25T14:15:19.976306+00:00", "event_type": "llm_responded", "phase": "phase_3", "data": {"response_length": 361, "result_count": 3}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:15:19.977548+00:00", "event_type": "developer_interaction", "phase": "phase_3", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:15:19.977896+00:00", "event_type": "phase_started", "phase": "phase_4"}
+{"timestamp": "2026-03-25T14:15:19.979465+00:00", "event_type": "checkpoint_saved", "phase": "phase_4", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_4.json"}}
+{"timestamp": "2026-03-25T14:15:19.979861+00:00", "event_type": "llm_called", "phase": "phase_4", "data": {"prompt_length": 42, "phase_title": "Phase 6 of 7: Completeness Sweep & Routing"}}
+{"timestamp": "2026-03-25T14:15:19.980294+00:00", "event_type": "llm_responded", "phase": "phase_4", "data": {"response_length": 1481, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:15:19.981842+00:00", "event_type": "developer_interaction", "phase": "phase_4", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:15:19.982264+00:00", "event_type": "phase_started", "phase": "phase_5"}
+{"timestamp": "2026-03-25T14:15:19.984512+00:00", "event_type": "checkpoint_saved", "phase": "phase_5", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_5.json"}}
+{"timestamp": "2026-03-25T14:15:19.984988+00:00", "event_type": "llm_called", "phase": "phase_5", "data": {"prompt_length": 32, "phase_title": "Phase 7 of 7: EARS Formalization"}}
+{"timestamp": "2026-03-25T14:15:19.985618+00:00", "event_type": "llm_responded", "phase": "phase_5", "data": {"response_length": 822, "result_count": 4}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:15:19.987239+00:00", "event_type": "developer_interaction", "phase": "phase_5", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:15:19.987666+00:00", "event_type": "phase_started", "phase": "phase_6"}
+{"timestamp": "2026-03-25T14:15:19.989392+00:00", "event_type": "checkpoint_saved", "phase": "phase_6", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_6.json"}}
+{"timestamp": "2026-03-25T14:15:54.709045+00:00", "event_type": "llm_called", "phase": "phase_0", "data": {"prompt_length": 41, "phase_title": "Phase 1 of 7: Interface & Actor Discovery"}}
+{"timestamp": "2026-03-25T14:15:54.709684+00:00", "event_type": "llm_responded", "phase": "phase_0", "data": {"response_length": 132, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:15:54.711157+00:00", "event_type": "developer_interaction", "phase": "phase_0", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:15:54.711534+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T14:15:54.712599+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T14:15:54.712947+00:00", "event_type": "llm_called", "phase": "phase_1", "data": {"prompt_length": 33, "phase_title": "Phase 2 of 7: Happy Path Contract"}}
+{"timestamp": "2026-03-25T14:15:54.713267+00:00", "event_type": "llm_responded", "phase": "phase_1", "data": {"response_length": 363, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:15:54.714412+00:00", "event_type": "developer_interaction", "phase": "phase_1", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:15:54.714693+00:00", "event_type": "phase_started", "phase": "phase_2"}
+{"timestamp": "2026-03-25T14:15:54.715696+00:00", "event_type": "checkpoint_saved", "phase": "phase_2", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_2.json"}}
+{"timestamp": "2026-03-25T14:15:54.716027+00:00", "event_type": "llm_called", "phase": "phase_2", "data": {"prompt_length": 40, "phase_title": "Phase 3 of 7: Precondition Formalization"}}
+{"timestamp": "2026-03-25T14:15:54.716315+00:00", "event_type": "llm_responded", "phase": "phase_2", "data": {"response_length": 457, "result_count": 3}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:15:54.717331+00:00", "event_type": "developer_interaction", "phase": "phase_2", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:15:54.717697+00:00", "event_type": "llm_called", "phase": "phase_2", "data": {"prompt_length": 38, "phase_title": "Phase 4 of 7: Failure Mode Enumeration"}}
+{"timestamp": "2026-03-25T14:15:54.718296+00:00", "event_type": "llm_responded", "phase": "phase_2", "data": {"response_length": 488, "result_count": 3}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:15:54.719555+00:00", "event_type": "developer_interaction", "phase": "phase_2", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:15:54.719901+00:00", "event_type": "phase_started", "phase": "phase_3"}
+{"timestamp": "2026-03-25T14:15:54.721301+00:00", "event_type": "checkpoint_saved", "phase": "phase_3", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_3.json"}}
+{"timestamp": "2026-03-25T14:15:54.721656+00:00", "event_type": "llm_called", "phase": "phase_3", "data": {"prompt_length": 34, "phase_title": "Phase 5 of 7: Invariant Extraction"}}
+{"timestamp": "2026-03-25T14:15:54.721956+00:00", "event_type": "llm_responded", "phase": "phase_3", "data": {"response_length": 361, "result_count": 3}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:15:54.723028+00:00", "event_type": "developer_interaction", "phase": "phase_3", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:15:54.723343+00:00", "event_type": "phase_started", "phase": "phase_4"}
+{"timestamp": "2026-03-25T14:15:54.724599+00:00", "event_type": "checkpoint_saved", "phase": "phase_4", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_4.json"}}
+{"timestamp": "2026-03-25T14:15:54.724917+00:00", "event_type": "llm_called", "phase": "phase_4", "data": {"prompt_length": 42, "phase_title": "Phase 6 of 7: Completeness Sweep & Routing"}}
+{"timestamp": "2026-03-25T14:15:54.725213+00:00", "event_type": "llm_responded", "phase": "phase_4", "data": {"response_length": 1481, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:15:54.726545+00:00", "event_type": "developer_interaction", "phase": "phase_4", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:15:54.726870+00:00", "event_type": "phase_started", "phase": "phase_5"}
+{"timestamp": "2026-03-25T14:15:54.728237+00:00", "event_type": "checkpoint_saved", "phase": "phase_5", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_5.json"}}
+{"timestamp": "2026-03-25T14:15:54.728564+00:00", "event_type": "llm_called", "phase": "phase_5", "data": {"prompt_length": 32, "phase_title": "Phase 7 of 7: EARS Formalization"}}
+{"timestamp": "2026-03-25T14:15:54.728875+00:00", "event_type": "llm_responded", "phase": "phase_5", "data": {"response_length": 822, "result_count": 4}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:15:54.729946+00:00", "event_type": "developer_interaction", "phase": "phase_5", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:15:54.730320+00:00", "event_type": "phase_started", "phase": "phase_6"}
+{"timestamp": "2026-03-25T14:15:54.731690+00:00", "event_type": "checkpoint_saved", "phase": "phase_6", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_6.json"}}
+{"timestamp": "2026-03-25T14:17:20.856817+00:00", "event_type": "llm_called", "phase": "phase_0", "data": {"prompt_length": 41, "phase_title": "Phase 1 of 7: Interface & Actor Discovery"}}
+{"timestamp": "2026-03-25T14:17:20.857584+00:00", "event_type": "llm_responded", "phase": "phase_0", "data": {"response_length": 132, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:17:20.858979+00:00", "event_type": "developer_interaction", "phase": "phase_0", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:17:20.859458+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T14:17:20.860823+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T14:17:20.861226+00:00", "event_type": "llm_called", "phase": "phase_1", "data": {"prompt_length": 33, "phase_title": "Phase 2 of 7: Happy Path Contract"}}
+{"timestamp": "2026-03-25T14:17:20.861613+00:00", "event_type": "llm_responded", "phase": "phase_1", "data": {"response_length": 363, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:17:20.862913+00:00", "event_type": "developer_interaction", "phase": "phase_1", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:17:20.863370+00:00", "event_type": "phase_started", "phase": "phase_2"}
+{"timestamp": "2026-03-25T14:17:20.864655+00:00", "event_type": "checkpoint_saved", "phase": "phase_2", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_2.json"}}
+{"timestamp": "2026-03-25T14:17:20.865064+00:00", "event_type": "llm_called", "phase": "phase_2", "data": {"prompt_length": 40, "phase_title": "Phase 3 of 7: Precondition Formalization"}}
+{"timestamp": "2026-03-25T14:17:20.865423+00:00", "event_type": "llm_responded", "phase": "phase_2", "data": {"response_length": 457, "result_count": 3}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:17:20.866484+00:00", "event_type": "developer_interaction", "phase": "phase_2", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:17:20.866775+00:00", "event_type": "llm_called", "phase": "phase_2", "data": {"prompt_length": 38, "phase_title": "Phase 4 of 7: Failure Mode Enumeration"}}
+{"timestamp": "2026-03-25T14:17:20.867130+00:00", "event_type": "llm_responded", "phase": "phase_2", "data": {"response_length": 488, "result_count": 3}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:17:20.868106+00:00", "event_type": "developer_interaction", "phase": "phase_2", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:17:20.868426+00:00", "event_type": "phase_started", "phase": "phase_3"}
+{"timestamp": "2026-03-25T14:17:20.870314+00:00", "event_type": "checkpoint_saved", "phase": "phase_3", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_3.json"}}
+{"timestamp": "2026-03-25T14:17:20.870851+00:00", "event_type": "llm_called", "phase": "phase_3", "data": {"prompt_length": 34, "phase_title": "Phase 5 of 7: Invariant Extraction"}}
+{"timestamp": "2026-03-25T14:17:20.871218+00:00", "event_type": "llm_responded", "phase": "phase_3", "data": {"response_length": 361, "result_count": 3}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:17:20.872236+00:00", "event_type": "developer_interaction", "phase": "phase_3", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:17:20.872551+00:00", "event_type": "phase_started", "phase": "phase_4"}
+{"timestamp": "2026-03-25T14:17:20.873868+00:00", "event_type": "checkpoint_saved", "phase": "phase_4", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_4.json"}}
+{"timestamp": "2026-03-25T14:17:20.874241+00:00", "event_type": "llm_called", "phase": "phase_4", "data": {"prompt_length": 42, "phase_title": "Phase 6 of 7: Completeness Sweep & Routing"}}
+{"timestamp": "2026-03-25T14:17:20.874570+00:00", "event_type": "llm_responded", "phase": "phase_4", "data": {"response_length": 1481, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:17:20.875595+00:00", "event_type": "developer_interaction", "phase": "phase_4", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:17:20.875890+00:00", "event_type": "phase_started", "phase": "phase_5"}
+{"timestamp": "2026-03-25T14:17:20.877198+00:00", "event_type": "checkpoint_saved", "phase": "phase_5", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_5.json"}}
+{"timestamp": "2026-03-25T14:17:20.877701+00:00", "event_type": "llm_called", "phase": "phase_5", "data": {"prompt_length": 32, "phase_title": "Phase 7 of 7: EARS Formalization"}}
+{"timestamp": "2026-03-25T14:17:20.878160+00:00", "event_type": "llm_responded", "phase": "phase_5", "data": {"response_length": 822, "result_count": 4}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:17:20.879335+00:00", "event_type": "developer_interaction", "phase": "phase_5", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:17:20.879648+00:00", "event_type": "phase_started", "phase": "phase_6"}
+{"timestamp": "2026-03-25T14:17:20.881004+00:00", "event_type": "checkpoint_saved", "phase": "phase_6", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_6.json"}}
+{"timestamp": "2026-03-25T14:18:37.006506+00:00", "event_type": "llm_called", "phase": "phase_0", "data": {"prompt_length": 41, "phase_title": "Phase 1 of 7: Interface & Actor Discovery"}}
+{"timestamp": "2026-03-25T14:18:37.007362+00:00", "event_type": "llm_responded", "phase": "phase_0", "data": {"response_length": 132, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:18:37.008836+00:00", "event_type": "developer_interaction", "phase": "phase_0", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:18:37.009178+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T14:18:37.010338+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T14:18:37.010763+00:00", "event_type": "llm_called", "phase": "phase_1", "data": {"prompt_length": 33, "phase_title": "Phase 2 of 7: Happy Path Contract"}}
+{"timestamp": "2026-03-25T14:18:37.011119+00:00", "event_type": "llm_responded", "phase": "phase_1", "data": {"response_length": 363, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:18:37.012210+00:00", "event_type": "developer_interaction", "phase": "phase_1", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:18:37.012606+00:00", "event_type": "phase_started", "phase": "phase_2"}
+{"timestamp": "2026-03-25T14:18:37.013964+00:00", "event_type": "checkpoint_saved", "phase": "phase_2", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_2.json"}}
+{"timestamp": "2026-03-25T14:18:37.014357+00:00", "event_type": "llm_called", "phase": "phase_2", "data": {"prompt_length": 40, "phase_title": "Phase 3 of 7: Precondition Formalization"}}
+{"timestamp": "2026-03-25T14:18:37.014688+00:00", "event_type": "llm_responded", "phase": "phase_2", "data": {"response_length": 457, "result_count": 3}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:18:37.015807+00:00", "event_type": "developer_interaction", "phase": "phase_2", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:18:37.016146+00:00", "event_type": "llm_called", "phase": "phase_2", "data": {"prompt_length": 38, "phase_title": "Phase 4 of 7: Failure Mode Enumeration"}}
+{"timestamp": "2026-03-25T14:18:37.016460+00:00", "event_type": "llm_responded", "phase": "phase_2", "data": {"response_length": 488, "result_count": 3}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:18:37.017480+00:00", "event_type": "developer_interaction", "phase": "phase_2", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:18:37.017792+00:00", "event_type": "phase_started", "phase": "phase_3"}
+{"timestamp": "2026-03-25T14:18:37.019507+00:00", "event_type": "checkpoint_saved", "phase": "phase_3", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_3.json"}}
+{"timestamp": "2026-03-25T14:18:37.019896+00:00", "event_type": "llm_called", "phase": "phase_3", "data": {"prompt_length": 34, "phase_title": "Phase 5 of 7: Invariant Extraction"}}
+{"timestamp": "2026-03-25T14:18:37.020250+00:00", "event_type": "llm_responded", "phase": "phase_3", "data": {"response_length": 361, "result_count": 3}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:18:37.021468+00:00", "event_type": "developer_interaction", "phase": "phase_3", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:18:37.021808+00:00", "event_type": "phase_started", "phase": "phase_4"}
+{"timestamp": "2026-03-25T14:18:37.023152+00:00", "event_type": "checkpoint_saved", "phase": "phase_4", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_4.json"}}
+{"timestamp": "2026-03-25T14:18:37.023522+00:00", "event_type": "llm_called", "phase": "phase_4", "data": {"prompt_length": 42, "phase_title": "Phase 6 of 7: Completeness Sweep & Routing"}}
+{"timestamp": "2026-03-25T14:18:37.023942+00:00", "event_type": "llm_responded", "phase": "phase_4", "data": {"response_length": 1481, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:18:37.025015+00:00", "event_type": "developer_interaction", "phase": "phase_4", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:18:37.025328+00:00", "event_type": "phase_started", "phase": "phase_5"}
+{"timestamp": "2026-03-25T14:18:37.028044+00:00", "event_type": "checkpoint_saved", "phase": "phase_5", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_5.json"}}
+{"timestamp": "2026-03-25T14:18:37.028486+00:00", "event_type": "llm_called", "phase": "phase_5", "data": {"prompt_length": 32, "phase_title": "Phase 7 of 7: EARS Formalization"}}
+{"timestamp": "2026-03-25T14:18:37.028868+00:00", "event_type": "llm_responded", "phase": "phase_5", "data": {"response_length": 822, "result_count": 4}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:18:37.029945+00:00", "event_type": "developer_interaction", "phase": "phase_5", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:18:37.030312+00:00", "event_type": "phase_started", "phase": "phase_6"}
+{"timestamp": "2026-03-25T14:18:37.031787+00:00", "event_type": "checkpoint_saved", "phase": "phase_6", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_6.json"}}
+{"timestamp": "2026-03-25T14:27:37.911282+00:00", "event_type": "llm_called", "phase": "phase_0", "data": {"prompt_length": 41, "phase_title": "Phase 1 of 7: Interface & Actor Discovery"}}
+{"timestamp": "2026-03-25T14:27:37.912201+00:00", "event_type": "llm_responded", "phase": "phase_0", "data": {"response_length": 132, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:27:37.913485+00:00", "event_type": "developer_interaction", "phase": "phase_0", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:27:37.913792+00:00", "event_type": "phase_started", "phase": "phase_1"}
+{"timestamp": "2026-03-25T14:27:37.914908+00:00", "event_type": "checkpoint_saved", "phase": "phase_1", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_1.json"}}
+{"timestamp": "2026-03-25T14:27:37.915267+00:00", "event_type": "llm_called", "phase": "phase_1", "data": {"prompt_length": 33, "phase_title": "Phase 2 of 7: Happy Path Contract"}}
+{"timestamp": "2026-03-25T14:27:37.915586+00:00", "event_type": "llm_responded", "phase": "phase_1", "data": {"response_length": 363, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:27:37.916703+00:00", "event_type": "developer_interaction", "phase": "phase_1", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:27:37.917055+00:00", "event_type": "phase_started", "phase": "phase_2"}
+{"timestamp": "2026-03-25T14:27:37.918254+00:00", "event_type": "checkpoint_saved", "phase": "phase_2", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_2.json"}}
+{"timestamp": "2026-03-25T14:27:37.918772+00:00", "event_type": "llm_called", "phase": "phase_2", "data": {"prompt_length": 40, "phase_title": "Phase 3 of 7: Precondition Formalization"}}
+{"timestamp": "2026-03-25T14:27:37.919185+00:00", "event_type": "llm_responded", "phase": "phase_2", "data": {"response_length": 457, "result_count": 3}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:27:37.920342+00:00", "event_type": "developer_interaction", "phase": "phase_2", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:27:37.920655+00:00", "event_type": "llm_called", "phase": "phase_2", "data": {"prompt_length": 38, "phase_title": "Phase 4 of 7: Failure Mode Enumeration"}}
+{"timestamp": "2026-03-25T14:27:37.921015+00:00", "event_type": "llm_responded", "phase": "phase_2", "data": {"response_length": 488, "result_count": 3}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:27:37.922105+00:00", "event_type": "developer_interaction", "phase": "phase_2", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:27:37.922526+00:00", "event_type": "phase_started", "phase": "phase_3"}
+{"timestamp": "2026-03-25T14:27:37.924235+00:00", "event_type": "checkpoint_saved", "phase": "phase_3", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_3.json"}}
+{"timestamp": "2026-03-25T14:27:37.924620+00:00", "event_type": "llm_called", "phase": "phase_3", "data": {"prompt_length": 34, "phase_title": "Phase 5 of 7: Invariant Extraction"}}
+{"timestamp": "2026-03-25T14:27:37.925028+00:00", "event_type": "llm_responded", "phase": "phase_3", "data": {"response_length": 361, "result_count": 3}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:27:37.926140+00:00", "event_type": "developer_interaction", "phase": "phase_3", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:27:37.926475+00:00", "event_type": "phase_started", "phase": "phase_4"}
+{"timestamp": "2026-03-25T14:27:37.927971+00:00", "event_type": "checkpoint_saved", "phase": "phase_4", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_4.json"}}
+{"timestamp": "2026-03-25T14:27:37.928377+00:00", "event_type": "llm_called", "phase": "phase_4", "data": {"prompt_length": 42, "phase_title": "Phase 6 of 7: Completeness Sweep & Routing"}}
+{"timestamp": "2026-03-25T14:27:37.928746+00:00", "event_type": "llm_responded", "phase": "phase_4", "data": {"response_length": 1481, "result_count": 1}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:27:37.929756+00:00", "event_type": "developer_interaction", "phase": "phase_4", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:27:37.930066+00:00", "event_type": "phase_started", "phase": "phase_5"}
+{"timestamp": "2026-03-25T14:27:37.931586+00:00", "event_type": "checkpoint_saved", "phase": "phase_5", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_5.json"}}
+{"timestamp": "2026-03-25T14:27:37.931949+00:00", "event_type": "llm_called", "phase": "phase_5", "data": {"prompt_length": 32, "phase_title": "Phase 7 of 7: EARS Formalization"}}
+{"timestamp": "2026-03-25T14:27:37.932351+00:00", "event_type": "llm_responded", "phase": "phase_5", "data": {"response_length": 822, "result_count": 4}, "duration_ms": 0}
+{"timestamp": "2026-03-25T14:27:37.933586+00:00", "event_type": "developer_interaction", "phase": "phase_5", "data": {"interaction_type": "approval", "input": "approve"}}
+{"timestamp": "2026-03-25T14:27:37.933897+00:00", "event_type": "phase_started", "phase": "phase_6"}
+{"timestamp": "2026-03-25T14:27:37.935497+00:00", "event_type": "checkpoint_saved", "phase": "phase_6", "data": {"checkpoint_path": ".verify/sessions/PHASE7-002/checkpoint_phase_6.json"}}

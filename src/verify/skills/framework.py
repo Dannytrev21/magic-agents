@@ -1,174 +1,120 @@
-"""Skill Agent Framework — base class, registry, and dispatch for verification skills.
+"""Skill Agent Framework — base class, registry, and dispatcher for verification skills.
 
-Each verification skill follows the Agent Skills open standard (SKILL.md).
-The SKILL_REGISTRY maps skill IDs to concrete VerificationSkill implementations.
-dispatch_skills() reads routing tables from compiled specs and dispatches to skills.
+Each verification skill is a self-contained module that reads a spec contract
+and generates a proof-of-correctness artifact (test file, config, scenario).
 
-This module is the bridge between the deterministic routing table in compiler.py
-and the AI-powered (or template-based) skill implementations.
+This implements Epic 4.1 of the Intent-to-Verification pipeline.
 """
 
+import logging
 import os
 from abc import ABC, abstractmethod
-from typing import Optional
 
-import yaml
-
-
-class VerificationSkill(ABC):
-    """Base class for all verification skills.
-
-    Each skill knows how to generate a specific type of verification artifact
-    (tests, configs, scenarios) from a spec contract.
-
-    Follows Block's 3 Principles:
-    - Principle 1: Tag coverage validation is deterministic (tag_enforcer.py)
-    - Principle 2: Adapting templates to contracts is the AI's job
-    - Principle 3: Constitutional rules in SKILL.md, not suggestions
-    """
-
-    skill_id: str = ""
-    description: str = ""
-
-    @abstractmethod
-    def generate(
-        self,
-        spec: dict,
-        requirement: dict,
-        constitution: dict,
-    ) -> str:
-        """Generate verification artifact content from a spec requirement.
-
-        Args:
-            spec: The full compiled spec dict.
-            requirement: A single requirement dict from spec['requirements'].
-            constitution: The project constitution dict.
-
-        Returns:
-            The generated file content as a string.
-        """
-
-    def output_path(self, spec: dict, requirement: dict) -> str:
-        """Return the output file path for this requirement.
-
-        Default implementation reads from the requirement's verification block.
-        """
-        verification = requirement.get("verification", [{}])
-        if verification:
-            return verification[0].get("output", "")
-        return ""
-
-    def expected_refs(self, requirement: dict) -> list[str]:
-        """Return the list of spec refs this skill should cover.
-
-        Used by tag_enforcer to validate coverage.
-        """
-        req_id = requirement.get("id", "REQ-001")
-        verification = requirement.get("verification", [{}])
-        refs = []
-        if verification:
-            raw_refs = verification[0].get("refs", [])
-            for ref in raw_refs:
-                if ref.startswith("REQ-"):
-                    refs.append(ref)
-                else:
-                    refs.append(f"{req_id}.{ref}")
-        return refs
+logger = logging.getLogger(__name__)
 
 
 # ── Skill Registry ──
 
-SKILL_REGISTRY: dict[str, VerificationSkill] = {}
+SKILL_REGISTRY: dict[str, "VerificationSkill"] = {}
 
 
-def register_skill(skill_cls):
-    """Decorator to register a skill class in the global registry.
+def register_skill(skill: "VerificationSkill") -> None:
+    """Register a verification skill in the global registry.
 
-    Usage:
-        @register_skill
-        class PytestSkill(VerificationSkill):
-            skill_id = "pytest_unit_test"
-            ...
+    Raises ValueError if a skill with the same ID is already registered.
     """
-    instance = skill_cls()
-    SKILL_REGISTRY[instance.skill_id] = instance
-    return skill_cls
+    if skill.skill_id in SKILL_REGISTRY:
+        raise ValueError(
+            f"Skill '{skill.skill_id}' is already registered. "
+            f"Cannot register duplicate skill IDs."
+        )
+    SKILL_REGISTRY[skill.skill_id] = skill
+    logger.info(f"Registered verification skill: {skill.skill_id}")
 
 
-# ── Skill Dispatch ──
+# ── Base Class ──
 
 
-def dispatch_skills(
-    spec: dict,
-    constitution: dict,
-    output_base: str = ".",
-) -> dict[str, str]:
+class VerificationSkill(ABC):
+    """Abstract base class for all verification skills.
+
+    Each skill reads a spec contract and generates verification artifacts.
+    Follows the Agent Skills open standard (SKILL.md).
+    """
+
+    skill_id: str = ""
+
+    @abstractmethod
+    def generate(self, spec: dict, requirement: dict, constitution: dict) -> str:
+        """Generate verification artifact content from a spec requirement.
+
+        Args:
+            spec: The full spec dict
+            requirement: A single requirement from spec["requirements"]
+            constitution: The project constitution dict
+
+        Returns:
+            The generated artifact content as a string
+        """
+        ...
+
+    @abstractmethod
+    def output_path(self, spec: dict, requirement: dict) -> str:
+        """Return the file path where the generated artifact should be written.
+
+        Args:
+            spec: The full spec dict
+            requirement: A single requirement from spec["requirements"]
+
+        Returns:
+            Absolute or relative path for the output file
+        """
+        ...
+
+
+# ── Dispatcher ──
+
+
+def dispatch_skills(spec: dict, constitution: dict) -> dict[str, str]:
     """Dispatch verification skills based on the spec's routing table.
 
-    For each requirement in the spec, looks up the skill in SKILL_REGISTRY
-    and calls skill.generate(). Writes output files and returns a mapping
-    of {output_path: content}.
+    Reads each requirement's verification block, looks up the skill in
+    SKILL_REGISTRY, calls generate(), and writes the output to disk.
 
     Args:
-        spec: The compiled spec dict (from compile_spec or loaded YAML).
-        constitution: The project constitution dict.
-        output_base: Base directory for output paths (default: current dir).
+        spec: The complete spec dict with requirements and verification blocks
+        constitution: The project constitution dict
 
     Returns:
-        Dict mapping output file paths to their generated content.
+        Dict mapping output_path -> generated content for all dispatched skills
     """
     generated_files: dict[str, str] = {}
 
     for requirement in spec.get("requirements", []):
-        for verification in requirement.get("verification", []):
-            skill_id = verification.get("skill", "")
-            output_path = verification.get("output", "")
+        for ver_entry in requirement.get("verification", []):
+            skill_id = ver_entry.get("skill", "")
+            output = ver_entry.get("output", "")
 
-            if not skill_id or not output_path:
-                continue
-
-            # Look up skill in registry
             skill = SKILL_REGISTRY.get(skill_id)
             if skill is None:
-                print(f"  [WARN] No registered skill for '{skill_id}', skipping {output_path}")
+                logger.warning(
+                    f"Skill '{skill_id}' not found in registry for "
+                    f"requirement {requirement.get('id', '?')}. Skipping."
+                )
                 continue
 
-            # Resolve output path
-            full_path = os.path.join(output_base, output_path) if output_base != "." else output_path
-
-            # Generate the content
             try:
                 content = skill.generate(spec, requirement, constitution)
+                # Write to disk
+                os.makedirs(os.path.dirname(output) or ".", exist_ok=True)
+                with open(output, "w") as f:
+                    f.write(content)
+                generated_files[output] = content
+                logger.info(f"Generated {output} via skill '{skill_id}'")
             except Exception as e:
-                print(f"  [ERROR] Skill '{skill_id}' failed for {requirement.get('id', '?')}: {e}")
-                continue
-
-            if not content or not content.strip():
-                print(f"  [WARN] Skill '{skill_id}' produced empty output for {requirement.get('id', '?')}")
-                continue
-
-            # Write to disk
-            os.makedirs(os.path.dirname(full_path), exist_ok=True)
-            with open(full_path, "w") as f:
-                f.write(content)
-
-            generated_files[full_path] = content
-            print(f"  [OK] {skill_id} → {full_path}")
+                logger.error(
+                    f"Skill '{skill_id}' failed for requirement "
+                    f"{requirement.get('id', '?')}: {e}"
+                )
 
     return generated_files
-
-
-def dispatch_skills_for_spec_path(
-    spec_path: str,
-    constitution_path: str = "constitution.yaml",
-) -> dict[str, str]:
-    """Convenience: dispatch skills from file paths instead of dicts."""
-    with open(spec_path) as f:
-        spec = yaml.safe_load(f)
-
-    constitution = {}
-    if os.path.exists(constitution_path):
-        with open(constitution_path) as f:
-            constitution = yaml.safe_load(f) or {}
-
-    return dispatch_skills(spec, constitution)

@@ -1,0 +1,323 @@
+{
+  "jira_key": "PHASE7-002",
+  "jira_summary": "Full Seven Phase Test",
+  "current_phase": "phase_3",
+  "raw_acceptance_criteria": [
+    {
+      "index": 0,
+      "text": "User can view their profile via GET /api/v1/users/me",
+      "checked": false
+    }
+  ],
+  "constitution": {
+    "project": {
+      "name": "dog-service",
+      "language": "java",
+      "version": 17,
+      "framework": "spring-boot",
+      "framework_version": "3.2",
+      "build_tool": "gradle"
+    },
+    "source_structure": {
+      "main": "dog-service/src/main/java",
+      "test": "dog-service/src/test/java",
+      "resources": "dog-service/src/main/resources",
+      "package_root": "com.example.dogservice"
+    },
+    "testing": {
+      "unit_framework": "junit5",
+      "assertion_library": "assertj",
+      "mocking_library": "mockito",
+      "test_runner": "cd dog-service && ./gradlew test",
+      "result_format": "dog-service/build/test-results/test/*.xml",
+      "naming_convention": "{ClassName}Test.java",
+      "method_naming": "should_{expected_behavior}_when_{condition}",
+      "patterns": [
+        {
+          "id": "controller_test",
+          "description": "REST controller tests using MockMvc",
+          "example_file": "dog-service/src/test/java/com/example/dogservice/controller/DogControllerTest.java",
+          "annotations": [
+            "@WebMvcTest",
+            "@MockBean"
+          ],
+          "imports": [
+            "org.springframework.test.web.servlet.MockMvc",
+            "org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest",
+            "org.springframework.boot.test.mock.mockito.MockBean",
+            "static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*",
+            "static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*"
+          ],
+          "assertion_style": "mockMvc.perform(get(...)).andExpect(status().isOk())"
+        },
+        {
+          "id": "cucumber_test",
+          "description": "Cucumber BDD feature tests with Spring Boot",
+          "example_file": "dog-service/src/test/resources/features/dogs.feature",
+          "annotations": [
+            "@Suite",
+            "@IncludeEngines(\"cucumber\")",
+            "@CucumberContextConfiguration"
+          ],
+          "imports": [
+            "io.cucumber.java.en.Given",
+            "io.cucumber.java.en.When",
+            "io.cucumber.java.en.Then",
+            "org.springframework.boot.test.web.client.TestRestTemplate"
+          ],
+          "assertion_style": "assertThat(response.getStatusCode().value()).isEqualTo(200)"
+        },
+        {
+          "id": "service_test",
+          "description": "Service layer unit tests with Mockito",
+          "example_file": "dog-service/src/test/java/com/example/dogservice/service/DogServiceTest.java",
+          "annotations": [
+            "@ExtendWith(MockitoExtension.class)",
+            "@Mock",
+            "@InjectMocks"
+          ],
+          "imports": [
+            "org.mockito.junit.jupiter.MockitoExtension",
+            "static org.assertj.core.api.Assertions.assertThat"
+          ],
+          "assertion_style": "assertThat(result).isEqualTo(expected)"
+        }
+      ]
+    },
+    "api": {
+      "style": "rest",
+      "base_path": "/api/v1",
+      "auth": {
+        "mechanism": "jwt_bearer",
+        "token_header": "Authorization",
+        "token_prefix": "Bearer ",
+        "claims_required": [
+          "sub",
+          "exp",
+          "iat"
+        ]
+      },
+      "error_format": {
+        "schema": {
+          "type": "object",
+          "required": [
+            "error",
+            "message",
+            "timestamp",
+            "path"
+          ],
+          "properties": {
+            "error": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            },
+            "timestamp": {
+              "type": "string",
+              "format": "iso8601"
+            },
+            "path": {
+              "type": "string"
+            }
+          }
+        },
+        "example": "{\"error\":\"not_found\",\"message\":\"Dog not found with id: 99\",\"timestamp\":\"2026-03-22T10:00:00Z\",\"path\":\"/api/v1/dogs/99\"}"
+      },
+      "common_status_codes": [
+        200,
+        201,
+        204,
+        400,
+        401,
+        403,
+        404,
+        409,
+        422,
+        429,
+        500
+      ]
+    },
+    "observability": {
+      "apm_provider": "new_relic",
+      "alert_format": "nrql",
+      "default_latency_sla_ms": 500,
+      "logging_framework": "slf4j",
+      "log_format": "structured_json",
+      "tracing": "opentelemetry"
+    },
+    "conventions": {
+      "branch_naming": "feat/{jira_key}-{short-description}",
+      "commit_format": "[{jira_key}] {message}",
+      "pr_template": ".github/pull_request_template.md"
+    },
+    "verification_standards": {
+      "required_verification_types": [
+        "unit_test",
+        "schema_contract"
+      ],
+      "security_invariants": [
+        "Never expose password, passwordHash, ssn, or internalId in API responses",
+        "Never allow cross-tenant data access",
+        "All PII fields must have X-Data-Classification header"
+      ]
+    }
+  },
+  "classifications": [
+    {
+      "ac_index": 0,
+      "type": "api_behavior",
+      "actor": "authenticated_user",
+      "interface": {
+        "method": "GET",
+        "path": "/api/v1/users/me"
+      }
+    }
+  ],
+  "postconditions": [
+    {
+      "ac_index": 0,
+      "status": 200,
+      "content_type": "application/json",
+      "schema": {
+        "id": {
+          "type": "integer",
+          "required": true
+        },
+        "name": {
+          "type": "string",
+          "required": true
+        },
+        "breed": {
+          "type": "string",
+          "required": true
+        },
+        "age": {
+          "type": "integer",
+          "required": false
+        }
+      },
+      "constraints": [
+        "response.id == path.id"
+      ],
+      "forbidden_fields": [
+        "password",
+        "internalId",
+        "ssn"
+      ]
+    }
+  ],
+  "preconditions": [
+    {
+      "id": "PRE-001",
+      "description": "Valid JWT bearer token is present",
+      "formal": "jwt != null AND jwt.exp > now()",
+      "category": "authentication"
+    },
+    {
+      "id": "PRE-002",
+      "description": "Resource referenced by path exists",
+      "formal": "db.resource.exists(path.id) == true",
+      "category": "data_existence"
+    },
+    {
+      "id": "PRE-003",
+      "description": "User has access to the resource",
+      "formal": "resource.owner == jwt.sub OR jwt.role == 'admin'",
+      "category": "authorization"
+    }
+  ],
+  "failure_modes": [
+    {
+      "id": "FAIL-001",
+      "description": "No auth token provided",
+      "violates": "PRE-001",
+      "status": 401,
+      "body": {
+        "error": "unauthorized",
+        "message": "Bearer token required"
+      }
+    },
+    {
+      "id": "FAIL-002",
+      "description": "Auth token expired",
+      "violates": "PRE-001",
+      "status": 401,
+      "body": {
+        "error": "unauthorized",
+        "message": "Token expired"
+      }
+    },
+    {
+      "id": "FAIL-003",
+      "description": "Resource not found",
+      "violates": "PRE-002",
+      "status": 404,
+      "body": {
+        "error": "not_found",
+        "message": "Resource not found"
+      }
+    }
+  ],
+  "invariants": [],
+  "verification_routing": {},
+  "ears_statements": [],
+  "traceability_map": {},
+  "approved": false,
+  "approved_by": "",
+  "approved_at": "",
+  "spec_path": "",
+  "generated_files": {},
+  "verdicts": [],
+  "all_passed": false,
+  "negotiation_log": [
+    {
+      "phase": "phase_0",
+      "role": "ai",
+      "content": "Phase 1 of 7: Interface & Actor Discovery: produced 1 items",
+      "timestamp": "2026-03-25T14:27:37.912584+00:00"
+    },
+    {
+      "phase": "phase_0",
+      "role": "human",
+      "content": "approve",
+      "timestamp": "2026-03-25T14:27:37.913785+00:00"
+    },
+    {
+      "phase": "phase_1",
+      "role": "ai",
+      "content": "Phase 2 of 7: Happy Path Contract: produced 1 items",
+      "timestamp": "2026-03-25T14:27:37.915879+00:00"
+    },
+    {
+      "phase": "phase_1",
+      "role": "human",
+      "content": "approve",
+      "timestamp": "2026-03-25T14:27:37.917048+00:00"
+    },
+    {
+      "phase": "phase_2",
+      "role": "ai",
+      "content": "Phase 3 of 7: Precondition Formalization: produced 3 items",
+      "timestamp": "2026-03-25T14:27:37.919558+00:00"
+    },
+    {
+      "phase": "phase_2",
+      "role": "human",
+      "content": "approve",
+      "timestamp": "2026-03-25T14:27:37.920650+00:00"
+    },
+    {
+      "phase": "phase_2",
+      "role": "ai",
+      "content": "Phase 4 of 7: Failure Mode Enumeration: produced 3 items",
+      "timestamp": "2026-03-25T14:27:37.921341+00:00"
+    },
+    {
+      "phase": "phase_2",
+      "role": "human",
+      "content": "approve",
+      "timestamp": "2026-03-25T14:27:37.922519+00:00"
+    }
+  ]
+}

@@ -4,12 +4,9 @@ version = "0.1.0"
 description = "Intent-to-Verification Spec Engine"
 requires-python = ">=3.10"
 dependencies = [
-    "anthropic",
     "fastapi",
     "uvicorn",
     "requests",
-    "pyyaml",
-    "python-dotenv",
 ]
 
 [project.optional-dependencies]
@@ -19,9 +16,6 @@ dev = [
     "httpx",
     "pyyaml",
 ]
-
-[project.scripts]
-specify = "verify.cli:main"
 
 [build-system]
 requires = ["setuptools>=68.0", "wheel"]

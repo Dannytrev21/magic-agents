@@ -1,0 +1,735 @@
+From 2e4eedf9d32fdc6fae6efeec64e9182006d15079 Mon Sep 17 00:00:00 2001
+From: Danny <danny.trev21@gmail.com>
+Date: Wed, 25 Mar 2026 17:40:41 -0400
+Subject: [PATCH] =?UTF-8?q?feat:=20implement=20Epic=204=20=E2=80=94=20Veri?=
+ =?UTF-8?q?fication=20Skill=20Framework,=20Pytest=20Skill,=20and=20Tag=20E?=
+ =?UTF-8?q?nforcer?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Adds the plugin architecture for verification skills (Feature 4.1), a pytest
+test generator skill that reads spec contracts and produces tagged test files
+(Feature 4.2), and tag coverage validation to ensure 100% spec ref coverage
+in generated tests (Feature 4.3). Updates web UI to use skill dispatch instead
+of the legacy generator, with tag validation step.
+
+TDD: 18 new tests covering framework imports, skill registration, dispatch,
+code generation, TestClient usage, spec ref coverage, and end-to-end generated
+test execution against the dummy app. All 21 tests pass.
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+---
+ src/verify/negotiation/web.py     |  37 ++++-
+ src/verify/skills/__init__.py     |   0
+ src/verify/skills/framework.py    | 120 ++++++++++++++
+ src/verify/skills/pytest_skill.py | 171 ++++++++++++++++++++
+ src/verify/skills/tag_enforcer.py |  71 +++++++++
+ tests/test_skills.py              | 251 ++++++++++++++++++++++++++++++
+ 6 files changed, 646 insertions(+), 4 deletions(-)
+ create mode 100644 src/verify/skills/__init__.py
+ create mode 100644 src/verify/skills/framework.py
+ create mode 100644 src/verify/skills/pytest_skill.py
+ create mode 100644 src/verify/skills/tag_enforcer.py
+ create mode 100644 tests/test_skills.py
+
+diff --git a/src/verify/negotiation/web.py b/src/verify/negotiation/web.py
+index 047cb2f..70b0ed6 100644
+--- a/src/verify/negotiation/web.py
++++ b/src/verify/negotiation/web.py
+@@ -19,6 +19,9 @@ from verify.compiler import compile_and_write
+ from verify.generator import generate_and_write
+ from verify.runner import run_and_parse
+ from verify.evaluator import evaluate_spec
++from verify.skills.framework import dispatch_skills
++from verify.skills.tag_enforcer import validate_tags
++import verify.skills.pytest_skill  # noqa: F401 — register pytest skill
+ 
+ app = FastAPI(title="Negotiation UI")
+ 
+@@ -194,12 +197,38 @@ async def generate_tests_endpoint():
+ 
+     steps = []
+     try:
+-        # Step 1: Generate tests
+-        test_path = generate_and_write(ctx.spec_path)
+-        with open(test_path) as f:
+-            test_content = f.read()
++        # Step 1: Generate tests via skill framework (Epic 4)
++        import yaml
++        with open(ctx.spec_path) as f:
++            spec = yaml.safe_load(f)
++        generated_files = dispatch_skills(spec, ctx.constitution or {})
++
++        if generated_files:
++            test_path = list(generated_files.keys())[0]
++            test_content = list(generated_files.values())[0]
++        else:
++            # Fallback to legacy generator
++            test_path = generate_and_write(ctx.spec_path)
++            with open(test_path) as f:
++                test_content = f.read()
+         steps.append({"step": "generate", "status": "ok", "path": test_path})
+ 
++        # Step 1.5: Tag validation (Epic 4.3)
++        expected_refs = []
++        for req in spec.get("requirements", []):
++            for ver in req.get("verification", []):
++                for ref in ver.get("refs", []):
++                    full_ref = f"{req['id']}.{ref}" if not ref.startswith("REQ") else ref
++                    expected_refs.append(full_ref)
++        tag_result = validate_tags(test_content, expected_refs)
++        steps.append({
++            "step": "tag_validation",
++            "status": "ok" if not tag_result["missing"] else "warning",
++            "covered": len(tag_result["covered"]),
++            "missing": tag_result["missing"],
++            "total": len(expected_refs),
++        })
++
+         # Step 2: Run tests
+         results = run_and_parse(test_path, ".verify/results")
+         cases = results["test_cases"]
+diff --git a/src/verify/skills/__init__.py b/src/verify/skills/__init__.py
+new file mode 100644
+index 0000000..e69de29
+diff --git a/src/verify/skills/framework.py b/src/verify/skills/framework.py
+new file mode 100644
+index 0000000..056815a
+--- /dev/null
++++ b/src/verify/skills/framework.py
+@@ -0,0 +1,120 @@
++"""Verification Skill Framework — base class, registry, and dispatcher.
++
++Feature 4.1: Plugin architecture where each verification skill is a self-contained module.
++Each skill follows the SKILL.md open standard for progressive disclosure.
++
++The routing table in compiler.py determines which skill handles which requirement type.
++This module provides the runtime dispatch mechanism.
++"""
++
++import logging
++import os
++from abc import ABC, abstractmethod
++
++logger = logging.getLogger(__name__)
++
++# ── Skill Registry ──
++# Maps skill_id → VerificationSkill instance
++SKILL_REGISTRY: dict[str, "VerificationSkill"] = {}
++
++
++class VerificationSkill(ABC):
++    """Base class for all verification skills.
++
++    Each skill generates proof-of-correctness artifacts (tests, configs, scenarios)
++    from a spec contract. Skills are dispatched by the routing table in compiler.py.
++    """
++
++    skill_id: str = ""
++
++    @abstractmethod
++    def generate(self, spec: dict, requirement: dict, constitution: dict) -> str:
++        """Generate the verification artifact content.
++
++        Args:
++            spec: The full spec dict (from .verify/specs/*.yaml)
++            requirement: The specific requirement dict from spec['requirements']
++            constitution: Repository constitution dict (coding patterns, tech stack)
++
++        Returns:
++            The generated artifact content as a string.
++        """
++        ...
++
++    @abstractmethod
++    def output_path(self, spec: dict, requirement: dict) -> str:
++        """Return where the artifact should be written.
++
++        Args:
++            spec: The full spec dict
++            requirement: The specific requirement dict
++
++        Returns:
++            File path string for the output artifact.
++        """
++        ...
++
++
++def register_skill(skill: VerificationSkill) -> None:
++    """Register a skill in the global SKILL_REGISTRY."""
++    if not skill.skill_id:
++        raise ValueError(f"Skill {type(skill).__name__} has no skill_id")
++    SKILL_REGISTRY[skill.skill_id] = skill
++    logger.info(f"Registered verification skill: {skill.skill_id}")
++
++
++def dispatch_skills(spec: dict, constitution: dict) -> dict[str, str]:
++    """Dispatch verification skills for all requirements in a spec.
++
++    Reads the 'verification' blocks from each requirement, looks up each skill
++    in SKILL_REGISTRY, calls generate(), and writes the output file.
++
++    Args:
++        spec: The full spec dict
++        constitution: Repository constitution dict
++
++    Returns:
++        Dict mapping {output_path: generated_content} for all generated files.
++    """
++    results: dict[str, str] = {}
++
++    for requirement in spec.get("requirements", []):
++        for verification in requirement.get("verification", []):
++            skill_id = verification.get("skill")
++            output = verification.get("output")
++
++            if not skill_id:
++                logger.warning(
++                    f"Requirement {requirement['id']} has no skill specified"
++                )
++                continue
++
++            skill = SKILL_REGISTRY.get(skill_id)
++            if skill is None:
++                logger.warning(
++                    f"No skill registered for '{skill_id}' "
++                    f"(requirement {requirement['id']})"
++                )
++                continue
++
++            # Generate the artifact
++            content = skill.generate(spec, requirement, constitution)
++
++            # Determine output path
++            if output:
++                path = output
++            else:
++                path = skill.output_path(spec, requirement)
++
++            # Write to disk
++            os.makedirs(os.path.dirname(path), exist_ok=True)
++            with open(path, "w") as f:
++                f.write(content)
++
++            results[path] = content
++            logger.info(
++                f"Generated {path} via skill '{skill_id}' "
++                f"for requirement {requirement['id']}"
++            )
++
++    return results
+diff --git a/src/verify/skills/pytest_skill.py b/src/verify/skills/pytest_skill.py
+new file mode 100644
+index 0000000..0e2b63a
+--- /dev/null
++++ b/src/verify/skills/pytest_skill.py
+@@ -0,0 +1,171 @@
++"""Pytest Unit Test Skill — generates tagged pytest test files from spec contracts.
++
++Feature 4.2: Reads the spec contract (success, failures, invariants) and generates
++a complete pytest test file. Each test function is tagged with its spec ref for
++traceability back to AC checkboxes.
++
++Uses FastAPI's TestClient for API behavior requirements.
++"""
++
++import textwrap
++
++from verify.skills.framework import VerificationSkill, register_skill
++
++
++class PytestSkill(VerificationSkill):
++    """Generates pytest test files from spec contracts.
++
++    Each generated test includes:
++    - Spec ref in the docstring as [REQ-xxx.ref]
++    - Spec ref in the function name as test_REQ_xxx_ref
++    - TestClient-based assertions against the dummy app
++    """
++
++    skill_id = "pytest_unit_test"
++
++    def generate(self, spec: dict, requirement: dict, constitution: dict) -> str:
++        """Generate a complete pytest test file for a requirement."""
++        contract = requirement.get("contract", {})
++        req_id = requirement["id"]
++        interface = contract.get("interface", {})
++        method = interface.get("method", "GET").lower()
++        path = interface.get("path", "/")
++
++        lines = [
++            '"""Auto-generated verification tests from spec.',
++            f'Requirement: {req_id} — {requirement.get("title", "")}',
++            '"""',
++            "",
++            "from fastapi.testclient import TestClient",
++            "",
++            "from dummy_app.main import app",
++            "",
++            "client = TestClient(app)",
++            "",
++        ]
++
++        # ── Success test ──
++        success = contract.get("success", {})
++        if success:
++            lines.append(self._gen_success_test(req_id, method, path, success))
++
++        # ── Failure tests ──
++        for failure in contract.get("failures", []):
++            lines.append(self._gen_failure_test(req_id, method, path, failure))
++
++        # ── Invariant tests ──
++        for inv in contract.get("invariants", []):
++            forbidden = success.get("schema", {}).get("forbidden_fields", [])
++            lines.append(self._gen_invariant_test(req_id, method, path, inv, forbidden))
++
++        return "\n".join(lines)
++
++    def output_path(self, spec: dict, requirement: dict) -> str:
++        """Return the output path from the spec's verification block."""
++        for ver in requirement.get("verification", []):
++            if ver.get("output"):
++                return ver["output"]
++        # Fallback: derive from jira key
++        key = spec.get("meta", {}).get("jira_key", "UNKNOWN").lower().replace("-", "_")
++        return f".verify/generated/test_{key}.py"
++
++    # ── Private generators ──
++
++    def _gen_success_test(
++        self, req_id: str, method: str, path: str, success: dict,
++    ) -> str:
++        status = success.get("status", 200)
++        required_fields = success.get("schema", {}).get("required", [])
++        fields_check = " and ".join(f'"{f}" in body' for f in required_fields)
++        safe_req = _safe(req_id)
++
++        return textwrap.dedent(f'''\
++            def test_{safe_req}_success():
++                """[{req_id}.success] Happy path returns correct data."""
++                response = client.{method}("{path}", headers={{"Authorization": "Bearer valid-token"}})
++                assert response.status_code == {status}, (
++                    f"Expected {status}, got {{response.status_code}}"
++                )
++                body = response.json()
++                assert {fields_check}, f"Missing required fields in {{body}}"
++
++        ''')
++
++    def _gen_failure_test(
++        self, req_id: str, method: str, path: str, failure: dict,
++    ) -> str:
++        fid = failure["id"]
++        status = failure["status"]
++        error_key = failure.get("body", {}).get("error", "unknown")
++        violates = failure.get("violates", "")
++        safe_req = _safe(req_id)
++        safe_fid = _safe(fid)
++
++        # Determine request params based on which precondition is violated
++        if violates == "PRE-001":
++            # Auth failure — no auth header
++            request_line = f'response = client.{method}("{path}")'
++        elif violates == "PRE-002":
++            # Data existence failure — invalid user token
++            request_line = (
++                f'response = client.{method}("{path}", '
++                f'headers={{"Authorization": "Bearer not-found-user"}})'
++            )
++        else:
++            # Generic failure — no auth header
++            request_line = f'response = client.{method}("{path}")'
++
++        return textwrap.dedent(f'''\
++            def test_{safe_req}_{safe_fid}():
++                """[{req_id}.{fid}] {failure.get("when", fid)}"""
++                {request_line}
++                assert response.status_code == {status}, (
++                    f"Expected {status}, got {{response.status_code}}"
++                )
++                body = response.json()
++                assert body["detail"]["error"] == "{error_key}", (
++                    f"Expected error '{error_key}', got {{body}}"
++                )
++
++        ''')
++
++    def _gen_invariant_test(
++        self,
++        req_id: str,
++        method: str,
++        path: str,
++        invariant: dict,
++        forbidden_fields: list[str],
++    ) -> str:
++        inv_id = invariant["id"]
++        safe_req = _safe(req_id)
++        safe_inv = _safe(inv_id)
++
++        if forbidden_fields:
++            forbidden_checks = " and ".join(
++                f'"{f}" not in body' for f in forbidden_fields
++            )
++        else:
++            forbidden_checks = "True  # No forbidden fields specified"
++
++        return textwrap.dedent(f'''\
++            def test_{safe_req}_{safe_inv}():
++                """[{req_id}.{inv_id}] {invariant.get("rule", inv_id)}"""
++                response = client.{method}("{path}", headers={{"Authorization": "Bearer valid-token"}})
++                assert response.status_code == 200
++                body = response.json()
++                assert {forbidden_checks}, (
++                    f"Forbidden fields found in response: {{body.keys()}}"
++                )
++
++        ''')
++
++
++def _safe(name: str) -> str:
++    """Convert a spec ref like REQ-001 to a valid Python identifier."""
++    return name.replace("-", "_")
++
++
++# Auto-register on import
++_instance = PytestSkill()
++register_skill(_instance)
+diff --git a/src/verify/skills/tag_enforcer.py b/src/verify/skills/tag_enforcer.py
+new file mode 100644
+index 0000000..56fd6b7
+--- /dev/null
++++ b/src/verify/skills/tag_enforcer.py
+@@ -0,0 +1,71 @@
++"""Tag Contract Enforcement — validates that generated tests cover all spec refs.
++
++Feature 4.3: Every generated test method must be tagged with its spec ref.
++This module scans generated test content and compares against expected refs
++from the spec's verification block.
++
++This is 100% deterministic — zero AI. It's a back-pressure mechanism from
++harness engineering: agents validate their own work before declaring success.
++"""
++
++import re
++
++
++def validate_tags(generated_content: str, expected_refs: list[str]) -> dict:
++    """Validate that generated test content covers all expected spec refs.
++
++    Scans for spec ref patterns in:
++    - Bracket notation: [REQ-001.success], [REQ-001.FAIL-001]
++    - Underscore notation: test_REQ_001_success, REQ_001_FAIL_001
++
++    Args:
++        generated_content: The generated test file content as a string.
++        expected_refs: List of expected spec refs (e.g., ['REQ-001.success', 'REQ-001.FAIL-001']).
++
++    Returns:
++        Dict with:
++            - covered: refs found in the content
++            - missing: refs NOT found in the content
++            - extra: refs found in content but NOT in expected list
++    """
++    found_refs = _extract_all_refs(generated_content)
++    expected_set = set(expected_refs)
++    found_set = set(found_refs)
++
++    covered = sorted(expected_set & found_set)
++    missing = sorted(expected_set - found_set)
++    extra = sorted(found_set - expected_set)
++
++    return {
++        "covered": covered,
++        "missing": missing,
++        "extra": extra,
++    }
++
++
++def _extract_all_refs(content: str) -> list[str]:
++    """Extract all spec ref tags from test content.
++
++    Looks for:
++    - [REQ-001.success] bracket patterns
++    - [REQ-001.FAIL-001] bracket patterns
++    - REQ_001_success underscore patterns (converted to dot notation)
++    """
++    refs = set()
++
++    # Pattern 1: bracket-enclosed refs like [REQ-001.success] or [REQ-001.FAIL-001]
++    bracket_matches = re.findall(r"\[([A-Z]+-\d+\.\S+?)\]", content)
++    refs.update(bracket_matches)
++
++    # Pattern 2: underscore-based refs in function names
++    # Convert REQ_001_success → REQ-001.success
++    # Convert REQ_001_FAIL_001 → REQ-001.FAIL-001
++    underscore_matches = re.findall(
++        r"(REQ_\d+)_(success|FAIL_\d+|INV_\d+)", content,
++    )
++    for req_part, element_part in underscore_matches:
++        req_ref = req_part.replace("_", "-")  # REQ_001 → REQ-001
++        element_ref = element_part.replace("_", "-")  # FAIL_001 → FAIL-001
++        refs.add(f"{req_ref}.{element_ref}")
++
++    return sorted(refs)
+diff --git a/tests/test_skills.py b/tests/test_skills.py
+new file mode 100644
+index 0000000..78291ea
+--- /dev/null
++++ b/tests/test_skills.py
+@@ -0,0 +1,251 @@
++"""TDD tests for Epic 4: Verification Skill Framework, Pytest Skill, and Tag Enforcer.
++
++RED phase — these tests define the contracts for:
++  - Feature 4.1: Skill Agent Framework (VerificationSkill base class, SKILL_REGISTRY, dispatch_skills)
++  - Feature 4.2: Pytest Unit Test Skill (PytestSkill generates tagged test code)
++  - Feature 4.3: Tag Contract Enforcement (validate_tags checks coverage)
++"""
++
++import os
++import yaml
++import pytest
++
++
++# ── Feature 4.1: Skill Agent Framework ──
++
++class TestSkillFramework:
++    """Feature 4.1: VerificationSkill base class, SKILL_REGISTRY, dispatch_skills."""
++
++    def test_framework_imports(self):
++        """SKILL_REGISTRY and dispatch_skills are importable."""
++        from verify.skills.framework import VerificationSkill, SKILL_REGISTRY, dispatch_skills
++        assert isinstance(SKILL_REGISTRY, dict)
++
++    def test_verification_skill_is_abstract(self):
++        """VerificationSkill enforces generate() and output_path() implementation."""
++        from verify.skills.framework import VerificationSkill
++
++        class IncompleteSkill(VerificationSkill):
++            skill_id = "incomplete"
++
++        with pytest.raises(TypeError):
++            IncompleteSkill()
++
++    def test_register_skill_adds_to_registry(self):
++        """register_skill() puts a skill into SKILL_REGISTRY by its skill_id."""
++        from verify.skills.framework import VerificationSkill, SKILL_REGISTRY, register_skill
++
++        class DummySkill(VerificationSkill):
++            skill_id = "test_dummy"
++
++            def generate(self, spec, requirement, constitution):
++                return "# dummy"
++
++            def output_path(self, spec, requirement):
++                return "/tmp/dummy.py"
++
++        register_skill(DummySkill())
++        assert "test_dummy" in SKILL_REGISTRY
++
++        # Clean up
++        del SKILL_REGISTRY["test_dummy"]
++
++    def test_dispatch_skills_returns_dict_of_generated_files(self):
++        """dispatch_skills() routes spec requirements to skills and returns {path: content}."""
++        from verify.skills.framework import dispatch_skills
++        import verify.skills.pytest_skill  # noqa: F401 — ensure skill is registered
++
++        spec = yaml.safe_load(open(".verify/specs/DEMO-001.yaml"))
++        result = dispatch_skills(spec, {})
++
++        assert isinstance(result, dict)
++        assert len(result) > 0
++        for path, content in result.items():
++            assert path.endswith(".py")
++            assert "def test_" in content
++
++    def test_dispatch_skills_writes_files(self, tmp_path):
++        """dispatch_skills() actually writes generated files to disk."""
++        from verify.skills.framework import dispatch_skills
++        import verify.skills.pytest_skill  # noqa: F401 — ensure skill is registered
++
++        spec = yaml.safe_load(open(".verify/specs/DEMO-001.yaml"))
++        result = dispatch_skills(spec, {})
++
++        for path in result:
++            assert os.path.exists(path), f"Expected file to be written: {path}"
++
++
++# ── Feature 4.2: Pytest Unit Test Skill ──
++
++class TestPytestSkill:
++    """Feature 4.2: PytestSkill generates tagged pytest test code from spec contracts."""
++
++    def test_pytest_skill_registered(self):
++        """PytestSkill is auto-registered as 'pytest_unit_test'."""
++        from verify.skills.pytest_skill import PytestSkill
++        from verify.skills.framework import SKILL_REGISTRY
++
++        assert "pytest_unit_test" in SKILL_REGISTRY
++        assert isinstance(SKILL_REGISTRY["pytest_unit_test"], PytestSkill)
++
++    def test_generate_contains_spec_refs(self):
++        """Generated test code contains spec refs like REQ-001."""
++        from verify.skills.framework import SKILL_REGISTRY
++
++        spec = yaml.safe_load(open(".verify/specs/DEMO-001.yaml"))
++        skill = SKILL_REGISTRY["pytest_unit_test"]
++        content = skill.generate(spec, spec["requirements"][0], {})
++
++        assert "REQ-001" in content, "Missing spec refs in generated tests"
++
++    def test_generate_contains_test_functions(self):
++        """Generated code contains actual test function definitions."""
++        from verify.skills.framework import SKILL_REGISTRY
++
++        spec = yaml.safe_load(open(".verify/specs/DEMO-001.yaml"))
++        skill = SKILL_REGISTRY["pytest_unit_test"]
++        content = skill.generate(spec, spec["requirements"][0], {})
++
++        assert "def test_" in content, "No test functions generated"
++
++    def test_generate_uses_testclient(self):
++        """Generated tests use FastAPI's TestClient for API testing."""
++        from verify.skills.framework import SKILL_REGISTRY
++
++        spec = yaml.safe_load(open(".verify/specs/DEMO-001.yaml"))
++        skill = SKILL_REGISTRY["pytest_unit_test"]
++        content = skill.generate(spec, spec["requirements"][0], {})
++
++        assert "TestClient" in content, "Missing TestClient import"
++
++    def test_generate_covers_success_and_failures(self):
++        """Generated tests cover the happy path, all failure modes, and invariants."""
++        from verify.skills.framework import SKILL_REGISTRY
++
++        spec = yaml.safe_load(open(".verify/specs/DEMO-001.yaml"))
++        skill = SKILL_REGISTRY["pytest_unit_test"]
++        content = skill.generate(spec, spec["requirements"][0], {})
++
++        assert "success" in content.lower(), "No success test"
++        assert "FAIL-001" in content or "FAIL_001" in content, "No FAIL-001 test"
++        assert "FAIL-002" in content or "FAIL_002" in content, "No FAIL-002 test"
++        assert "INV-001" in content or "INV_001" in content, "No INV-001 test"
++
++    def test_output_path_matches_spec(self):
++        """output_path() returns the path specified in the spec verification block."""
++        from verify.skills.framework import SKILL_REGISTRY
++
++        spec = yaml.safe_load(open(".verify/specs/DEMO-001.yaml"))
++        skill = SKILL_REGISTRY["pytest_unit_test"]
++        path = skill.output_path(spec, spec["requirements"][0])
++
++        assert path == ".verify/generated/test_demo_001.py"
++
++    def test_generated_tests_actually_pass(self):
++        """Generated tests pass when run against the dummy app."""
++        from verify.skills.framework import dispatch_skills
++
++        spec = yaml.safe_load(open(".verify/specs/DEMO-001.yaml"))
++        files = dispatch_skills(spec, {})
++
++        # Run the generated tests
++        import subprocess
++        import sys
++
++        for path in files:
++            result = subprocess.run(
++                [sys.executable, "-m", "pytest", path, "-v", "--tb=short"],
++                capture_output=True,
++                text=True,
++                env={**os.environ, "PYTHONPATH": "src"},
++            )
++            assert result.returncode == 0, (
++                f"Generated tests failed:\n{result.stdout}\n{result.stderr}"
++            )
++
++
++# ── Feature 4.3: Tag Contract Enforcement ──
++
++class TestTagEnforcer:
++    """Feature 4.3: validate_tags checks that generated tests cover all spec refs."""
++
++    def test_validate_tags_importable(self):
++        """validate_tags is importable from tag_enforcer module."""
++        from verify.skills.tag_enforcer import validate_tags
++
++    def test_validate_tags_finds_covered_refs(self):
++        """validate_tags correctly identifies refs present in the test content."""
++        from verify.skills.tag_enforcer import validate_tags
++
++        test_content = '''
++        def test_success_REQ_001():
++            """[REQ-001.success] Happy path"""
++            pass
++
++        def test_fail_001():
++            """[REQ-001.FAIL-001] No auth"""
++            pass
++        '''
++
++        result = validate_tags(
++            test_content,
++            ["REQ-001.success", "REQ-001.FAIL-001", "REQ-001.FAIL-002"],
++        )
++
++        assert "REQ-001.success" in result["covered"]
++        assert "REQ-001.FAIL-001" in result["covered"]
++
++    def test_validate_tags_finds_missing_refs(self):
++        """validate_tags correctly identifies refs NOT present in the test content."""
++        from verify.skills.tag_enforcer import validate_tags
++
++        test_content = '[REQ-001.success]'
++
++        result = validate_tags(
++            test_content,
++            ["REQ-001.success", "REQ-001.FAIL-001"],
++        )
++
++        assert "REQ-001.FAIL-001" in result["missing"]
++
++    def test_validate_tags_finds_extra_refs(self):
++        """validate_tags identifies refs in tests that aren't in the expected list."""
++        from verify.skills.tag_enforcer import validate_tags
++
++        test_content = '[REQ-001.success] [REQ-001.FAIL-001] [REQ-001.EXTRA-001]'
++
++        result = validate_tags(
++            test_content,
++            ["REQ-001.success"],
++        )
++
++        assert len(result["extra"]) > 0
++
++    def test_validate_tags_returns_correct_structure(self):
++        """validate_tags returns dict with 'covered', 'missing', and 'extra' keys."""
++        from verify.skills.tag_enforcer import validate_tags
++
++        result = validate_tags("", [])
++        assert "covered" in result
++        assert "missing" in result
++        assert "extra" in result
++
++    def test_full_coverage_on_generated_tests(self):
++        """Generated tests from PytestSkill have 100% tag coverage for DEMO-001."""
++        from verify.skills.framework import SKILL_REGISTRY
++        from verify.skills.tag_enforcer import validate_tags
++
++        spec = yaml.safe_load(open(".verify/specs/DEMO-001.yaml"))
++        skill = SKILL_REGISTRY["pytest_unit_test"]
++        content = skill.generate(spec, spec["requirements"][0], {})
++
++        req = spec["requirements"][0]
++        expected_refs = [
++            f"{req['id']}.{ref}" for ref in req["verification"][0]["refs"]
++        ]
++
++        result = validate_tags(content, expected_refs)
++        assert len(result["missing"]) == 0, (
++            f"Missing refs in generated tests: {result['missing']}"
++        )
+-- 
+2.34.1
+

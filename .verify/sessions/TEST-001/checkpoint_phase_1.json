@@ -1,0 +1,39 @@
+{
+  "jira_key": "TEST-001",
+  "jira_summary": "Test Story",
+  "current_phase": "phase_1",
+  "raw_acceptance_criteria": [
+    {
+      "index": 0,
+      "text": "User can login",
+      "checked": false
+    }
+  ],
+  "constitution": {
+    "project": {
+      "framework": "spring-boot",
+      "language": "java"
+    }
+  },
+  "classifications": [
+    {
+      "ac_index": 0,
+      "type": "api_behavior"
+    }
+  ],
+  "postconditions": [],
+  "preconditions": [],
+  "failure_modes": [],
+  "invariants": [],
+  "verification_routing": {},
+  "ears_statements": [],
+  "traceability_map": {},
+  "approved": false,
+  "approved_by": "",
+  "approved_at": "",
+  "spec_path": "",
+  "generated_files": {},
+  "verdicts": [],
+  "all_passed": false,
+  "negotiation_log": []
+}

@@ -1,0 +1,597 @@
+{
+  "jira_key": "DEV-17",
+  "jira_summary": "Dog Service CRUD API",
+  "current_phase": "phase_3",
+  "raw_acceptance_criteria": [
+    {
+      "index": 0,
+      "text": "User can list all dogs via GET /api/v1/dogs",
+      "checked": false
+    }
+  ],
+  "constitution": {
+    "project": {
+      "name": "dog-service",
+      "language": "java",
+      "version": 17,
+      "framework": "spring-boot",
+      "framework_version": "3.2",
+      "build_tool": "gradle"
+    },
+    "source_structure": {
+      "main": "dog-service/src/main/java",
+      "test": "dog-service/src/test/java",
+      "resources": "dog-service/src/main/resources",
+      "package_root": "com.example.dogservice"
+    },
+    "testing": {
+      "unit_framework": "junit5",
+      "assertion_library": "assertj",
+      "mocking_library": "mockito",
+      "test_runner": "cd dog-service && ./gradlew test",
+      "result_format": "dog-service/build/test-results/test/*.xml",
+      "naming_convention": "{ClassName}Test.java",
+      "method_naming": "should_{expected_behavior}_when_{condition}",
+      "patterns": [
+        {
+          "id": "controller_test",
+          "description": "REST controller tests using MockMvc",
+          "example_file": "dog-service/src/test/java/com/example/dogservice/controller/DogControllerTest.java",
+          "annotations": [
+            "@WebMvcTest",
+            "@MockBean"
+          ],
+          "imports": [
+            "org.springframework.test.web.servlet.MockMvc",
+            "org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest",
+            "org.springframework.boot.test.mock.mockito.MockBean",
+            "static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*",
+            "static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*"
+          ],
+          "assertion_style": "mockMvc.perform(get(...)).andExpect(status().isOk())"
+        },
+        {
+          "id": "cucumber_test",
+          "description": "Cucumber BDD feature tests with Spring Boot",
+          "example_file": "dog-service/src/test/resources/features/dogs.feature",
+          "annotations": [
+            "@Suite",
+            "@IncludeEngines(\"cucumber\")",
+            "@CucumberContextConfiguration"
+          ],
+          "imports": [
+            "io.cucumber.java.en.Given",
+            "io.cucumber.java.en.When",
+            "io.cucumber.java.en.Then",
+            "org.springframework.boot.test.web.client.TestRestTemplate"
+          ],
+          "assertion_style": "assertThat(response.getStatusCode().value()).isEqualTo(200)"
+        },
+        {
+          "id": "service_test",
+          "description": "Service layer unit tests with Mockito",
+          "example_file": "dog-service/src/test/java/com/example/dogservice/service/DogServiceTest.java",
+          "annotations": [
+            "@ExtendWith(MockitoExtension.class)",
+            "@Mock",
+            "@InjectMocks"
+          ],
+          "imports": [
+            "org.mockito.junit.jupiter.MockitoExtension",
+            "static org.assertj.core.api.Assertions.assertThat"
+          ],
+          "assertion_style": "assertThat(result).isEqualTo(expected)"
+        }
+      ]
+    },
+    "api": {
+      "style": "rest",
+      "base_path": "/api/v1",
+      "auth": {
+        "mechanism": "jwt_bearer",
+        "token_header": "Authorization",
+        "token_prefix": "Bearer ",
+        "claims_required": [
+          "sub",
+          "exp",
+          "iat"
+        ]
+      },
+      "error_format": {
+        "schema": {
+          "type": "object",
+          "required": [
+            "error",
+            "message",
+            "timestamp",
+            "path"
+          ],
+          "properties": {
+            "error": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            },
+            "timestamp": {
+              "type": "string",
+              "format": "iso8601"
+            },
+            "path": {
+              "type": "string"
+            }
+          }
+        },
+        "example": "{\"error\":\"not_found\",\"message\":\"Dog not found with id: 99\",\"timestamp\":\"2026-03-22T10:00:00Z\",\"path\":\"/api/v1/dogs/99\"}"
+      },
+      "common_status_codes": [
+        200,
+        201,
+        204,
+        400,
+        401,
+        403,
+        404,
+        409,
+        422,
+        429,
+        500
+      ]
+    },
+    "observability": {
+      "apm_provider": "new_relic",
+      "alert_format": "nrql",
+      "default_latency_sla_ms": 500,
+      "logging_framework": "slf4j",
+      "log_format": "structured_json",
+      "tracing": "opentelemetry"
+    },
+    "conventions": {
+      "branch_naming": "feat/{jira_key}-{short-description}",
+      "commit_format": "[{jira_key}] {message}",
+      "pr_template": ".github/pull_request_template.md"
+    },
+    "verification_standards": {
+      "required_verification_types": [
+        "unit_test",
+        "schema_contract"
+      ],
+      "security_invariants": [
+        "Never expose password, passwordHash, ssn, or internalId in API responses",
+        "Never allow cross-tenant data access",
+        "All PII fields must have X-Data-Classification header"
+      ]
+    },
+    "_codebase_index": "Codebase: spring-boot (java)\nEndpoints found: 5\n  GET /api/v1/dogs -> DogController.listDogs\n  GET /api/v1/dogs/{id} -> DogController.getDog\n  POST /api/v1/dogs -> DogController.createDog\n  PUT /api/v1/dogs/{id} -> DogController.updateDog\n  DELETE /api/v1/dogs/{id} -> DogController.deleteDog\nSecurity: jwt_bearer"
+  },
+  "classifications": [
+    {
+      "ac_index": 0,
+      "type": "api_behavior",
+      "actor": "authenticated_user",
+      "interface": {
+        "method": "GET",
+        "path": "/api/v1/dogs"
+      }
+    }
+  ],
+  "postconditions": [
+    {
+      "ac_index": 0,
+      "status": 200,
+      "content_type": "application/json",
+      "schema": {
+        "dogs": {
+          "type": "array",
+          "required": true,
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "required": true
+              },
+              "name": {
+                "type": "string",
+                "required": true
+              },
+              "breed": {
+                "type": "string",
+                "required": true
+              },
+              "age": {
+                "type": "integer",
+                "required": true
+              },
+              "owner_id": {
+                "type": "string",
+                "required": true
+              }
+            }
+          }
+        }
+      },
+      "constraints": [
+        "response.dogs[*].owner_id MUST equal the JWT sub claim (prevents cross-user data access)",
+        "response.dogs array MUST only contain dogs owned by the authenticated user"
+      ],
+      "forbidden_fields": [
+        "password",
+        "password_hash",
+        "ssn",
+        "internalId"
+      ]
+    }
+  ],
+  "preconditions": [
+    {
+      "id": "PRE-001",
+      "description": "Valid JWT bearer token is present",
+      "formal": "jwt != null AND jwt.exp > now()",
+      "category": "authentication"
+    },
+    {
+      "id": "PRE-002",
+      "description": "Request contains properly formatted Authorization header",
+      "formal": "request.headers['Authorization'].startsWith('Bearer ')",
+      "category": "authentication"
+    },
+    {
+      "id": "PRE-003",
+      "description": "User referenced in JWT exists in the system",
+      "formal": "db.users.exists(jwt.sub) == true",
+      "category": "data_existence"
+    },
+    {
+      "id": "PRE-004",
+      "description": "User account is in active state",
+      "formal": "db.users.find(jwt.sub).status == 'active'",
+      "category": "data_state"
+    },
+    {
+      "id": "PRE-005",
+      "description": "User has authorization to access dog data",
+      "formal": "jwt.scope.includes('read:dogs') OR user.permissions.includes('dogs:read')",
+      "category": "authorization"
+    },
+    {
+      "id": "PRE-006",
+      "description": "Database connection is available",
+      "formal": "db.connection.status == 'healthy'",
+      "category": "system_health"
+    },
+    {
+      "id": "PRE-007",
+      "description": "Rate limit for user has not been exceeded",
+      "formal": "rate_limiter.check(jwt.sub, 'get_dogs') == allowed",
+      "category": "rate_limit"
+    }
+  ],
+  "failure_modes": [
+    {
+      "id": "FAIL-001",
+      "description": "No Authorization header provided",
+      "violates": "PRE-002",
+      "status": 401,
+      "body": {
+        "error": "unauthorized",
+        "message": "Authorization header required",
+        "timestamp": "2026-03-22T10:00:00Z",
+        "path": "/api/v1/dogs"
+      }
+    },
+    {
+      "id": "FAIL-002",
+      "description": "Authorization header does not start with 'Bearer '",
+      "violates": "PRE-002",
+      "status": 401,
+      "body": {
+        "error": "unauthorized",
+        "message": "Bearer token required",
+        "timestamp": "2026-03-22T10:00:00Z",
+        "path": "/api/v1/dogs"
+      }
+    },
+    {
+      "id": "FAIL-003",
+      "description": "No JWT token provided in Bearer header",
+      "violates": "PRE-001",
+      "status": 401,
+      "body": {
+        "error": "unauthorized",
+        "message": "Bearer token required",
+        "timestamp": "2026-03-22T10:00:00Z",
+        "path": "/api/v1/dogs"
+      }
+    },
+    {
+      "id": "FAIL-004",
+      "description": "JWT token has expired",
+      "violates": "PRE-001",
+      "status": 401,
+      "body": {
+        "error": "token_expired",
+        "message": "JWT token has expired",
+        "timestamp": "2026-03-22T10:00:00Z",
+        "path": "/api/v1/dogs"
+      }
+    },
+    {
+      "id": "FAIL-005",
+      "description": "JWT token is malformed",
+      "violates": "PRE-001",
+      "status": 401,
+      "body": {
+        "error": "invalid_token",
+        "message": "Invalid JWT token format",
+        "timestamp": "2026-03-22T10:00:00Z",
+        "path": "/api/v1/dogs"
+      }
+    },
+    {
+      "id": "FAIL-006",
+      "description": "JWT token has wrong issuer",
+      "violates": "PRE-001",
+      "status": 401,
+      "body": {
+        "error": "invalid_token",
+        "message": "JWT token from invalid issuer",
+        "timestamp": "2026-03-22T10:00:00Z",
+        "path": "/api/v1/dogs"
+      }
+    },
+    {
+      "id": "FAIL-007",
+      "description": "JWT token has been revoked",
+      "violates": "PRE-001",
+      "status": 401,
+      "body": {
+        "error": "token_revoked",
+        "message": "JWT token has been revoked",
+        "timestamp": "2026-03-22T10:00:00Z",
+        "path": "/api/v1/dogs"
+      }
+    },
+    {
+      "id": "FAIL-008",
+      "description": "User referenced in JWT never existed",
+      "violates": "PRE-003",
+      "status": 404,
+      "body": {
+        "error": "not_found",
+        "message": "User not found",
+        "timestamp": "2026-03-22T10:00:00Z",
+        "path": "/api/v1/dogs"
+      }
+    },
+    {
+      "id": "FAIL-009",
+      "description": "User referenced in JWT has been soft-deleted",
+      "violates": "PRE-003",
+      "status": 404,
+      "body": {
+        "error": "not_found",
+        "message": "User not found",
+        "timestamp": "2026-03-22T10:00:00Z",
+        "path": "/api/v1/dogs"
+      }
+    },
+    {
+      "id": "FAIL-010",
+      "description": "User referenced in JWT has been hard-deleted",
+      "violates": "PRE-003",
+      "status": 404,
+      "body": {
+        "error": "not_found",
+        "message": "User not found",
+        "timestamp": "2026-03-22T10:00:00Z",
+        "path": "/api/v1/dogs"
+      }
+    },
+    {
+      "id": "FAIL-011",
+      "description": "User account is in inactive state",
+      "violates": "PRE-004",
+      "status": 403,
+      "body": {
+        "error": "account_inactive",
+        "message": "User account is inactive",
+        "timestamp": "2026-03-22T10:00:00Z",
+        "path": "/api/v1/dogs"
+      }
+    },
+    {
+      "id": "FAIL-012",
+      "description": "User account is in suspended state",
+      "violates": "PRE-004",
+      "status": 403,
+      "body": {
+        "error": "account_suspended",
+        "message": "User account is suspended",
+        "timestamp": "2026-03-22T10:00:00Z",
+        "path": "/api/v1/dogs"
+      }
+    },
+    {
+      "id": "FAIL-013",
+      "description": "User account is in pending state",
+      "violates": "PRE-004",
+      "status": 403,
+      "body": {
+        "error": "account_pending",
+        "message": "User account is pending activation",
+        "timestamp": "2026-03-22T10:00:00Z",
+        "path": "/api/v1/dogs"
+      }
+    },
+    {
+      "id": "FAIL-014",
+      "description": "User account is in locked state",
+      "violates": "PRE-004",
+      "status": 403,
+      "body": {
+        "error": "account_locked",
+        "message": "User account is locked",
+        "timestamp": "2026-03-22T10:00:00Z",
+        "path": "/api/v1/dogs"
+      }
+    },
+    {
+      "id": "FAIL-015",
+      "description": "JWT missing required scope for dog data",
+      "violates": "PRE-005",
+      "status": 403,
+      "body": {
+        "error": "insufficient_scope",
+        "message": "Token does not have required scope: read:dogs",
+        "timestamp": "2026-03-22T10:00:00Z",
+        "path": "/api/v1/dogs"
+      }
+    },
+    {
+      "id": "FAIL-016",
+      "description": "User permissions missing dogs:read permission",
+      "violates": "PRE-005",
+      "status": 403,
+      "body": {
+        "error": "forbidden",
+        "message": "Insufficient permissions to access dog data",
+        "timestamp": "2026-03-22T10:00:00Z",
+        "path": "/api/v1/dogs"
+      }
+    },
+    {
+      "id": "FAIL-017",
+      "description": "User from wrong tenant attempting to access dog data",
+      "violates": "PRE-005",
+      "status": 403,
+      "body": {
+        "error": "forbidden",
+        "message": "Access denied for this tenant",
+        "timestamp": "2026-03-22T10:00:00Z",
+        "path": "/api/v1/dogs"
+      }
+    },
+    {
+      "id": "FAIL-018",
+      "description": "Database connection is down",
+      "violates": "PRE-006",
+      "status": 500,
+      "body": {
+        "error": "service_unavailable",
+        "message": "Database connection unavailable",
+        "timestamp": "2026-03-22T10:00:00Z",
+        "path": "/api/v1/dogs"
+      }
+    },
+    {
+      "id": "FAIL-019",
+      "description": "Database connection timeout",
+      "violates": "PRE-006",
+      "status": 500,
+      "body": {
+        "error": "service_timeout",
+        "message": "Database connection timeout",
+        "timestamp": "2026-03-22T10:00:00Z",
+        "path": "/api/v1/dogs"
+      }
+    },
+    {
+      "id": "FAIL-020",
+      "description": "Database connection refused",
+      "violates": "PRE-006",
+      "status": 500,
+      "body": {
+        "error": "service_unavailable",
+        "message": "Database connection refused",
+        "timestamp": "2026-03-22T10:00:00Z",
+        "path": "/api/v1/dogs"
+      }
+    },
+    {
+      "id": "FAIL-021",
+      "description": "Per-user rate limit exceeded",
+      "violates": "PRE-007",
+      "status": 429,
+      "body": {
+        "error": "rate_limit_exceeded",
+        "message": "Request rate limit exceeded for user",
+        "timestamp": "2026-03-22T10:00:00Z",
+        "path": "/api/v1/dogs"
+      }
+    },
+    {
+      "id": "FAIL-022",
+      "description": "Global rate limit exceeded",
+      "violates": "PRE-007",
+      "status": 429,
+      "body": {
+        "error": "rate_limit_exceeded",
+        "message": "Global request rate limit exceeded",
+        "timestamp": "2026-03-22T10:00:00Z",
+        "path": "/api/v1/dogs"
+      }
+    }
+  ],
+  "invariants": [],
+  "verification_routing": {},
+  "ears_statements": [],
+  "traceability_map": {},
+  "approved": false,
+  "approved_by": "",
+  "approved_at": "",
+  "spec_path": "",
+  "generated_files": {},
+  "verdicts": [],
+  "all_passed": false,
+  "negotiation_log": [
+    {
+      "phase": "phase_0",
+      "role": "ai",
+      "content": "Phase 1 of 4: Interface & Actor Discovery: produced 1 items",
+      "timestamp": "2026-03-25T22:38:08.396938+00:00"
+    },
+    {
+      "phase": "phase_0",
+      "role": "human",
+      "content": "approve",
+      "timestamp": "2026-03-25T22:38:15.262812+00:00"
+    },
+    {
+      "phase": "phase_1",
+      "role": "ai",
+      "content": "Phase 2 of 4: Happy Path Contract: produced 1 items",
+      "timestamp": "2026-03-25T22:38:22.826751+00:00"
+    },
+    {
+      "phase": "phase_1",
+      "role": "human",
+      "content": "approve",
+      "timestamp": "2026-03-25T22:38:24.254018+00:00"
+    },
+    {
+      "phase": "phase_2",
+      "role": "ai",
+      "content": "Phase 3 of 4: Precondition Formalization: produced 7 items",
+      "timestamp": "2026-03-25T22:38:32.173643+00:00"
+    },
+    {
+      "phase": "phase_2",
+      "role": "human",
+      "content": "approve",
+      "timestamp": "2026-03-25T22:38:35.871379+00:00"
+    },
+    {
+      "phase": "phase_2",
+      "role": "ai",
+      "content": "Phase 4 of 4: Failure Mode Enumeration: produced 22 items",
+      "timestamp": "2026-03-25T22:38:58.081022+00:00"
+    },
+    {
+      "phase": "phase_2",
+      "role": "human",
+      "content": "approve",
+      "timestamp": "2026-03-25T22:39:04.955380+00:00"
+    }
+  ]
+}
