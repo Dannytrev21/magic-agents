@@ -19,6 +19,9 @@ from verify.negotiation.phase1 import run_phase1
 from verify.negotiation.phase2 import run_phase2
 from verify.negotiation.phase3 import run_phase3
 from verify.negotiation.phase4 import run_phase4
+from verify.negotiation.phase5 import run_phase5
+from verify.negotiation.phase6 import run_phase6
+from verify.negotiation.phase7 import run_phase7
 from verify.negotiation.synthesis import run_synthesis
 from verify.negotiation.checkpoint import load_checkpoint, has_checkpoint, get_session_info
 from verify.compiler import compile_and_write, compile_spec
@@ -29,6 +32,7 @@ from verify.evaluator import evaluate_spec
 from verify.pipeline import update_jira, load_constitution
 from verify.scanner import scan_java_project
 from verify.spec_diff import diff_specs, format_diff_summary
+from verify.observability import HarnessLogger
 
 logger = logging.getLogger(__name__)
 
@@ -41,10 +45,13 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 _session: dict = {}
 
 PHASE_SKILLS = [
-    ("Phase 1 of 4: Interface & Actor Discovery", run_phase1),
-    ("Phase 2 of 4: Happy Path Contract", run_phase2),
-    ("Phase 3 of 4: Precondition Formalization", run_phase3),
-    ("Phase 4 of 4: Failure Mode Enumeration", run_phase4),
+    ("Phase 1 of 7: Interface & Actor Discovery", run_phase1),
+    ("Phase 2 of 7: Happy Path Contract", run_phase2),
+    ("Phase 3 of 7: Precondition Formalization", run_phase3),
+    ("Phase 4 of 7: Failure Mode Enumeration", run_phase4),
+    ("Phase 5 of 7: Invariant Extraction", run_phase5),
+    ("Phase 6 of 7: Completeness Sweep & Routing", run_phase6),
+    ("Phase 7 of 7: EARS Formalization", run_phase7),
 ]
 
 
@@ -226,6 +233,13 @@ async def respond(request: Request):
     ctx: VerificationContext = _session["ctx"]
     phase_idx: int = _session["phase_idx"]
 
+    # Log developer interaction
+    harness.logger.log_developer_interaction(
+        harness.current_phase,
+        "feedback" if user_input.lower() not in ("approve", "skip", "") else "approval",
+        data={"input": user_input[:100]}  # Log first 100 chars to avoid huge logs
+    )
+
     harness.add_to_log(harness.current_phase, "human", user_input)
 
     # If not approve/skip, re-run current phase with developer feedback
@@ -238,7 +252,9 @@ async def respond(request: Request):
     _session["phase_idx"] = phase_idx + 1
 
     if _session["phase_idx"] >= len(PHASE_SKILLS):
-        run_synthesis(ctx)
+        # Post-negotiation: build traceability map (invariants & EARS already populated by phases 5 & 7)
+        from verify.negotiation.synthesis import build_traceability_map
+        build_traceability_map(ctx)
         return JSONResponse({
             "done": True,
             "phase_number": len(PHASE_SKILLS),
@@ -342,48 +358,75 @@ async def spec_diff_endpoint():
 
 @app.post("/api/generate-tests")
 async def generate_tests_endpoint():
-    """Generate Cucumber/Gherkin tests from the compiled spec via Claude API."""
+    """Copy the appropriate verification skill into the target repo.
+
+    Determines the skill type from the spec/constitution (e.g., cucumber_java),
+    copies the skill files (SKILL.md, SCHEMA.md) into the target repo's
+    .claude/skills/ directory, and returns the file contents so the user
+    can run the skill themselves.
+    """
     if "ctx" not in _session:
         return JSONResponse({"error": "No active session"}, status_code=400)
 
     ctx: VerificationContext = _session["ctx"]
-    llm: LLMClient = _session["llm"]
     if not ctx.spec_path:
         return JSONResponse({"error": "No spec compiled yet. Call /api/compile first."}, status_code=400)
 
-    steps = []
     try:
-        # Load constitution
+        import shutil
+
+        # Determine which skill to copy based on constitution
         constitution = BaseGenerator.load_constitution("constitution.yaml")
+        language = constitution.get("project", {}).get("language", "java")
+        framework = constitution.get("project", {}).get("framework", "spring-boot")
 
-        # Step 1: Generate tests via AI
-        generator = get_generator("cucumber_java")
-        generated = generator.generate(ctx.spec_path, constitution, llm)
+        # Map language/framework to skill directory
+        skill_id = "verify-gherkin"  # default for Java/Spring Boot + Cucumber
+        # Future: add mapping logic for other languages/frameworks
 
-        valid, errors = generator.validate(generated)
-        if not valid:
-            steps.append({"step": "validate", "status": "warning", "errors": errors})
+        # Source: our skill directory
+        source_dir = Path(__file__).parent.parent.parent.parent / ".claude" / "skills" / skill_id
 
-        written_paths = generator.write(generated)
-        steps.append({"step": "generate", "status": "ok", "paths": written_paths})
+        # Destination: target repo's .claude/skills/ directory
+        # Use the constitution's source_structure to find the target repo root
+        test_dir = constitution.get("source_structure", {}).get("test", "dog-service/src/test/java")
+        # Walk up from test dir to find the repo root (where .claude/ should go)
+        repo_root = test_dir.split("/src/")[0] if "/src/" in test_dir else "dog-service"
+        dest_dir = Path(repo_root) / ".claude" / "skills" / skill_id
 
-        # Build response with file contents
-        generated_files = {}
-        for path, content in generated.files.items():
-            label = "feature" if path.endswith(".feature") else "step_definition"
-            generated_files[label] = {"path": path, "content": content}
+        if not source_dir.exists():
+            return JSONResponse({"error": f"Skill directory not found: {source_dir}"}, status_code=500)
+
+        # Copy skill files
+        os.makedirs(dest_dir, exist_ok=True)
+        copied_files = {}
+        for src_file in source_dir.iterdir():
+            if src_file.is_file():
+                dest_file = dest_dir / src_file.name
+                shutil.copy2(src_file, dest_file)
+                with open(dest_file) as f:
+                    copied_files[src_file.name] = {
+                        "path": str(dest_file),
+                        "content": f.read(),
+                    }
+
+        # Also copy the spec into the target repo for reference
+        spec_dest = Path(repo_root) / "specs" / Path(ctx.spec_path).name
+        os.makedirs(spec_dest.parent, exist_ok=True)
+        shutil.copy2(ctx.spec_path, spec_dest)
 
         return JSONResponse({
-            "steps": steps,
-            "generated_files": generated_files,
-            "all_paths": written_paths,
+            "skill_id": skill_id,
+            "skill_dest": str(dest_dir),
+            "spec_dest": str(spec_dest),
+            "copied_files": copied_files,
+            "message": f"Skill '{skill_id}' copied to {dest_dir}. Run the skill with Claude Code in the target repo to generate tests.",
         })
     except Exception as e:
         import traceback
         tb = traceback.format_exc()
         print(f"generate-tests error:\n{tb}", flush=True)
-        steps.append({"step": "error", "status": "failed", "message": str(e)})
-        return JSONResponse({"steps": steps, "error": str(e), "traceback": tb}, status_code=500)
+        return JSONResponse({"error": str(e), "traceback": tb}, status_code=500)
 
 
 # ------------------------------------------------------------------
@@ -448,6 +491,61 @@ async def scan_status():
         "scanned": has_scan,
         "summary": _session.get("codebase_summary", ""),
     })
+
+
+# ------------------------------------------------------------------
+# Evaluator-Optimizer (Feature 2.9)
+# ------------------------------------------------------------------
+
+
+@app.post("/api/evaluate-phase")
+async def evaluate_phase_endpoint(request: Request):
+    """Run the evaluator-optimizer on the current phase output.
+
+    Provides adversarial critique of phase outputs — catches semantic gaps
+    that deterministic validation (validate.py) can't.
+    """
+    if "context" not in _session and "ctx" not in _session:
+        return JSONResponse({"error": "No active session"}, status_code=400)
+
+    ctx = _session.get("context") or _session.get("ctx")
+    llm = _session.get("llm") or LLMClient()
+
+    body = await request.json()
+    phase = body.get("phase", "phase_1")
+
+    try:
+        from verify.negotiation.evaluator_optimizer import evaluate_phase_output
+        result = evaluate_phase_output(ctx, phase, llm)
+        return JSONResponse(result)
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+# ------------------------------------------------------------------
+# Negotiation Planner (Feature 2.10)
+# ------------------------------------------------------------------
+
+
+@app.post("/api/plan")
+async def plan_endpoint():
+    """Create a negotiation plan before starting Phase 1.
+
+    Analyzes all ACs, groups related ones, identifies cross-cutting
+    concerns, and estimates complexity.
+    """
+    if "context" not in _session and "ctx" not in _session:
+        return JSONResponse({"error": "No active session"}, status_code=400)
+
+    ctx = _session.get("context") or _session.get("ctx")
+    llm = _session.get("llm") or LLMClient()
+
+    try:
+        from verify.negotiation.planner import create_negotiation_plan
+        plan = create_negotiation_plan(ctx, llm)
+        return JSONResponse(plan)
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
 
 
 # ------------------------------------------------------------------
@@ -749,11 +847,30 @@ def _run_current_phase():
     phase_idx: int = _session["phase_idx"]
 
     title, skill_fn = PHASE_SKILLS[phase_idx]
+
+    # Log LLM call
+    harness.logger.log_llm_called(
+        harness.current_phase,
+        prompt_length=len(title),  # Rough estimate
+        data={"phase_title": title}
+    )
+
     results = skill_fn(ctx, llm)
+
+    # Normalize results for logging — dict results (phase 6) vs list results
+    result_count = len(results) if isinstance(results, list) else len(results.get("routing", results.get("checklist", []))) if isinstance(results, dict) else 0
+
+    # Log LLM response
+    harness.logger.log_llm_responded(
+        harness.current_phase,
+        response_length=len(str(results)),
+        duration_ms=0,  # Not tracked in this simple version
+        data={"result_count": result_count}
+    )
 
     harness.add_to_log(
         harness.current_phase, "ai",
-        f"{title}: produced {len(results)} items",
+        f"{title}: produced {result_count} items",
     )
 
     questions = _extract_questions(phase_idx)
@@ -777,11 +894,30 @@ def _rerun_current_phase(feedback: str):
     phase_idx: int = _session["phase_idx"]
 
     title, skill_fn = PHASE_SKILLS[phase_idx]
+
+    # Log LLM call with feedback
+    harness.logger.log_llm_called(
+        harness.current_phase,
+        prompt_length=len(title) + len(feedback),
+        data={"phase_title": title, "feedback_length": len(feedback)}
+    )
+
     results = skill_fn(ctx, llm, feedback=feedback)
+
+    # Normalize results for logging
+    result_count = len(results) if isinstance(results, list) else len(results.get("routing", results.get("checklist", []))) if isinstance(results, dict) else 0
+
+    # Log LLM response
+    harness.logger.log_llm_responded(
+        harness.current_phase,
+        response_length=len(str(results)),
+        duration_ms=0,
+        data={"result_count": result_count, "revised": True}
+    )
 
     harness.add_to_log(
         harness.current_phase, "ai",
-        f"{title} (revised): produced {len(results)} items",
+        f"{title} (revised): produced {result_count} items",
     )
 
     questions = _extract_questions(phase_idx)
@@ -804,7 +940,10 @@ def _extract_questions(phase_idx: int) -> list[str]:
         from verify.negotiation.phase2 import SYSTEM_PROMPT as P2
         from verify.negotiation.phase3 import SYSTEM_PROMPT as P3
         from verify.negotiation.phase4 import SYSTEM_PROMPT as P4
-        prompts = [P1, P2, P3, P4]
+        from verify.negotiation.phase5 import SYSTEM_PROMPT as P5
+        from verify.negotiation.phase6 import SYSTEM_PROMPT as P6
+        from verify.negotiation.phase7 import SYSTEM_PROMPT as P7
+        prompts = [P1, P2, P3, P4, P5, P6, P7]
         if phase_idx < len(prompts):
             mock_resp = llm._mock_response(prompts[phase_idx])
             if isinstance(mock_resp, dict):

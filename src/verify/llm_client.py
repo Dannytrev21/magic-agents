@@ -5,9 +5,12 @@ from __future__ import annotations
 import json
 import os
 import re
-from typing import Union
+from typing import TYPE_CHECKING, Union
 
 import anthropic
+
+if TYPE_CHECKING:
+    from verify.backpressure import BackPressureController
 
 
 # ------------------------------------------------------------------
@@ -152,6 +155,83 @@ _MOCK_RESPONSES: dict = {
     },
     "defining postconditions": _dynamic_postconditions,
     "classify acceptance criteria": _dynamic_classify,
+    "invariant extraction": {
+        "invariants": [
+            {
+                "id": "INV-001",
+                "type": "security",
+                "rule": "Response MUST NOT contain password field",
+                "source": "constitution",
+            },
+            {
+                "id": "INV-002",
+                "type": "security",
+                "rule": "Response MUST NOT contain SSN field",
+                "source": "constitution",
+            },
+            {
+                "id": "INV-003",
+                "type": "security",
+                "rule": "Response MUST NOT contain fields: password, ssn",
+                "source": "data_model_inference",
+            },
+        ],
+        "questions": ["Are there any additional PII fields that should never be exposed?"],
+    },
+    "completeness sweep": {
+        "checklist": [
+            {"category": "authentication", "status": "covered", "detail": "PRE-001 covers JWT validation"},
+            {"category": "authorization", "status": "covered", "detail": "PRE-003 covers ownership check"},
+            {"category": "input_validation", "status": "covered", "detail": "Path parameter validated via framework"},
+            {"category": "output_schema", "status": "covered", "detail": "Postcondition defines response schema"},
+            {"category": "error_handling", "status": "covered", "detail": "3 failure modes enumerated"},
+            {"category": "rate_limiting", "status": "gap", "detail": "No rate limiting preconditions defined"},
+            {"category": "pagination", "status": "gap", "detail": "Single resource endpoint, N/A"},
+            {"category": "caching", "status": "gap", "detail": "No caching strategy defined"},
+            {"category": "versioning", "status": "covered", "detail": "API path includes v1"},
+            {"category": "idempotency", "status": "covered", "detail": "GET is inherently idempotent"},
+            {"category": "observability", "status": "gap", "detail": "No observability requirements specified"},
+            {"category": "security", "status": "covered", "detail": "3 security invariants defined"},
+            {"category": "data_classification", "status": "covered", "detail": "Forbidden fields identified"},
+        ],
+        "routing": [
+            {
+                "req_id": "REQ-001",
+                "skill": "cucumber_java",
+                "refs": ["REQ-001.success", "REQ-001.FAIL-001", "REQ-001.FAIL-002", "REQ-001.FAIL-003", "REQ-001.INV-001"],
+            },
+        ],
+        "questions": ["Should we add rate limiting for this endpoint?"],
+    },
+    "ears formalization": {
+        "ears_statements": [
+            {
+                "id": "EARS-001",
+                "pattern": "EVENT_DRIVEN",
+                "statement": "WHEN GET /api/v1/users/me is requested with valid authentication THEN the system SHALL respond with status 200 and the user profile JSON",
+                "traces_to": "REQ-001.success",
+            },
+            {
+                "id": "EARS-002",
+                "pattern": "UNWANTED",
+                "statement": "IF no auth token is provided THEN the system SHALL respond with status 401 and error message 'Bearer token required'",
+                "traces_to": "REQ-001.FAIL-001",
+            },
+            {
+                "id": "EARS-003",
+                "pattern": "UNWANTED",
+                "statement": "IF the auth token is expired THEN the system SHALL respond with status 401 and error message 'Token expired'",
+                "traces_to": "REQ-001.FAIL-002",
+            },
+            {
+                "id": "EARS-004",
+                "pattern": "UBIQUITOUS",
+                "statement": "The system SHALL never include password, SSN, or internalId fields in any API response",
+                "traces_to": "REQ-001.INV-001",
+            },
+        ],
+        "questions": [],
+    },
     "cucumber": {
         "feature_content": """@DEV-17 @REQ-001
 Feature: Dog CRUD API verification
@@ -288,9 +368,11 @@ class LLMClient:
         self,
         api_key: str | None = None,
         model: str = "claude-sonnet-4-20250514",
+        backpressure: BackPressureController | None = None,
     ) -> None:
         self.model = model
         self._mock = os.environ.get("LLM_MOCK", "").lower() == "true"
+        self.backpressure = backpressure
         if not self._mock:
             self._client = anthropic.Anthropic(
                 api_key=api_key or os.environ.get("ANTHROPIC_API_KEY"),
@@ -315,6 +397,11 @@ class LLMClient:
         Returns:
             Parsed dict when response_format="json", raw string otherwise.
         """
+        # Check backpressure limits before making the call
+        if self.backpressure and not self.backpressure.can_proceed():
+            ok, messages = self.backpressure.check_limits()
+            raise RuntimeError(f"Backpressure limits exceeded: {'; '.join(messages)}")
+
         if self._mock:
             return self._mock_response(system_prompt, user_message)
 
@@ -326,6 +413,13 @@ class LLMClient:
         )
 
         text = message.content[0].text
+
+        # Record usage if backpressure is enabled
+        if self.backpressure:
+            # Estimate tokens: input_tokens + output_tokens from the response
+            input_tokens = message.usage.input_tokens
+            output_tokens = message.usage.output_tokens
+            self.backpressure.record_api_call(input_tokens, output_tokens)
 
         if response_format == "json":
             return self._parse_json(text)
@@ -347,6 +441,11 @@ class LLMClient:
         Returns:
             Parsed dict when response_format="json", raw string otherwise.
         """
+        # Check backpressure limits before making the call
+        if self.backpressure and not self.backpressure.can_proceed():
+            ok, messages_err = self.backpressure.check_limits()
+            raise RuntimeError(f"Backpressure limits exceeded: {'; '.join(messages_err)}")
+
         if self._mock:
             return self._mock_response(system_prompt)
 
@@ -358,6 +457,12 @@ class LLMClient:
         )
 
         text = message.content[0].text
+
+        # Record usage if backpressure is enabled
+        if self.backpressure:
+            input_tokens = message.usage.input_tokens
+            output_tokens = message.usage.output_tokens
+            self.backpressure.record_api_call(input_tokens, output_tokens)
 
         if response_format == "json":
             return self._parse_json(text)
