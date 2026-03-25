@@ -171,7 +171,7 @@ async def compile_spec_endpoint():
 
     ctx: VerificationContext = _session["ctx"]
     try:
-        spec_path = compile_and_write(ctx)
+        spec_path = compile_and_write(ctx, output_dir="specs")
         with open(spec_path) as f:
             spec_content = f.read()
         return JSONResponse({

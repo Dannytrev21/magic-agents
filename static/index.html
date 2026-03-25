@@ -512,6 +512,15 @@ function renderTraceability() {
   }
 
   document.getElementById('traceContent').innerHTML = html;
+  document.getElementById('specActions').classList.remove('hidden');
+  // Reset panels for fresh run
+  document.getElementById('specPanel').className = 'hidden';
+  document.getElementById('testPanel').className = 'hidden';
+  document.getElementById('verdictPanel').className = 'hidden';
+  document.getElementById('btnCompile').disabled = false;
+  document.getElementById('btnTests').disabled = true;
+  document.getElementById('compileStatus').textContent = '';
+  document.getElementById('testStatus').textContent = '';
 }
 
 // Helpers
