@@ -7,7 +7,10 @@ import os
 import re
 from typing import TYPE_CHECKING, Union
 
-import anthropic
+try:
+    import anthropic
+except ModuleNotFoundError:  # pragma: no cover - exercised in mock/test environments
+    anthropic = None
 
 if TYPE_CHECKING:
     from verify.backpressure import BackPressureController
@@ -374,6 +377,10 @@ class LLMClient:
         self._mock = os.environ.get("LLM_MOCK", "").lower() == "true"
         self.backpressure = backpressure
         if not self._mock:
+            if anthropic is None:
+                raise RuntimeError(
+                    "The anthropic package is required when LLM_MOCK is false."
+                )
             self._client = anthropic.Anthropic(
                 api_key=api_key or os.environ.get("ANTHROPIC_API_KEY"),
                 timeout=120.0,

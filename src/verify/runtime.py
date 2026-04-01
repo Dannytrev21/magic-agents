@@ -211,23 +211,29 @@ class SessionStore:
 
     def __init__(self) -> None:
         self.sessions: dict[str, SessionState] = {}
+        self.active_session_id: str | None = None
 
     def create(
         self,
         context: VerificationContext,
         llm: LLMClient | None = None,
         phase_idx: int = 0,
+        session_id: str | None = None,
     ) -> SessionState:
-        session_id = uuid4().hex
+        resolved_session_id = session_id or getattr(context, "session_id", None) or uuid4().hex
+        if hasattr(context, "session_id"):
+            context.session_id = resolved_session_id
+
         state = SessionState(
-            session_id=session_id,
+            session_id=resolved_session_id,
             context=context,
             llm=llm or LLMClient(),
             harness=NegotiationHarness(context),
             phase_idx=phase_idx,
         )
         state.record_history("session_created", context.jira_key)
-        self.sessions[session_id] = state
+        self.sessions[resolved_session_id] = state
+        self.active_session_id = resolved_session_id
         return state
 
     def get(self, session_id: str | None) -> SessionState | None:
@@ -238,6 +244,10 @@ class SessionStore:
     def resolve(self, session_id: str | None) -> SessionState | None:
         if session_id:
             return self.sessions.get(session_id)
+        if self.active_session_id:
+            active_session = self.sessions.get(self.active_session_id)
+            if active_session is not None:
+                return active_session
         if len(self.sessions) == 1:
             return next(iter(self.sessions.values()))
         return None
@@ -246,10 +256,13 @@ class SessionStore:
         if session_id not in self.sessions:
             return False
         del self.sessions[session_id]
+        if self.active_session_id == session_id:
+            self.active_session_id = None
         return True
 
     def clear(self) -> None:
         self.sessions.clear()
+        self.active_session_id = None
 
     def restore(self, jira_key: str, llm: LLMClient | None = None) -> SessionState | None:
         loaded = load_checkpoint(jira_key)
@@ -257,10 +270,17 @@ class SessionStore:
             return None
 
         context, _ = loaded
+        session_id = getattr(context, "session_id", None) or None
+
+        if session_id and session_id in self.sessions:
+            self.active_session_id = session_id
+            return self.sessions[session_id]
+
         state = self.create(
             context=context,
             llm=llm,
             phase_idx=_next_phase_index_from_context(context.current_phase),
+            session_id=session_id,
         )
         state.record_history(
             "session_restored",

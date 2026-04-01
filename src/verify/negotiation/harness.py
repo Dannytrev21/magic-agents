@@ -22,11 +22,11 @@ if TYPE_CHECKING:
 PHASES = [
     "phase_0",  # Intake & classification
     "phase_1",  # Postcondition extraction
-    "phase_2",  # Precondition & failure-mode analysis
-    "phase_3",  # Invariant identification
-    "phase_4",  # Verification routing
-    "phase_5",  # EARS statement generation
-    "phase_6",  # Traceability mapping
+    "phase_2",  # Precondition formalization
+    "phase_3",  # Failure mode enumeration
+    "phase_4",  # Invariant identification
+    "phase_5",  # Verification routing
+    "phase_6",  # EARS statement generation
     "phase_7",  # Approval gate
 ]
 
@@ -215,25 +215,26 @@ class NegotiationHarness:
         return api_indices.issubset(postcond_indices)
 
     def _phase_2_ok(self) -> bool:
-        """Guard: preconditions exist and every failure mode references a valid precondition."""
+        """Guard: preconditions have been identified for the current story."""
+        return len(self.ctx.preconditions) > 0
+
+    def _phase_3_ok(self) -> bool:
+        """Guard: failure modes exist and reference known preconditions."""
         if not self.ctx.preconditions or not self.ctx.failure_modes:
             return False
         pre_ids = {p.get("id") for p in self.ctx.preconditions}
         fail_refs = {f.get("violates") for f in self.ctx.failure_modes}
         return fail_refs.issubset(pre_ids)
 
-    def _phase_3_ok(self) -> bool:
+    def _phase_4_ok(self) -> bool:
         """Guard: invariants populated (can be from constitution or synthesis)."""
         return len(self.ctx.invariants) > 0
 
-    def _phase_4_ok(self) -> bool:
+    def _phase_5_ok(self) -> bool:
         return len(self.ctx.verification_routing) > 0
 
-    def _phase_5_ok(self) -> bool:
-        return len(self.ctx.ears_statements) > 0
-
     def _phase_6_ok(self) -> bool:
-        return len(self.ctx.traceability_map) > 0
+        return len(self.ctx.ears_statements) > 0
 
     def _phase_7_ok(self) -> bool:
         return self.ctx.approved

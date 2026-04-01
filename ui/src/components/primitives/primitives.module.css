@@ -1,0 +1,237 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 2.75rem;
+  padding: 0 var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: var(--leading-tight);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--motion-fast) var(--easing-standard),
+    border-color var(--motion-fast) var(--easing-standard),
+    color var(--motion-fast) var(--easing-standard),
+    transform var(--motion-fast) var(--easing-standard);
+}
+
+.button:hover {
+  transform: translateY(-1px);
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 2px;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  transform: none;
+  opacity: 0.65;
+}
+
+.buttonPrimary {
+  background: var(--color-signal);
+  color: var(--color-ink);
+}
+
+.buttonSecondary {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+.buttonGhost {
+  background: transparent;
+  color: var(--color-text);
+}
+
+.buttonDanger {
+  background: color-mix(in srgb, var(--color-error) 16%, var(--color-surface));
+  border-color: color-mix(in srgb, var(--color-error) 45%, var(--color-border));
+  color: var(--color-text);
+}
+
+.spinner {
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 999px;
+  border: 2px solid color-mix(in srgb, currentColor 20%, transparent);
+  border-top-color: currentColor;
+  animation: spin 0.75s linear infinite;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.65rem;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-round);
+  border: 1px solid transparent;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: var(--leading-tight);
+  white-space: nowrap;
+}
+
+.badgeInfo {
+  background: color-mix(in srgb, var(--color-info) 14%, transparent);
+  border-color: color-mix(in srgb, var(--color-info) 30%, var(--color-border));
+  color: var(--color-info);
+}
+
+.badgeSuccess {
+  background: color-mix(in srgb, var(--color-success) 14%, transparent);
+  border-color: color-mix(in srgb, var(--color-success) 30%, var(--color-border));
+  color: var(--color-success);
+}
+
+.badgeWarning {
+  background: color-mix(in srgb, var(--color-warning) 14%, transparent);
+  border-color: color-mix(in srgb, var(--color-warning) 30%, var(--color-border));
+  color: var(--color-warning);
+}
+
+.badgeError {
+  background: color-mix(in srgb, var(--color-error) 14%, transparent);
+  border-color: color-mix(in srgb, var(--color-error) 30%, var(--color-border));
+  color: var(--color-error);
+}
+
+.badgeNeutral {
+  background: color-mix(in srgb, var(--color-surface-strong) 60%, transparent);
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.panel {
+  background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+}
+
+.panelSubtle {
+  background: color-mix(in srgb, var(--color-surface-strong) 86%, transparent);
+}
+
+.sectionHeader {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.sectionHeaderRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.sectionHeaderDescription {
+  color: var(--color-text-muted);
+}
+
+.text {
+  margin: 0;
+  color: inherit;
+}
+
+.textMuted {
+  color: var(--color-text-muted);
+}
+
+.textSignal {
+  color: var(--color-signal);
+}
+
+.textXs {
+  font-size: var(--text-xs);
+  line-height: var(--leading-tight);
+}
+
+.textSm {
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+.textBase {
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+}
+
+.textLg {
+  font-size: var(--text-lg);
+  line-height: var(--leading-tight);
+}
+
+.textXl {
+  font-size: var(--text-xl);
+  line-height: var(--leading-tight);
+}
+
+.weightRegular {
+  font-weight: 400;
+}
+
+.weightMedium {
+  font-weight: 500;
+}
+
+.weightSemibold {
+  font-weight: 600;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+}
+
+.divider {
+  height: 1px;
+  width: 100%;
+  border: 0;
+  background: var(--color-border);
+}
+
+.skeleton {
+  width: 100%;
+  min-height: 4rem;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--color-surface-strong) 90%, transparent) 0%,
+    color-mix(in srgb, var(--color-signal) 8%, var(--color-surface-strong)) 50%,
+    color-mix(in srgb, var(--color-surface-strong) 90%, transparent) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite linear;
+}
+
+.emptyState {
+  display: grid;
+  gap: var(--space-3);
+  text-align: left;
+}
+
+.emptyStateBody {
+  display: grid;
+  gap: var(--space-1);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}

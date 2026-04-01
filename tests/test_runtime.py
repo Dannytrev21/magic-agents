@@ -1,6 +1,7 @@
 """Unit tests for session/runtime helpers — includes P3.2 compaction integration."""
 
 from pathlib import Path
+from unittest.mock import Mock
 
 import logging
 import pytest
@@ -50,7 +51,8 @@ def test_session_store_creates_distinct_sessions(sample_context):
     assert first.session_id != second.session_id
     assert store.resolve(first.session_id) is first
     assert store.resolve(second.session_id) is second
-    assert store.resolve(None) is None
+    # resolve(None) returns the active session (last created)
+    assert store.resolve(None) is second
 
 
 def test_run_phase_captures_structured_questions(sample_context):
@@ -96,6 +98,36 @@ def test_restore_uses_checkpoint_phase_index(sample_context, monkeypatch, tmp_pa
     assert restored is not None
     assert restored.context.current_phase == "phase_2"
     assert restored.phase_idx == 2
+
+
+# ---------------------------------------------------------------
+# Session identity persistence (from main)
+# ---------------------------------------------------------------
+
+def test_restore_reuses_persisted_session_identity(monkeypatch, tmp_path):
+    monkeypatch.setattr("verify.negotiation.checkpoint.SESSIONS_DIR", Path(tmp_path))
+
+    context = VerificationContext(
+        jira_key="RUNTIME-001",
+        jira_summary="Runtime restore",
+        raw_acceptance_criteria=[
+            {"index": 0, "text": "Operator can resume the saved session", "checked": False},
+        ],
+        constitution={},
+    )
+    context.current_phase = "phase_2"
+    context.session_id = "session-runtime-001"
+
+    save_checkpoint(context, "phase_2")
+
+    store = SessionStore()
+    first_restore = store.restore("RUNTIME-001", llm=LLMClient())
+    second_restore = store.restore("RUNTIME-001", llm=LLMClient())
+
+    assert first_restore is not None
+    assert first_restore.session_id == "session-runtime-001"
+    assert first_restore.context.session_id == "session-runtime-001"
+    assert second_restore is first_restore
 
 
 # ---------------------------------------------------------------
