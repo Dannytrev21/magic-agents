@@ -8,6 +8,12 @@
 
 The Operator Workspace should not stop at negotiation. Once the operator approves EARS, the app needs to feel like a verification console: generate artifacts, watch execution, inspect verdicts, and push evidence back to Jira from the same surface.
 
+## Delivery Status
+
+- Implemented in the React workspace and FastAPI contract on 2026-04-01.
+- The center pane now owns the EARS approval gate, compile/generate controls, artifact viewers, live SSE pipeline console, and post-run Jira feedback surface.
+- Backend execution endpoints now enforce EARS approval so the UI gate cannot be bypassed with direct requests.
+
 ---
 
 ## Story U6.1: Integrate the EARS approval gate and execution controls
@@ -34,10 +40,10 @@ The Operator Workspace should not stop at negotiation. Once the operator approve
 
 ### Acceptance Criteria
 
-- [ ] The EARS approval gate is rendered in the workspace after negotiation completes.
-- [ ] Compile, generate-tests, and pipeline actions stay disabled until approval succeeds.
-- [ ] Approval status shows approver and timestamp from the backend.
-- [ ] Failed approvals leave execution controls disabled and display inline errors.
+- [x] The EARS approval gate is rendered in the workspace after negotiation completes.
+- [x] Compile, generate-tests, and pipeline actions stay disabled until approval succeeds.
+- [x] Approval status shows approver and timestamp from the backend.
+- [x] Failed approvals leave execution controls disabled and display inline errors.
 
 ### How to Test
 
@@ -71,10 +77,10 @@ The Operator Workspace should not stop at negotiation. Once the operator approve
 
 ### Acceptance Criteria
 
-- [ ] Spec YAML is displayed in an inline artifact viewer after compile succeeds.
-- [ ] Generated test output is displayed after test generation succeeds.
-- [ ] Artifact viewers support long content without breaking layout.
-- [ ] Artifact surfaces can be revisited from the workspace after the initial action.
+- [x] Spec YAML is displayed in an inline artifact viewer after compile succeeds.
+- [x] Generated test output is displayed after test generation succeeds.
+- [x] Artifact viewers support long content without breaking layout.
+- [x] Artifact surfaces can be revisited from the workspace after the initial action.
 
 ### How to Test
 
@@ -108,10 +114,10 @@ The Operator Workspace should not stop at negotiation. Once the operator approve
 
 ### Acceptance Criteria
 
-- [ ] The pipeline console connects to the SSE endpoint and renders step events live.
-- [ ] Running, done, skipped, and failed states are visually distinct.
-- [ ] Final pipeline status remains visible after completion.
-- [ ] Stream errors are surfaced without crashing the workspace.
+- [x] The pipeline console connects to the SSE endpoint and renders step events live.
+- [x] Running, done, skipped, and failed states are visually distinct.
+- [x] Final pipeline status remains visible after completion.
+- [x] Stream errors are surfaced without crashing the workspace.
 
 ### How to Test
 
@@ -148,13 +154,13 @@ The Operator Workspace should not stop at negotiation. Once the operator approve
 
 ### Acceptance Criteria
 
-- [ ] The post-run surface includes a concise overall results summary before the detailed verdict list.
-- [ ] The post-run surface shows pass/fail verdicts grouped by AC.
-- [ ] Evidence refs and details are visible for each verdict.
-- [ ] Failed or incomplete results are surfaced ahead of passed results where helpful for operator review.
-- [ ] Jira feedback can be triggered from the verification console.
-- [ ] The UI reports whether checkboxes were ticked and evidence was posted.
-- [ ] Empty-result and pipeline-error states provide clear next actions in the same surface.
+- [x] The post-run surface includes a concise overall results summary before the detailed verdict list.
+- [x] The post-run surface shows pass/fail verdicts grouped by AC.
+- [x] Evidence refs and details are visible for each verdict.
+- [x] Failed or incomplete results are surfaced ahead of passed results where helpful for operator review.
+- [x] Jira feedback can be triggered from the verification console.
+- [x] The UI reports whether checkboxes were ticked and evidence was posted.
+- [x] Empty-result and pipeline-error states provide clear next actions in the same surface.
 
 ### How to Test
 

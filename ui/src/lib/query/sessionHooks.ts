@@ -1,5 +1,6 @@
-import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  approveEars,
   compileSpec,
   evaluatePhase,
   fetchPlan,
@@ -9,6 +10,8 @@ import {
   fetchScanStatus,
   fetchSessionInfo,
   fetchSkills,
+  generateTests,
+  postJiraUpdate,
   respondToSession,
   runCodebaseScan,
   resumeSession,
@@ -154,4 +157,45 @@ export function useRespondMutation() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.sessionInfo(session.jira_key) });
     },
   });
+}
+
+export function useVerificationQueries() {
+  const jiraConfiguredQuery = useQuery({
+    queryKey: queryKeys.jiraConfigured,
+    queryFn: fetchJiraConfigured,
+  });
+
+  return {
+    jiraConfigured: jiraConfiguredQuery.data?.configured ?? false,
+    jiraConfiguredQuery,
+  };
+}
+
+export function useVerificationActions(sessionId: string) {
+  const approveMutation = useMutation({
+    mutationFn: (approvedBy?: string) =>
+      approveEars({
+        approved_by: approvedBy ?? 'web_operator',
+        session_id: sessionId,
+      }),
+  });
+
+  const compileMutation = useMutation({
+    mutationFn: () => compileSpec({ session_id: sessionId }),
+  });
+
+  const generateMutation = useMutation({
+    mutationFn: () => generateTests({ session_id: sessionId }),
+  });
+
+  const jiraUpdateMutation = useMutation({
+    mutationFn: () => postJiraUpdate({ session_id: sessionId }),
+  });
+
+  return {
+    approveMutation,
+    compileMutation,
+    generateMutation,
+    jiraUpdateMutation,
+  };
 }

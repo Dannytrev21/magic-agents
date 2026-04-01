@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from 'react';
+import { useEffect, useState, type RefObject } from 'react';
 import { Button } from '@/components/primitives/Button';
 import { Badge } from '@/components/primitives/Badge';
 import { Divider } from '@/components/primitives/Divider';
@@ -7,6 +7,11 @@ import { Mono } from '@/components/primitives/Mono';
 import { SectionHeader } from '@/components/primitives/SectionHeader';
 import { Text } from '@/components/primitives/Text';
 import { PhaseTranscript } from '@/features/workspace/PhaseTranscript';
+import {
+  buildInitialVerificationState,
+  WorkspaceVerificationConsole,
+  type VerificationWorkspaceState,
+} from '@/features/workspace/WorkspaceVerificationConsole';
 import {
   buildPhaseReview,
   buildTranscriptEntries,
@@ -69,6 +74,10 @@ export function WorkspaceCenterPane({
   statusLabel,
   storySummary = null,
 }: WorkspaceCenterPaneProps) {
+  const [verificationState, setVerificationState] = useState<VerificationWorkspaceState>(() =>
+    buildInitialVerificationState(activeSession),
+  );
+
   useEffect(() => {
     if (!activeSession || activeView !== 'negotiation') {
       return;
@@ -99,6 +108,10 @@ export function WorkspaceCenterPane({
       window.removeEventListener('keydown', handleKeydown);
     };
   }, [activeSession, activeView, onPhaseSelect]);
+
+  useEffect(() => {
+    setVerificationState(buildInitialVerificationState(activeSession));
+  }, [activeSession?.session_id]);
 
   if (!activeSession) {
     return (
@@ -242,6 +255,20 @@ export function WorkspaceCenterPane({
             activeSession={activeSession}
             selectedAcceptanceCriterionIndex={selectedAcceptanceCriterionIndex}
           />
+        ) : null}
+        {activeView === 'verification' ? (
+          activeSession.done ? (
+            <WorkspaceVerificationConsole
+              activeSession={activeSession}
+              onStateChange={setVerificationState}
+              state={verificationState}
+            />
+          ) : (
+            <EmptyState
+              title="Verification unlocks after negotiation"
+              description="Finish the negotiation loop to approve EARS, inspect proof artifacts, and run the verification pipeline."
+            />
+          )
         ) : null}
       </section>
     </div>

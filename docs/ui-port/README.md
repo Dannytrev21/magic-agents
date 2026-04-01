@@ -65,10 +65,11 @@
 
 ## Current Status
 
-- U1 through U5 are now complete in the React workspace.
+- U1 through U6 are now complete in the React workspace.
 - The right inspector now owns the evidence, scan, traceability, planning/critique, and structured spec-contract surfaces.
-- Inspector actions stay session-scoped and keep the center-pane negotiation flow stable while scan, critique, planning, and spec-compare requests run.
-- The next delivery slice is Epic U6: verification console and pipeline execution.
+- The center pane now carries a session-scoped verification console with backend-confirmed EARS approval, inline artifact viewers, live pipeline streaming, verdict summaries, and Jira feedback.
+- Inspector actions and verification actions stay session-scoped and keep the center-pane workflow stable while scan, critique, planning, compile, and pipeline requests run.
+- The next delivery slice is Epic U7: design system, accessibility, and motion.
 
 ## Success Criteria
 

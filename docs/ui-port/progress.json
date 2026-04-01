@@ -2,18 +2,18 @@
   "meta": {
     "project": "Magic Agents Operator Workspace UI port",
     "created": "2026-03-31",
-    "last_updated": "2026-04-01T12:39:32Z",
+    "last_updated": "2026-04-01T13:32:13Z",
     "total_epics": 8,
     "total_stories": 36
   },
   "summary": {
-    "epics_complete": 5,
+    "epics_complete": 6,
     "epics_in_progress": 0,
-    "epics_not_started": 3,
-    "stories_complete": 26,
+    "epics_not_started": 2,
+    "stories_complete": 30,
     "stories_in_progress": 0,
-    "stories_not_started": 10,
-    "stories_tested": 26
+    "stories_not_started": 6,
+    "stories_tested": 30
   },
   "epics": [
     {
@@ -92,12 +92,12 @@
       "title": "Verification Console and Pipeline Execution",
       "file": "U06-verification-console-pipeline.md",
       "priority": 6,
-      "status": "not_started",
+      "status": "complete",
       "stories": [
-        { "id": "U6.1", "title": "Integrate the EARS approval gate and execution controls", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U6.2", "title": "Add artifact viewers for specs and generated tests", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U6.3", "title": "Stream pipeline execution as a live console", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U6.4", "title": "Present verdicts and Jira feedback in one post-run surface", "status": "not_started", "tested": false, "notes": "" }
+        { "id": "U6.1", "title": "Integrate the EARS approval gate and execution controls", "status": "complete", "tested": true, "notes": "Added a session-scoped verification console in the center pane, surfaced backend approval metadata, and enforced the EARS gate in both the React controls and FastAPI execution endpoints." },
+        { "id": "U6.2", "title": "Add artifact viewers for specs and generated tests", "status": "complete", "tested": true, "notes": "Added inline spec YAML and generated-test viewers with revisit-friendly tabs, mono file refs, and long-content handling without leaving the workspace." },
+        { "id": "U6.3", "title": "Stream pipeline execution as a live console", "status": "complete", "tested": true, "notes": "Implemented `/api/pipeline/stream` SSE events for compile, generate, run, evaluate, and completion states, then rendered them as an in-place live console with durable final status." },
+        { "id": "U6.4", "title": "Present verdicts and Jira feedback in one post-run surface", "status": "complete", "tested": true, "notes": "Added post-run summaries, per-AC verdict details with evidence refs, Jira configuration gating, and session-scoped Jira feedback results in the verification console." }
       ]
     },
     {

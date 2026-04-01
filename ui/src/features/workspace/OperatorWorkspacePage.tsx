@@ -217,6 +217,11 @@ export function OperatorWorkspacePage({
         setActiveSession(nextSession);
         setStorySummary(nextSession.jira_summary ?? storySummary);
         setSelectedPhaseNumber((current) => resolveSelectedPhaseNumber(current, activeSession, nextSession));
+        if (action === 'approve' && nextSession.done) {
+          const next = new URLSearchParams(searchParams);
+          next.set('view', 'verification');
+          setSearchParams(next, { replace: true });
+        }
         setPhaseActionState({
           activeAction: action,
           isPending: false,

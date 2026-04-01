@@ -261,6 +261,13 @@
   border-top: 1px solid color-mix(in srgb, var(--color-border) 72%, transparent);
 }
 
+.actionRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
 .field {
   display: grid;
   gap: var(--space-2);
@@ -323,6 +330,47 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.console {
+  display: grid;
+  gap: var(--space-3);
+  max-height: 24rem;
+  padding-right: var(--space-2);
+  overflow: auto;
+}
+
+.consoleEntry {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+  background: color-mix(in srgb, var(--color-bg-elevated) 88%, transparent);
+}
+
+.consoleEntry[data-status='running'] {
+  border-color: color-mix(in srgb, var(--color-signal) 36%, transparent);
+}
+
+.consoleEntry[data-status='done'] {
+  border-color: color-mix(in srgb, var(--color-success) 36%, transparent);
+}
+
+.consoleEntry[data-status='skipped'] {
+  border-color: color-mix(in srgb, var(--color-border) 92%, transparent);
+}
+
+.consoleEntry[data-status='failed'],
+.consoleEntry[data-status='error'] {
+  border-color: color-mix(in srgb, var(--color-signal) 52%, transparent);
+}
+
+.consoleEntryHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 

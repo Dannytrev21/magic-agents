@@ -1,6 +1,9 @@
 import type {
   CompileSpecResponse,
+  EarsApprovalResponse,
+  GenerateTestsResponse,
   JiraConfiguredResponse,
+  JiraUpdateResponse,
   JiraStoriesResponse,
   JiraTicketResponse,
   PhaseCritiqueResponse,
@@ -38,7 +41,7 @@ async function requestJson<T>(input: string, init: RequestInit = {}): Promise<T>
 }
 
 function jsonRequest<TBody>(body?: TBody): RequestInit {
-  if (!body) {
+  if (body === undefined) {
     return {};
   }
 
@@ -93,8 +96,8 @@ export function fetchSpecDiff() {
   return requestJson<SpecDiffResponse>('/api/spec-diff', jsonRequest({}));
 }
 
-export function compileSpec() {
-  return requestJson<CompileSpecResponse>('/api/compile', jsonRequest({}));
+export function compileSpec(payload?: { session_id?: string }) {
+  return requestJson<CompileSpecResponse>('/api/compile', jsonRequest(payload ?? {}));
 }
 
 export function respondToSession(payload: { input: string; session_id: string }) {
@@ -105,8 +108,23 @@ export function startNegotiation(payload: StartNegotiationRequest) {
   return requestJson<StartNegotiationResponse>('/api/start', jsonRequest(payload));
 }
 
+export function approveEars(payload: { approved_by?: string; session_id?: string }) {
+  return requestJson<EarsApprovalResponse>('/api/ears-approve', jsonRequest(payload));
+}
+
+export function generateTests(payload?: { session_id?: string }) {
+  return requestJson<GenerateTestsResponse>('/api/generate-tests', jsonRequest(payload ?? {}));
+}
+
+export function postJiraUpdate(payload?: { session_id?: string }) {
+  return requestJson<JiraUpdateResponse>('/api/jira/update', jsonRequest(payload ?? {}));
+}
+
 export async function streamPipelineEvents(sessionId: string, onEvent: (event: PipelineEvent) => void) {
-  const response = await fetch('/api/pipeline/stream', jsonRequest({ session_id: sessionId }));
+  const response = await fetch(
+    '/api/pipeline/stream',
+    jsonRequest({ session_id: sessionId }),
+  );
 
   if (!response.ok) {
     throw new ApiError(await response.text(), response.status);

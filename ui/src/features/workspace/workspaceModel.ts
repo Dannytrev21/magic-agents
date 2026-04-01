@@ -13,6 +13,7 @@ export const negotiationPhases = [
 export const centerWorkspaceViews = [
   { value: 'overview', label: 'Overview' },
   { value: 'negotiation', label: 'Negotiation' },
+  { value: 'verification', label: 'Verification' },
   { value: 'traceability', label: 'Traceability' },
 ] as const;
 
