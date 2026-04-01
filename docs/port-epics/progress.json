@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-04-01T12:00:00Z",
+  "last_updated": "2026-04-01T18:00:00Z",
   "epics": [
     {
       "id": "P01",
@@ -43,7 +43,17 @@
         { "id": "P4.3", "name": "Dynamic Command Discovery in Web UI", "status": "done" }
       ]
     },
-    { "id": "P05", "name": "Permission & Access Control", "file": "P05-permission-access-control.md", "stories": [], "status": "not_started" },
+    {
+      "id": "P05",
+      "name": "Permission & Access Control",
+      "file": "P05-permission-access-control.md",
+      "stories": [
+        { "id": "P5.1", "name": "ToolPermissionContext & PermissionDenial Data Models", "status": "done" },
+        { "id": "P5.2", "name": "Skill Filtering by Permission Context", "status": "done" },
+        { "id": "P5.3", "name": "Permission-Aware Web Endpoints", "status": "done" },
+        { "id": "P5.4", "name": "Constitution-Driven Permission Defaults", "status": "done" }
+      ]
+    },
     { "id": "P06", "name": "Structured Streaming Events", "file": "P06-structured-streaming-events.md", "stories": [], "status": "not_started" },
     { "id": "P07", "name": "Session Cost Accounting", "file": "P07-session-cost-accounting.md", "stories": [], "status": "not_started" },
     { "id": "P08", "name": "Bootstrap & Initialization Graph", "file": "P08-bootstrap-initialization-graph.md", "stories": [], "status": "not_started" },

@@ -16,7 +16,7 @@ def ensure_mock_mode(monkeypatch):
 
 
 from fastapi.testclient import TestClient
-from verify.negotiation.web import app, _session
+from verify.negotiation.web import app, _session, SCAN_STATE
 
 
 @pytest.fixture
@@ -24,6 +24,9 @@ def client(monkeypatch):
     """Create a test client and clear session state."""
     monkeypatch.setenv("LLM_MOCK", "true")
     _session.clear()
+    SCAN_STATE["project_root"] = ""
+    SCAN_STATE["scanned"] = False
+    SCAN_STATE["summary"] = ""
     return TestClient(app)
 
 

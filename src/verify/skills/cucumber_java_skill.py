@@ -10,7 +10,6 @@ import yaml
 from verify.skills.framework import VerificationSkill, register_skill
 
 
-@register_skill
 class CucumberJavaSkill(VerificationSkill):
     """Bridges the CucumberJavaGenerator into the skill framework.
 
@@ -19,7 +18,12 @@ class CucumberJavaSkill(VerificationSkill):
     """
 
     skill_id = "cucumber_java"
+    name = "Cucumber Java"
     description = "Generate Cucumber/Gherkin + Java step definitions from spec contracts"
+    input_types = frozenset({"api_behavior"})
+    output_format = ".feature"
+    framework = "cucumber"
+    version = "1.0.0"
 
     def generate(
         self,
@@ -27,16 +31,10 @@ class CucumberJavaSkill(VerificationSkill):
         requirement: dict,
         constitution: dict,
     ) -> str:
-        """Generate Cucumber feature file by delegating to the existing generator.
-
-        Note: The CucumberJavaGenerator produces TWO files (.feature + .java).
-        This skill generates the .feature content; the .java file is written
-        as a side effect via the generator's write() method.
-        """
+        """Generate Cucumber feature file by delegating to the existing generator."""
         from verify.generators.cucumber_java import CucumberJavaGenerator
         from verify.llm_client import LLMClient
 
-        # The existing generator needs a spec file path, so we write a temp spec
         import tempfile
 
         with tempfile.NamedTemporaryFile(
@@ -50,18 +48,30 @@ class CucumberJavaSkill(VerificationSkill):
             llm = LLMClient()
             generated_files = generator.generate(temp_spec_path, constitution, llm)
 
-            # Write all generated files (feature + step defs)
             generator.write(generated_files)
 
-            # Return the feature file content (the primary output)
             for path, content in generated_files.files.items():
                 if path.endswith(".feature"):
                     return content
 
-            # Fallback: return the first file's content
             if generated_files.files:
                 return next(iter(generated_files.files.values()))
 
             return ""
         finally:
             os.unlink(temp_spec_path)
+
+    def output_path(self, spec: dict, requirement: dict) -> str:
+        """Return the output path from the verification entry or construct one."""
+        for ver in requirement.get("verification", []):
+            if ver.get("skill") == self.skill_id:
+                return ver.get("output", "")
+
+        jira_key = spec.get("meta", {}).get("jira_key", "UNKNOWN")
+        safe_key = jira_key.replace("-", "_")
+        return f".verify/generated/{safe_key}.feature"
+
+
+# Auto-register on import
+_skill = CucumberJavaSkill()
+register_skill(_skill)
