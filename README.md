@@ -7,6 +7,7 @@ Every arrow below represents a handoff between components. Each handoff has a de
 ## React Workspace Status
 
 - The React + TypeScript operator workspace now covers epics U1 through U8 of the UI port.
+- As of 2026-04-01, [`/Users/dannytrevino/development/magic-agents/docs/ui-port/progress.json`](/Users/dannytrevino/development/magic-agents/docs/ui-port/progress.json) reports 36 of 36 UI stories complete and the U1 through U8 epic markdown EARS checklists are synchronized to that state.
 - The right inspector exposes evidence, scan output, per-AC traceability, planner/critique tools, spec diff, and a structured spec contract viewer beside raw YAML.
 - The center pane now includes a verification console with backend-confirmed EARS approval, inline spec/test artifact viewers, live SSE pipeline events, and post-run Jira feedback controls.
 - The shared UI design system now ships from a typed token source mirrored into CSS variables, keeping graphite/bone surfaces, mono artifact treatment, and restrained glass chrome aligned across the shell, rails, and verification surfaces.
@@ -22,6 +23,7 @@ Every arrow below represents a handoff between components. Each handoff has a de
 - Hook & event system (P09) provides a `HookRegistry` with lifecycle points (`pre_phase`, `post_phase`, `checkpoint_saved`, etc.) that fire registered callbacks in order with isolated failure handling. Hooks integrate into `NegotiationHarness` at phase boundaries and can be configured via `constitution.yaml` shell commands with environment variable context.
 - MCP server wrapper (P10) exposes core pipeline capabilities as MCP tools (`start_negotiation`, `run_phase`, `get_spec`, `dispatch_skills`, `get_verdicts`) with JSON Schema definitions, plus resources at `verify://specs/{key}` and `verify://sessions/{id}` for spec YAML and session state.
 - UI verification now runs through `npm run test:ci` for Vitest + build + bundle budgets, with browser coverage authored under `npm run test:e2e` after `npm run test:e2e:install` in [`/Users/dannytrevino/development/magic-agents/ui`](/Users/dannytrevino/development/magic-agents/ui). The Playwright harness supports `PLAYWRIGHT_BROWSER=chromium|firefox|webkit`, a dedicated remote browser server via `npm run test:e2e:server`, and Codex-friendly remote execution through `npm run test:e2e:remote` or `PW_TEST_CONNECT_WS_ENDPOINT=... npm run test:e2e`.
+- The current non-browser shell CSS budget is 33.5 kB raw and 7 kB gzip, which matches the shipped Apple-inspired workspace chrome while keeping lazy-loaded verification and analyst surfaces outside the initial shell budget.
 
 ```
 ┌──────────┐     jira_ticket.yaml      ┌───────────────┐

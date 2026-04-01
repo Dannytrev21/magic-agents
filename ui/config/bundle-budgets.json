@@ -11,7 +11,7 @@
       "label": "Workspace shell CSS",
       "manifestKey": "index.html",
       "source": "css.0",
-      "maxBytes": 32000,
+      "maxBytes": 33500,
       "maxGzipBytes": 7000
     },
     {

@@ -13,6 +13,7 @@ By the time the React operator workspace covered epics U1 through U7, the featur
 Adopt a three-part rollout and quality model:
 
 - separate frontend verification into `npm run test:ui`, `npm run test:e2e`, and `npm run test:ci` so browser coverage remains optional and independent from the faster component/integration gate
+- treat `npm run test:ci` as the baseline contributor gate for UI-only changes, while keeping `npm run test:e2e` additive for release validation, regression investigation, and environments that use the remote Playwright server path
 - keep the core operator journey deterministic in Playwright by routing all browser tests through mocked API/SSE fixtures with retained traces and screenshots on failure
 - treat the FastAPI root as a reversible rollout boundary by supporting `MAGIC_AGENTS_FRONTEND_MODE=auto|react|legacy` and `/?frontend=react|legacy` overrides while preserving the legacy HTML entrypoint
 
@@ -25,6 +26,7 @@ Make the Playwright browser runtime explicit and environment-selectable. Keep Ch
 ### Positive
 
 - Frontend regressions now have explicit coverage layers instead of relying on convention.
+- Contributors now have a single non-browser gate that remains valid even when local browser launch is restricted.
 - Browser journeys can be exercised without a live FastAPI or Jira backend because the Playwright suite owns its mocks.
 - Browser choice no longer blocks diagnosis when one engine is incompatible with the host sandbox.
 - Restricted hosts can keep using the same Playwright suite by connecting to a separately launched browser runtime.

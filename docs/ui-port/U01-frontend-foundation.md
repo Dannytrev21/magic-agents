@@ -8,6 +8,15 @@
 
 The current frontend is a single HTML file with inline CSS and JavaScript. That is fast for prototyping but too brittle for the Operator Workspace direction. Before layout or feature work matters, the project needs a typed frontend boundary, a predictable build pipeline, and a reusable shell that can host the three-pane workspace without turning state management into ad hoc DOM mutation.
 
+## Implementation Status
+
+- Implemented in the React workspace and reflected in `progress.json` on 2026-04-01.
+- `U1.1` shipped a React 19 + TypeScript + Vite workspace in `ui/`, plus Vite proxying and FastAPI handoff to built `static/ui` assets.
+- `U1.2` shipped typed API adapters, SSE parsing utilities, and TanStack Query hooks for intake and bootstrap flows.
+- `U1.3` shipped the provider-backed three-pane shell, router composition, and top-level error handling.
+- `U1.4` shipped typed graphite/bone/signal tokens mirrored into CSS variables with non-blocking font loading.
+- `U1.5` shipped accessible shared primitives for buttons, badges, text, mono refs, dividers, skeletons, empty states, panels, and section headers.
+
 ---
 
 ## Story U1.1: Scaffold the React + TypeScript + Vite frontend
@@ -34,10 +43,10 @@ The current frontend is a single HTML file with inline CSS and JavaScript. That 
 
 ### Acceptance Criteria
 
-- [ ] A `ui/` workspace exists with React, TypeScript, Vite, linting, and formatting configured.
-- [ ] Local development supports a proxy from the Vite dev server to FastAPI.
-- [ ] Production build output is served by FastAPI.
-- [ ] No existing `/api/*` route signatures are changed as part of the scaffold.
+- [x] A `ui/` workspace exists with React, TypeScript, Vite, linting, and formatting configured.
+- [x] Local development supports a proxy from the Vite dev server to FastAPI.
+- [x] Production build output is served by FastAPI.
+- [x] No existing `/api/*` route signatures are changed as part of the scaffold.
 
 ### How to Test
 
@@ -71,10 +80,10 @@ The current frontend is a single HTML file with inline CSS and JavaScript. That 
 
 ### Acceptance Criteria
 
-- [ ] A dedicated API module defines typed functions for the current FastAPI endpoints.
-- [ ] TanStack Query manages read and mutation lifecycles for story intake and session workflows.
-- [ ] SSE pipeline streaming is wrapped in a reusable client adapter.
-- [ ] Direct `fetch()` usage in presentational components is forbidden by convention.
+- [x] A dedicated API module defines typed functions for the current FastAPI endpoints.
+- [x] TanStack Query manages read and mutation lifecycles for story intake and session workflows.
+- [x] SSE pipeline streaming is wrapped in a reusable client adapter.
+- [x] Direct `fetch()` usage in presentational components is forbidden by convention.
 
 ### How to Test
 
@@ -108,10 +117,10 @@ The current frontend is a single HTML file with inline CSS and JavaScript. That 
 
 ### Acceptance Criteria
 
-- [ ] The app has a single root shell with provider composition.
-- [ ] Layout primitives exist for rails, inspectors, sections, and artifact panels.
-- [ ] Top-level error boundary and not-found fallback are present.
-- [ ] The shell can host a placeholder three-pane layout before feature surfaces are ported.
+- [x] The app has a single root shell with provider composition.
+- [x] Layout primitives exist for rails, inspectors, sections, and artifact panels.
+- [x] Top-level error boundary and not-found fallback are present.
+- [x] The shell can host a placeholder three-pane layout before feature surfaces are ported.
 
 ### How to Test
 
@@ -146,10 +155,10 @@ The current frontend is a single HTML file with inline CSS and JavaScript. That 
 
 ### Acceptance Criteria
 
-- [ ] Global tokens cover color, spacing, typography, radius, and motion durations.
-- [ ] The workspace defaults to sans-serif product copy and mono for IDs/refs.
-- [ ] Hardcoded visual values are avoided outside the token definitions or narrowly justified exceptions.
-- [ ] Font loading does not block first paint.
+- [x] Global tokens cover color, spacing, typography, radius, and motion durations.
+- [x] The workspace defaults to sans-serif product copy and mono for IDs/refs.
+- [x] Hardcoded visual values are avoided outside the token definitions or narrowly justified exceptions.
+- [x] Font loading does not block first paint.
 
 ### How to Test
 
@@ -183,10 +192,10 @@ The current frontend is a single HTML file with inline CSS and JavaScript. That 
 
 ### Acceptance Criteria
 
-- [ ] A shared primitive set exists for common interactive and display needs.
-- [ ] Interactive primitives support keyboard focus and disabled/loading states.
-- [ ] Shared text primitives distinguish product copy from IDs and refs.
-- [ ] Skeleton and empty-state primitives exist for async loading surfaces.
+- [x] A shared primitive set exists for common interactive and display needs.
+- [x] Interactive primitives support keyboard focus and disabled/loading states.
+- [x] Shared text primitives distinguish product copy from IDs and refs.
+- [x] Skeleton and empty-state primitives exist for async loading surfaces.
 
 ### How to Test
 

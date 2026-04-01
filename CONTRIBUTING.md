@@ -19,6 +19,7 @@
 - Run `npm run test:ui` in [`/Users/dannytrevino/development/magic-agents/ui`](/Users/dannytrevino/development/magic-agents/ui) for component, integration, and typed client contract coverage.
 - Run `npm run build` and `npm run test:budgets` in [`/Users/dannytrevino/development/magic-agents/ui`](/Users/dannytrevino/development/magic-agents/ui) before pushing UI changes that affect shipped assets or lazy-loaded surfaces.
 - Use `npm run test:ci` in [`/Users/dannytrevino/development/magic-agents/ui`](/Users/dannytrevino/development/magic-agents/ui) when you want the full non-browser frontend gate in one command.
+- Treat `npm run test:ci` as the default pre-push gate for UI-only changes; use browser e2e coverage as an additional release or regression check when a local or remote Playwright runtime is available.
 - Install the local Playwright browsers once with `npm run test:e2e:install` and run `npm run test:e2e` for deterministic mock-mode browser coverage. Use `npm run test:e2e:chromium`, `npm run test:e2e:firefox`, or `npm run test:e2e:webkit` when you need to isolate host-specific browser failures.
 - When Codex Desktop cannot launch browsers locally, start `npm run test:e2e:server` in a normal terminal and run `npm run test:e2e:remote` from Codex. For non-default endpoints, pass `PW_TEST_CONNECT_WS_ENDPOINT=ws://host:port/` directly to `npm run test:e2e`.
 - Set `PW_SKIP_WEBSERVER=1` when the app under test is already running, or override the target app URL with `PW_BASE_URL=http://host:port`. Failed runs retain traces/screenshots under the ignored Playwright output folders in the UI workspace.
@@ -37,4 +38,5 @@
 
 - Update [`/Users/dannytrevino/development/magic-agents/docs/ui-port/progress.json`](/Users/dannytrevino/development/magic-agents/docs/ui-port/progress.json) when a UI story changes status.
 - Keep the relevant epic file in [`/Users/dannytrevino/development/magic-agents/docs/ui-port`](/Users/dannytrevino/development/magic-agents/docs/ui-port) synchronized with the implemented acceptance criteria.
+- When a UI story moves to `complete`, flip the corresponding Acceptance Criteria checkboxes in the epic file to `[x]` in the same change so the EARS-style docs stay consistent with `progress.json`.
 - Record durable UI architecture decisions in [`/Users/dannytrevino/development/magic-agents/docs/adr/0001-workspace-inspector.md`](/Users/dannytrevino/development/magic-agents/docs/adr/0001-workspace-inspector.md) or later ADRs when the decision scope expands.

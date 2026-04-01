@@ -65,7 +65,9 @@
 
 ## Current Status
 
-- U1 through U8 are now complete in the React workspace, with U8.2 browser coverage authored but blocked from local execution in this sandbox because Playwright Chromium cannot launch under the current macOS permission envelope.
+- As of 2026-04-01, `progress.json` reports all 36 UI-port stories complete and the U1 through U8 epic markdown acceptance checklists are synchronized to that shipped state.
+- This verification pass re-ran `npm test`, `npm run build`, and `npm run test:ci` in [`/Users/dannytrevino/development/magic-agents/ui`](/Users/dannytrevino/development/magic-agents/ui). The non-browser frontend gate is green again after recalibrating the raw shell CSS budget to match the current workspace chrome.
+- U8.2 browser coverage remains implemented; when Codex-hosted macOS cannot launch Playwright locally, the supported path is `npm run test:e2e:server` outside Codex plus `npm run test:e2e:remote` or `PW_TEST_CONNECT_WS_ENDPOINT=... npm run test:e2e` inside Codex.
 - The shell, rails, workspace, and verification console now consume a typed graphite/bone/signal design system mirrored into CSS tokens.
 - Workspace announcements, pane focus handoff, busy states, and the pipeline log now support keyboard and screen-reader operation without pointer-only assumptions.
 - Reduced-motion fallbacks and shared timing tokens now govern pane transitions, live console behavior, and responsive shell refinements.

@@ -8,6 +8,15 @@
 
 The current UI dumps structured phase data into generic message blocks. The Operator Workspace needs a summary-first review surface where the operator can understand each phase quickly, inspect details when necessary, and take the next action inline.
 
+## Implementation Status
+
+- Implemented in the React workspace and reflected in `progress.json` on 2026-04-01.
+- `U4.1` shipped phase-aware review formatters for all seven negotiation phases with summary-first rendering and raw-payload fallback details.
+- `U4.2` shipped inline approve and revise controls wired to `/api/respond` with loading, success, and error feedback kept beside the action row.
+- `U4.3` shipped a distinct clarifying-questions region and smooth in-place phase advancement with transition-backed session updates.
+- `U4.4` shipped a role-aware transcript with bottom-pin auto-scroll and pause-on-scroll-up behavior.
+- `U4.5` shipped a sticky mini-rail with breadcrumb context, completed-phase reopening, and input-aware shortcut suppression.
+
 ---
 
 ## Story U4.1: Render each phase as a structured review surface
@@ -34,10 +43,10 @@ The current UI dumps structured phase data into generic message blocks. The Oper
 
 ### Acceptance Criteria
 
-- [ ] Each of the seven phases has a dedicated renderer or formatter.
-- [ ] The center pane leads with the primary decision or contract of the phase.
-- [ ] Dense supporting fields are collapsible or secondary.
-- [ ] Unknown payload keys still render safely in a fallback details view.
+- [x] Each of the seven phases has a dedicated renderer or formatter.
+- [x] The center pane leads with the primary decision or contract of the phase.
+- [x] Dense supporting fields are collapsible or secondary.
+- [x] Unknown payload keys still render safely in a fallback details view.
 
 ### How to Test
 
@@ -71,10 +80,10 @@ The current UI dumps structured phase data into generic message blocks. The Oper
 
 ### Acceptance Criteria
 
-- [ ] The center pane includes explicit approve and revise actions.
-- [ ] Revise supports freeform operator feedback without redirecting to a separate chat screen.
-- [ ] Action states show loading, success, and error feedback inline.
-- [ ] Duplicate submissions are prevented while a mutation is in flight.
+- [x] The center pane includes explicit approve and revise actions.
+- [x] Revise supports freeform operator feedback without redirecting to a separate chat screen.
+- [x] Action states show loading, success, and error feedback inline.
+- [x] Duplicate submissions are prevented while a mutation is in flight.
 
 ### How to Test
 
@@ -108,10 +117,10 @@ The current UI dumps structured phase data into generic message blocks. The Oper
 
 ### Acceptance Criteria
 
-- [ ] Clarifying questions render in a dedicated, visually distinct region.
-- [ ] The next phase transition does not feel like a new page load.
-- [ ] `startTransition` is used for non-urgent workspace updates where it improves responsiveness.
-- [ ] Operators can still reference the previous result summary during or after the transition when appropriate.
+- [x] Clarifying questions render in a dedicated, visually distinct region.
+- [x] The next phase transition does not feel like a new page load.
+- [x] `startTransition` is used for non-urgent workspace updates where it improves responsiveness.
+- [x] Operators can still reference the previous result summary during or after the transition when appropriate.
 
 ### How to Test
 
@@ -145,10 +154,10 @@ The current UI dumps structured phase data into generic message blocks. The Oper
 
 ### Acceptance Criteria
 
-- [ ] Transcript entries render with distinct system, operator, and model states.
-- [ ] New transcript entries auto-scroll when the operator is already at the bottom.
-- [ ] Auto-scroll pauses when the operator intentionally scrolls up.
-- [ ] Transcript rendering remains readable with long or dense phase history.
+- [x] Transcript entries render with distinct system, operator, and model states.
+- [x] New transcript entries auto-scroll when the operator is already at the bottom.
+- [x] Auto-scroll pauses when the operator intentionally scrolls up.
+- [x] Transcript rendering remains readable with long or dense phase history.
 
 ### How to Test
 
@@ -182,10 +191,10 @@ The current UI dumps structured phase data into generic message blocks. The Oper
 
 ### Acceptance Criteria
 
-- [ ] The center pane includes a sticky mini-rail for the seven phases.
-- [ ] Breadcrumb context identifies the active story and current center-pane context.
-- [ ] Completed phases can be reopened from the mini-rail where appropriate.
-- [ ] Any quick-jump shortcuts are suppressed while text inputs are focused.
+- [x] The center pane includes a sticky mini-rail for the seven phases.
+- [x] Breadcrumb context identifies the active story and current center-pane context.
+- [x] Completed phases can be reopened from the mini-rail where appropriate.
+- [x] Any quick-jump shortcuts are suppressed while text inputs are focused.
 
 ### How to Test
 

@@ -8,6 +8,15 @@
 
 The most visible improvement is structural, not ornamental. The app needs to feel like an operating surface: intake on the left, active work in the center, evidence on the right. This epic defines the workspace composition that the rest of the port relies on.
 
+## Implementation Status
+
+- Implemented in the React workspace and reflected in `progress.json` on 2026-04-01.
+- `U2.1` shipped a divider-led three-pane layout with the center workspace dominant and independent scroll regions for intake, work, and evidence.
+- `U2.2` shipped a sticky session strip and full seven-phase rail tied to backend-confirmed session metadata.
+- `U2.3` shipped in-place center and inspector transitions with focus handoff instead of route thrash.
+- `U2.4` shipped a stable top bar with product identity, story context, phase context, and pane controls.
+- `U2.5` shipped desktop collapse persistence, tablet inspector overlays, and mobile pane switching with defensive storage fallbacks.
+
 ---
 
 ## Story U2.1: Implement the three-pane workspace layout
@@ -34,10 +43,10 @@ The most visible improvement is structural, not ornamental. The app needs to fee
 
 ### Acceptance Criteria
 
-- [ ] Desktop layouts render all three panes at once.
-- [ ] Pane widths follow a clear hierarchy, with the center pane widest.
-- [ ] Independent scroll regions do not cause header jitter or layout collapse.
-- [ ] The visual treatment uses sections and dividers rather than a grid of cards.
+- [x] Desktop layouts render all three panes at once.
+- [x] Pane widths follow a clear hierarchy, with the center pane widest.
+- [x] Independent scroll regions do not cause header jitter or layout collapse.
+- [x] The visual treatment uses sections and dividers rather than a grid of cards.
 
 ### How to Test
 
@@ -71,10 +80,10 @@ The most visible improvement is structural, not ornamental. The app needs to fee
 
 ### Acceptance Criteria
 
-- [ ] The phase rail shows all seven negotiation phases, not an abbreviated count.
-- [ ] The active phase is visually distinct from complete and pending phases.
-- [ ] Session status is visible while the operator scrolls the center workspace.
-- [ ] Phase navigation does not imply fake client-side completion states.
+- [x] The phase rail shows all seven negotiation phases, not an abbreviated count.
+- [x] The active phase is visually distinct from complete and pending phases.
+- [x] Session status is visible while the operator scrolls the center workspace.
+- [x] Phase navigation does not imply fake client-side completion states.
 
 ### How to Test
 
@@ -108,10 +117,10 @@ The most visible improvement is structural, not ornamental. The app needs to fee
 
 ### Acceptance Criteria
 
-- [ ] The new UI avoids the current separate "Home / AC Overview / Negotiate / Traceability" screen model.
-- [ ] Center and inspector surfaces can swap independently.
-- [ ] Phase transitions use in-place updates, not full re-renders of the whole workspace.
-- [ ] Focus lands in the primary active region after each transition.
+- [x] The new UI avoids the current separate "Home / AC Overview / Negotiate / Traceability" screen model.
+- [x] Center and inspector surfaces can swap independently.
+- [x] Phase transitions use in-place updates, not full re-renders of the whole workspace.
+- [x] Focus lands in the primary active region after each transition.
 
 ### How to Test
 
@@ -145,10 +154,10 @@ The most visible improvement is structural, not ornamental. The app needs to fee
 
 ### Acceptance Criteria
 
-- [ ] The top bar shows product identity and current story context.
-- [ ] The top bar shows phase or workspace context for the active session.
-- [ ] Panel controls are reachable from the top bar.
-- [ ] The bar remains stable during independent pane scrolling.
+- [x] The top bar shows product identity and current story context.
+- [x] The top bar shows phase or workspace context for the active session.
+- [x] Panel controls are reachable from the top bar.
+- [x] The bar remains stable during independent pane scrolling.
 
 ### How to Test
 
@@ -182,10 +191,10 @@ The most visible improvement is structural, not ornamental. The app needs to fee
 
 ### Acceptance Criteria
 
-- [ ] Left and right panes can be collapsed and restored from workspace controls.
-- [ ] Panel visibility preferences persist across reloads.
-- [ ] Narrower breakpoints use overlays or single-panel switching instead of unusable compressed columns.
-- [ ] Returning to wider breakpoints restores the multi-pane layout predictably.
+- [x] Left and right panes can be collapsed and restored from workspace controls.
+- [x] Panel visibility preferences persist across reloads.
+- [x] Narrower breakpoints use overlays or single-panel switching instead of unusable compressed columns.
+- [x] Returning to wider breakpoints restores the multi-pane layout predictably.
 
 ### How to Test
 
