@@ -3,11 +3,30 @@
 import logging
 import sys
 
+import yaml
+
 from verify.evaluator import evaluate_spec
 from verify.generator import generate_and_write
 from verify.runner import run_and_parse
 
 logger = logging.getLogger(__name__)
+
+
+def load_constitution(path: str = "constitution.yaml") -> dict:
+    """Load the project constitution YAML file.
+
+    Args:
+        path: Path to the constitution file. Defaults to 'constitution.yaml'.
+
+    Returns:
+        Parsed constitution dictionary.
+    """
+    try:
+        with open(path) as f:
+            return yaml.safe_load(f) or {}
+    except FileNotFoundError:
+        logger.warning(f"Constitution file not found: {path}")
+        return {}
 
 
 def run_pipeline(spec_path: str) -> list[dict]:
@@ -65,9 +84,10 @@ def run_pipeline(spec_path: str) -> list[dict]:
 def update_jira(
     jira_key: str,
     verdicts: list[dict],
-    jira_client,
     spec_path: str = "",
-) -> None:
+    *,
+    transition_on_pass: bool = False,
+) -> dict:
     """Wire evaluator verdicts to Jira checkbox updates and evidence comments.
 
     Feature 6.1: Tick AC checkboxes for passed verdicts.
@@ -76,24 +96,71 @@ def update_jira(
     Args:
         jira_key: The Jira ticket key (e.g., "DEV-17")
         verdicts: List of verdict dicts from evaluate_spec
-        jira_client: A JiraClient instance
         spec_path: Path to the spec file for evidence formatting
+        transition_on_pass: If True, transition the ticket when all verdicts pass.
+
+    Returns:
+        Summary dict with checkboxes_ticked, comment_posted, all_passed.
     """
+    from verify.jira_client import JiraClient
+
+    result = {
+        "checkboxes_ticked": [],
+        "comment_posted": False,
+        "all_passed": all(v["passed"] for v in verdicts) if verdicts else False,
+    }
+
     if not verdicts:
         logger.info(f"No verdicts to update for {jira_key}")
-        return
+        return result
+
+    jira_client = JiraClient()
 
     # Feature 6.1: Tick checkboxes for passed verdicts
     passed_indices = [v["ac_checkbox"] for v in verdicts if v["passed"]]
     if passed_indices:
         logger.info(f"Ticking checkboxes {passed_indices} on {jira_key}")
         jira_client.tick_checkboxes(jira_key, passed_indices)
+    result["checkboxes_ticked"] = passed_indices
 
     # Feature 6.2: Post evidence comment
     if spec_path:
-        comment = jira_client.format_evidence_comment(verdicts, spec_path)
-        logger.info(f"Posting evidence comment to {jira_key}")
-        jira_client.post_comment(jira_key, comment)
+        try:
+            comment = jira_client.format_evidence_comment(verdicts, spec_path)
+            logger.info(f"Posting evidence comment to {jira_key}")
+            jira_client.post_comment(jira_key, comment)
+            result["comment_posted"] = True
+        except Exception as e:
+            logger.error(f"Failed to post evidence comment: {e}")
+
+    return result
+
+
+def run_pipeline_with_jira(
+    spec_path: str,
+    jira_key: str,
+    skip_jira: bool = False,
+) -> list[dict]:
+    """Run the verification pipeline and optionally update Jira.
+
+    Args:
+        spec_path: Path to the compiled spec YAML.
+        jira_key: Jira ticket key for updates.
+        skip_jira: If True, skip Jira updates even though key is provided.
+
+    Returns:
+        List of verdict dicts from the evaluator.
+    """
+    verdicts = run_pipeline(spec_path)
+
+    if not skip_jira and jira_key:
+        try:
+            update_jira(jira_key, verdicts, spec_path)
+        except Exception as e:
+            logger.error(f"Failed to update Jira: {e}")
+            print(f"  [WARNING] Jira update failed: {e}")
+
+    return verdicts
 
 
 if __name__ == "__main__":

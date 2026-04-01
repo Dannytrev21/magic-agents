@@ -51,6 +51,8 @@ pytest --cov=src tests/                   # with coverage
 - **`runner.py`** — Runs pytest with `--junitxml`, parses results.
 - **`evaluator.py`** — Maps test results back to AC verdicts via spec traceability.
 - **`jira_client.py`** — Jira Cloud REST API v3 (search, fetch, extract AC, update).
+- **`permissions.py`** — Permission & access control: `ToolPermissionContext` (frozen dataclass with deny rules), `PermissionDenial` (denial event), skill filtering, and constitution-driven defaults. Ported from claw-code P05.
+- **`skills/framework.py`** — Skill agent framework with `SkillDescriptor`, `SkillDispatchError`, `find_skills()`, `find_skills_by_type()`, `validate_dispatch()`, and registry discovery.
 - **`dog-service/`** — Spring Boot demo target (Dog CRUD API at `/api/v1/dogs` with Bearer auth, Lombok, Cucumber tests).
 
 ### Web UI

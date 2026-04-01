@@ -130,8 +130,8 @@ class TestDispatchSkills:
         # Cleanup
         del SKILL_REGISTRY["mock_dispatch_skill"]
 
-    def test_dispatch_skills_warns_on_missing_skill(self, tmp_path):
-        from verify.skills.framework import dispatch_skills
+    def test_dispatch_skills_raises_on_missing_skill(self, tmp_path):
+        from verify.skills.framework import dispatch_skills, SkillDispatchError
         spec = {
             "meta": {"jira_key": "TEST-001"},
             "requirements": [{
@@ -145,6 +145,6 @@ class TestDispatchSkills:
             }],
             "traceability": {"ac_mappings": []},
         }
-        # Should not raise but should skip the missing skill
-        result = dispatch_skills(spec, {})
-        assert str(tmp_path / "out.py") not in result
+        # Should raise SkillDispatchError for missing skill
+        with pytest.raises(SkillDispatchError, match="nonexistent_skill"):
+            dispatch_skills(spec, {})

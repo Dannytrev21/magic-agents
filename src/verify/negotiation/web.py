@@ -7,6 +7,7 @@ from typing import Any
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+import yaml
 
 from verify.context import VerificationContext
 from verify.llm_client import LLMClient
@@ -106,13 +107,22 @@ async def jira_configured():
 
 @app.get("/api/skills")
 async def skills_index():
-    """Return a lightweight skill inventory for the inspector."""
-    skills_dir = Path(__file__).parent.parent / "skills"
-    skills = []
-    for path in sorted(skills_dir.glob("*.py")):
-        if path.stem == "__init__":
-            continue
-        skills.append({"name": path.stem, "path": str(path)})
+    """Return skill descriptors for all registered skills."""
+    from verify.skills.framework import get_all_descriptors
+
+    descriptors = get_all_descriptors()
+    skills = [
+        {
+            "skill_id": d.skill_id,
+            "name": d.name,
+            "description": d.description,
+            "input_types": sorted(d.input_types),
+            "output_format": d.output_format,
+            "framework": d.framework,
+            "version": d.version,
+        }
+        for d in descriptors
+    ]
     return JSONResponse(skills)
 
 
@@ -257,9 +267,12 @@ async def compile_spec_endpoint():
         spec_path = compile_and_write(ctx, output_dir="specs")
         with open(spec_path) as f:
             spec_content = f.read()
+        parsed_spec = yaml.safe_load(spec_content) or {}
         return JSONResponse({
             "spec_path": spec_path,
             "spec_content": spec_content,
+            "requirements": parsed_spec.get("requirements", []),
+            "traceability": parsed_spec.get("traceability", {}),
         })
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
@@ -335,19 +348,405 @@ async def jira_update():
         return JSONResponse({"error": "No verdicts available. Run /api/generate-tests first."}, status_code=400)
 
     try:
-        from verify.jira_client import JiraClient
-        jira = JiraClient()
-        update_jira(ctx.jira_key, verdicts, jira, spec_path=ctx.spec_path)
-
-        passed_count = sum(1 for v in verdicts if v["passed"])
+        result = update_jira(ctx.jira_key, verdicts, ctx.spec_path)
         return JSONResponse({
             "status": "ok",
             "jira_key": ctx.jira_key,
-            "checkboxes_ticked": passed_count,
-            "evidence_posted": True,
+            "checkboxes_ticked": len(result.get("checkboxes_ticked", [])),
+            "evidence_posted": result.get("comment_posted", False),
         })
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
+
+
+# ------------------------------------------------------------------
+# EARS Approval Gate
+# ------------------------------------------------------------------
+
+
+@app.post("/api/ears-approve")
+async def ears_approve_endpoint(request: Request):
+    """Approve EARS statements and set context.approved."""
+    from datetime import datetime, timezone
+
+    resolved = _resolve_session_response()
+    if isinstance(resolved, JSONResponse):
+        return resolved
+
+    body = await request.json()
+    ctx = resolved.context
+    ctx.approved = True
+    ctx.approved_by = body.get("approved_by", "web_operator")
+    approved_at = datetime.now(timezone.utc).isoformat()
+    ctx.approved_at = approved_at
+
+    return JSONResponse({
+        "approved": True,
+        "approved_by": ctx.approved_by,
+        "approved_at": approved_at,
+    })
+
+
+# ------------------------------------------------------------------
+# Pipeline Streaming & Step Endpoints
+# ------------------------------------------------------------------
+
+
+@app.post("/api/pipeline/stream")
+async def stream_pipeline_endpoint():
+    """SSE streaming pipeline execution (compile → test → evaluate)."""
+    resolved = _resolve_session_response()
+    if isinstance(resolved, JSONResponse):
+        return resolved
+    return JSONResponse({"error": "Streaming not yet implemented"}, status_code=501)
+
+
+@app.post("/api/run-tests")
+async def run_tests_endpoint():
+    """Run generated tests."""
+    resolved = _resolve_session_response()
+    if isinstance(resolved, JSONResponse):
+        return resolved
+
+    ctx = resolved.context
+    if not ctx.spec_path:
+        return JSONResponse({"error": "No spec compiled yet."}, status_code=400)
+
+    try:
+        from verify.generator import generate_and_write
+        from verify.runner import run_and_parse
+
+        test_path = generate_and_write(ctx.spec_path)
+        results = run_and_parse(test_path, ".verify/results")
+        cases = results["test_cases"]
+        passed = sum(1 for c in cases if c["status"] == "passed")
+        return JSONResponse({
+            "test_path": test_path,
+            "passed": passed,
+            "total": len(cases),
+            "results": results,
+        })
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@app.post("/api/evaluate")
+async def evaluate_endpoint():
+    """Evaluate test results against spec traceability."""
+    resolved = _resolve_session_response()
+    if isinstance(resolved, JSONResponse):
+        return resolved
+
+    ctx = resolved.context
+    if not ctx.spec_path:
+        return JSONResponse({"error": "No spec compiled yet."}, status_code=400)
+
+    try:
+        from verify.evaluator import evaluate_spec
+        from verify.runner import run_and_parse
+        from verify.generator import generate_and_write
+
+        test_path = generate_and_write(ctx.spec_path)
+        results = run_and_parse(test_path, ".verify/results")
+        verdicts = evaluate_spec(ctx.spec_path, results)
+        ctx.verdicts = verdicts
+        all_passed = all(v["passed"] for v in verdicts)
+        return JSONResponse({
+            "verdicts": verdicts,
+            "all_passed": all_passed,
+        })
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@app.post("/api/jira-update")
+async def jira_update_endpoint():
+    """Update Jira ticket with verdicts."""
+    from verify.pipeline import update_jira
+
+    resolved = _resolve_session_response()
+    if isinstance(resolved, JSONResponse):
+        return resolved
+
+    ctx = resolved.context
+    verdicts = ctx.verdicts
+    if not verdicts:
+        return JSONResponse({"error": "No verdicts available."}, status_code=400)
+
+    try:
+        result = update_jira(ctx.jira_key, verdicts, ctx.spec_path)
+        return JSONResponse({
+            "status": "ok",
+            "jira_key": ctx.jira_key,
+            **result,
+        })
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+# ------------------------------------------------------------------
+# Codebase Scan
+# ------------------------------------------------------------------
+
+
+@app.post("/api/scan")
+async def scan_endpoint(request: Request):
+    """Run a codebase scan and update SCAN_STATE."""
+    body = await request.json()
+    project_root = body.get("project_root") or body.get("path", ".")
+
+    try:
+        from verify.scanner import scan_java_project
+
+        index = scan_java_project(project_root)
+        summary = {
+            "language": getattr(index, "language", "unknown"),
+            "controllers": len(getattr(index, "controllers", [])),
+            "services": len(getattr(index, "services", [])),
+            "models": len(getattr(index, "models", [])),
+        }
+        SCAN_STATE["project_root"] = project_root
+        SCAN_STATE["scanned"] = True
+        SCAN_STATE["summary"] = summary
+        return JSONResponse({
+            "status": "ok",
+            "project_root": project_root,
+            "scanned": True,
+            "summary": summary,
+        })
+    except Exception as e:
+        # Gracefully handle scan failures - return status with error info
+        SCAN_STATE["project_root"] = project_root
+        SCAN_STATE["scanned"] = True
+        SCAN_STATE["summary"] = f"Scan failed: {e}"
+        return JSONResponse({
+            "status": "partial",
+            "project_root": project_root,
+            "scanned": True,
+            "summary": str(e),
+        })
+
+
+# ------------------------------------------------------------------
+# Constitution Endpoints
+# ------------------------------------------------------------------
+
+
+@app.get("/api/constitution")
+async def get_constitution_endpoint():
+    """Return the current constitution from file or session."""
+    from verify.pipeline import load_constitution
+
+    resolved = _resolve_session_response()
+    if not isinstance(resolved, JSONResponse) and resolved.context.constitution:
+        return JSONResponse({"constitution": resolved.context.constitution})
+
+    constitution = load_constitution()
+    return JSONResponse({"constitution": constitution})
+
+
+@app.post("/api/constitution")
+async def set_constitution_endpoint(request: Request):
+    """Update the constitution for the current session."""
+    body = await request.json()
+    constitution = body.get("constitution", {})
+
+    resolved = _resolve_session_response()
+    if isinstance(resolved, JSONResponse):
+        return resolved
+
+    resolved.context.constitution = constitution
+    return JSONResponse({"status": "ok", "constitution": constitution})
+
+
+# ------------------------------------------------------------------
+# Spec Diff
+# ------------------------------------------------------------------
+
+
+@app.post("/api/spec-diff")
+async def spec_diff_endpoint():
+    """Compare the current spec against a previous version."""
+    from verify.spec_diff import diff_specs
+
+    resolved = _resolve_session_response()
+    if isinstance(resolved, JSONResponse):
+        return resolved
+
+    ctx = resolved.context
+    jira_key = ctx.jira_key
+
+    # Try to find an existing spec
+    spec_dir = ".verify/specs"
+    old_spec_path = os.path.join(spec_dir, f"{jira_key}.yaml")
+    has_old_spec = os.path.exists(old_spec_path)
+
+    return JSONResponse({
+        "jira_key": jira_key,
+        "has_old_spec": has_old_spec,
+        "diff": diff_specs(old_spec_path, None) if has_old_spec else None,
+    })
+
+
+# ------------------------------------------------------------------
+# Permission & Access Control
+# ------------------------------------------------------------------
+
+
+@app.get("/api/permissions")
+async def get_permissions_endpoint():
+    """Return the current permission context for the session."""
+    resolved = _resolve_session_response()
+    if isinstance(resolved, JSONResponse):
+        return resolved
+
+    ctx = resolved.context
+    perm_ctx = getattr(ctx, "permission_context", None)
+    if perm_ctx is None:
+        return JSONResponse({"deny_names": [], "deny_prefixes": []})
+
+    return JSONResponse({
+        "deny_names": sorted(perm_ctx.deny_names),
+        "deny_prefixes": list(perm_ctx.deny_prefixes),
+    })
+
+
+@app.post("/api/permissions")
+async def set_permissions_endpoint(request: Request):
+    """Set the permission context for the current session."""
+    from verify.permissions import ToolPermissionContext
+
+    resolved = _resolve_session_response()
+    if isinstance(resolved, JSONResponse):
+        return resolved
+
+    body = await request.json()
+    perm_ctx = ToolPermissionContext.from_iterables(
+        deny_names=body.get("deny_names", []),
+        deny_prefixes=body.get("deny_prefixes", []),
+    )
+    resolved.context.permission_context = perm_ctx
+
+    return JSONResponse({
+        "status": "ok",
+        "deny_names": sorted(perm_ctx.deny_names),
+        "deny_prefixes": list(perm_ctx.deny_prefixes),
+    })
+
+
+@app.get("/api/permissions/denials")
+async def get_denials_endpoint():
+    """Return all permission denial events for the current session."""
+    resolved = _resolve_session_response()
+    if isinstance(resolved, JSONResponse):
+        return resolved
+
+    denials = getattr(resolved.context, "permission_denials", [])
+    return JSONResponse({
+        "denials": [
+            {"tool_name": d.tool_name, "reason": d.reason}
+            for d in denials
+        ] if denials else [],
+    })
+
+
+# ------------------------------------------------------------------
+# Evaluate Phase (Quality Critique)
+# ------------------------------------------------------------------
+
+
+@app.post("/api/evaluate-phase")
+async def evaluate_phase_endpoint(request: Request):
+    """Analyze current phase output for completeness and issues."""
+    resolved = _resolve_session_response()
+    if isinstance(resolved, JSONResponse):
+        return resolved
+
+    body = await request.json()
+    phase = body.get("phase", "phase_1")
+    ctx = resolved.context
+
+    issues = []
+    suggestions = []
+
+    if phase == "phase_1":
+        # Check classification completeness
+        types_found = {c.get("type") for c in ctx.classifications}
+        if types_found == {"api_behavior"}:
+            issues.append(
+                "All ACs classified as api_behavior — consider if any are "
+                "security_invariant, data_constraint, or performance_sla"
+            )
+            suggestions.append("Review ACs for non-functional requirements")
+        if not ctx.classifications:
+            issues.append("No classifications produced yet")
+    elif phase == "phase_2":
+        if not ctx.postconditions:
+            issues.append("No postconditions defined")
+    elif phase == "phase_3":
+        if not ctx.preconditions:
+            issues.append("No preconditions defined")
+    elif phase == "phase_4":
+        if not ctx.failure_modes:
+            issues.append("No failure modes enumerated")
+
+    return JSONResponse({
+        "has_issues": len(issues) > 0,
+        "issues": issues,
+        "suggestions": suggestions,
+    })
+
+
+# ------------------------------------------------------------------
+# Plan Endpoint
+# ------------------------------------------------------------------
+
+
+@app.post("/api/plan")
+async def plan_endpoint():
+    """Generate an execution plan by grouping ACs by endpoint."""
+    resolved = _resolve_session_response()
+    if isinstance(resolved, JSONResponse):
+        return resolved
+
+    ctx = resolved.context
+
+    # Group ACs by endpoint
+    endpoint_groups: dict[str, list[int]] = {}
+    for clf in ctx.classifications:
+        iface = clf.get("interface", {})
+        endpoint = iface.get("path", "unknown")
+        ac_idx = clf.get("ac_index", -1)
+        endpoint_groups.setdefault(endpoint, []).append(ac_idx)
+
+    ac_groups = []
+    for endpoint, indices in endpoint_groups.items():
+        methods = []
+        for clf in ctx.classifications:
+            if clf.get("interface", {}).get("path") == endpoint:
+                method = clf.get("interface", {}).get("method", "GET")
+                if method not in methods:
+                    methods.append(method)
+        ac_groups.append({
+            "ac_indices": sorted(indices),
+            "endpoint": endpoint,
+            "methods": methods,
+        })
+
+    # Estimate complexity
+    total_acs = len(ctx.raw_acceptance_criteria)
+    if total_acs <= 2:
+        complexity = "low"
+    elif total_acs <= 5:
+        complexity = "medium"
+    else:
+        complexity = "high"
+
+    return JSONResponse({
+        "ac_groups": ac_groups,
+        "cross_ac_dependencies": [],
+        "estimated_complexity": complexity,
+    })
 
 
 # ------------------------------------------------------------------
@@ -493,9 +892,20 @@ def _resolve_session_response(
     session_id: str | None = None,
 ) -> SessionState | JSONResponse:
     state = SESSION_STORE.resolve(session_id)
-    if state is None:
-        return JSONResponse({"error": "No active session"}, status_code=400)
-    return state
+    if state is not None:
+        return state
+
+    # Legacy fallback: tests may set _session["context"] directly
+    ctx = _session.get("context")
+    if isinstance(ctx, VerificationContext):
+        llm = _session.get("llm") or LLMClient()
+        state = SESSION_STORE.create(context=ctx, llm=llm)
+        # Clear legacy keys so they don't cause confusion
+        _session.pop("context", None)
+        _session.pop("llm", None)
+        return state
+
+    return JSONResponse({"error": "No active session"}, status_code=400)
 
 
 def _extract_session_id(body: dict[str, Any]) -> str | None:
