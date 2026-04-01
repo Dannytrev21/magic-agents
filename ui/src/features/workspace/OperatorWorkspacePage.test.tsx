@@ -1,5 +1,5 @@
 import { type RefObject } from 'react';
-import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -204,7 +204,8 @@ vi.mock('@/features/workspace/WorkspaceInspector', () => {
   type WorkspaceInspectorProps = {
     activeView: string;
     focusRef: RefObject<HTMLElement | null>;
-    onViewChange: (view: 'evidence' | 'scan' | 'traceability') => void;
+    onAcceptanceCriterionSelect?: (index: number) => void;
+    onViewChange: (view: 'analysis' | 'evidence' | 'scan' | 'traceability') => void;
     selectedAcceptanceCriterionIndex?: number | null;
   };
 
@@ -212,6 +213,7 @@ vi.mock('@/features/workspace/WorkspaceInspector', () => {
     WorkspaceInspector: ({
       activeView,
       focusRef,
+      onAcceptanceCriterionSelect,
       onViewChange,
       selectedAcceptanceCriterionIndex,
     }: WorkspaceInspectorProps) => (
@@ -224,6 +226,12 @@ vi.mock('@/features/workspace/WorkspaceInspector', () => {
         </button>
         <button onClick={() => onViewChange('traceability')} type="button">
           Inspector traceability
+        </button>
+        <button onClick={() => onViewChange('analysis')} type="button">
+          Inspector planning & critique
+        </button>
+        <button onClick={() => onAcceptanceCriterionSelect?.(2)} type="button">
+          Inspector focus AC 3
         </button>
         <section ref={focusRef} tabIndex={-1}>
           Inspector view: {activeView}
@@ -329,43 +337,37 @@ afterEach(() => {
 });
 
 describe('Operator workspace layout', () => {
-  it('renders a seven-phase sticky rail and session status strip for active sessions', () => {
+  beforeEach(() => {
+    setViewport(1440);
+    installStorage();
+  });
+
+  it('renders top-bar session context and the wired workspace shell for active sessions', () => {
     renderWorkspace();
 
-    const phaseList = screen.getByRole('list', { name: /negotiation phases/i });
-    const items = within(phaseList).getAllByRole('listitem');
-
-    expect(items).toHaveLength(7);
-    expect(items[0]).toHaveAttribute('data-state', 'complete');
-    expect(items[2]).toHaveAttribute('data-state', 'active');
-    expect(screen.getByText(/session status/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/awaiting operator input/i)[0]).toBeInTheDocument();
-    expect(screen.getAllByText('session-123')[0]).toBeInTheDocument();
-    expect(screen.getByText(/phase 3 of 7/i)).toBeInTheDocument();
+    expect(screen.getAllByRole('status')[0]).toHaveTextContent(/awaiting operator input/i);
+    expect(screen.getByText(/bootstrap session: session-123/i)).toBeInTheDocument();
+    expect(screen.getByText(/phase 3: precondition formalization/i)).toBeInTheDocument();
+    expect(screen.getByText('Center view: overview')).toBeInTheDocument();
+    expect(screen.getByText('Inspector view: evidence')).toBeInTheDocument();
   });
 
   it('swaps center and inspector surfaces in place and keeps focus on the active region', async () => {
     const user = userEvent.setup();
     renderWorkspace();
 
-    await user.click(
-      within(screen.getByRole('tablist', { name: /workspace views/i })).getByRole('tab', {
-        name: /traceability/i,
-      }),
-    );
+    await user.click(screen.getByRole('button', { name: /center traceability/i }));
 
-    expect(screen.getByRole('heading', { name: /traceability matrix/i })).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: /active workspace region/i })).toHaveFocus();
+    await waitFor(() => {
+      expect(screen.getByText('Center view: traceability').closest('section')).toHaveFocus();
+    });
     expect(screen.getByTestId('location')).toHaveTextContent('/?view=traceability&inspector=evidence&pane=workspace');
 
-    await user.click(
-      within(screen.getByRole('tablist', { name: /inspector views/i })).getByRole('tab', {
-        name: /scan output/i,
-      }),
-    );
+    await user.click(screen.getByRole('button', { name: /inspector scan/i }));
 
-    expect(screen.getByText(/project root/i)).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: /inspector detail region/i })).toHaveFocus();
+    await waitFor(() => {
+      expect(screen.getByText('Inspector view: scan').closest('section')).toHaveFocus();
+    });
     expect(screen.getByTestId('location')).toHaveTextContent('/?view=traceability&inspector=scan&pane=workspace');
   });
 
@@ -395,13 +397,6 @@ describe('Operator workspace layout', () => {
       '--workspace-right-width': '0rem',
     });
     expect(screen.getByText('Inspector view: evidence')).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: /inspector scan/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText('Inspector view: scan')).toHaveFocus();
-    });
-    expect(screen.getByText('Center view: traceability')).toBeInTheDocument();
   });
 
   it('updates the top bar story context when intake starts a new session', async () => {

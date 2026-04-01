@@ -4,6 +4,13 @@
 
 Every arrow below represents a handoff between components. Each handoff has a defined contract (schema + example) that both sides agree to. Team members build against these contracts independently and integrate when ready.
 
+## React Workspace Status
+
+- The React + TypeScript operator workspace now covers epics U1 through U5 of the UI port.
+- The right inspector exposes evidence, scan output, per-AC traceability, planner/critique tools, spec diff, and a structured spec contract viewer beside raw YAML.
+- The inspector consumes the current FastAPI routes directly: `/api/scan`, `/api/scan/status`, `/api/plan`, `/api/evaluate-phase`, `/api/spec-diff`, and `/api/compile`.
+- UI verification currently runs through `npm test` and `npm run build` in [`/Users/dannytrevino/development/magic-agents/ui`](/Users/dannytrevino/development/magic-agents/ui).
+
 ```
 ┌──────────┐     jira_ticket.yaml      ┌───────────────┐
 │  Jira    │ ──────────────────────────▶│  Phase 0:     │

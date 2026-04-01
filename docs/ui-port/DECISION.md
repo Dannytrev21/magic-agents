@@ -92,3 +92,10 @@ The final plan in `docs/ui-port` is a hybrid:
 - `docs/ui-port` remains the canonical plan
 - `docs/ui-port-claude` contributes concrete interaction details
 - all imported features are rewritten to fit the actual Magic Agents backend, UI thesis, and React/Vite architecture
+
+## Implemented U5 Decisions
+
+- Keep inspector work session-scoped and subordinate to the selected story and AC instead of introducing a parallel route tree.
+- Use on-demand inspector actions for planner, critique, spec diff, compile, and scan work so the center pane never resets during evidence inspection.
+- Return parsed requirement and traceability data from `/api/compile` so the contract viewer stays structured without adding client-side YAML parsing complexity.
+- Share acceptance-criterion selection between the left rail, center pane, and inspector so traceability and structured spec requirements can cross-highlight the same proof chain.

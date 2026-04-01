@@ -335,6 +335,7 @@ export function OperatorWorkspacePage({
           activeSession={activeSession}
           activeView={inspectorView}
           focusRef={inspectorFocusRef}
+          onAcceptanceCriterionSelect={handleAcceptanceCriterionSelect}
           onViewChange={handleInspectorViewChange}
           selectedAcceptanceCriterionIndex={selectedAcceptanceCriterionIndex}
         />

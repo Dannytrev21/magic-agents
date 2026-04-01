@@ -1,11 +1,16 @@
 import type {
+  CompileSpecResponse,
   JiraConfiguredResponse,
   JiraStoriesResponse,
   JiraTicketResponse,
+  PhaseCritiqueResponse,
   PipelineEvent,
+  PlanResponse,
+  ScanRunResponse,
   ScanStatusResponse,
   SessionInfoResponse,
   SkillDescriptor,
+  SpecDiffResponse,
   StartNegotiationRequest,
   StartNegotiationResponse,
 } from '@/lib/api/types';
@@ -64,12 +69,32 @@ export function fetchScanStatus() {
   return requestJson<ScanStatusResponse>('/api/scan/status');
 }
 
+export function runCodebaseScan(projectRoot: string) {
+  return requestJson<ScanRunResponse>('/api/scan', jsonRequest({ path: projectRoot, project_root: projectRoot }));
+}
+
 export function fetchSessionInfo(jiraKey: string) {
   return requestJson<SessionInfoResponse>(`/api/session/${jiraKey}`);
 }
 
 export function resumeSession(jiraKey: string) {
   return requestJson<StartNegotiationResponse>(`/api/session/${jiraKey}/resume`, jsonRequest({}));
+}
+
+export function fetchPlan() {
+  return requestJson<PlanResponse>('/api/plan', jsonRequest({}));
+}
+
+export function evaluatePhase(payload: { phase: string }) {
+  return requestJson<PhaseCritiqueResponse>('/api/evaluate-phase', jsonRequest(payload));
+}
+
+export function fetchSpecDiff() {
+  return requestJson<SpecDiffResponse>('/api/spec-diff', jsonRequest({}));
+}
+
+export function compileSpec() {
+  return requestJson<CompileSpecResponse>('/api/compile', jsonRequest({}));
 }
 
 export function respondToSession(payload: { input: string; session_id: string }) {
