@@ -3,10 +3,12 @@ import {
   fetchJiraConfigured,
   fetchJiraStories,
   fetchScanStatus,
+  fetchSessionInfo,
   fetchSkills,
+  resumeSession,
   startNegotiation,
 } from '@/lib/api/client';
-import type { StartNegotiationRequest } from '@/lib/api/types';
+import type { JiraStory, StartNegotiationRequest } from '@/lib/api/types';
 import { queryKeys } from '@/lib/query/queryKeys';
 
 export function useSessionBootstrapQueries() {
@@ -30,6 +32,22 @@ export function useSessionBootstrapQueries() {
     storiesError: storiesQuery.data?.error ?? null,
     stories: storiesQuery.data?.stories ?? [],
   };
+}
+
+export function useStorySessionQueries(stories: JiraStory[]) {
+  const sessionQueries = useQueries({
+    queries: stories.map((story) => ({
+      enabled: Boolean(story.key),
+      queryKey: queryKeys.sessionInfo(story.key),
+      queryFn: () => fetchSessionInfo(story.key),
+      staleTime: 15_000,
+    })),
+  });
+
+  return stories.reduce<Record<string, (typeof sessionQueries)[number]['data']>>((acc, story, index) => {
+    acc[story.key] = sessionQueries[index]?.data;
+    return acc;
+  }, {});
 }
 
 export function useInspectorQueries() {
@@ -63,9 +81,22 @@ export function useStartNegotiationMutation() {
 
   return useMutation({
     mutationFn: (payload: StartNegotiationRequest) => startNegotiation(payload),
-    onSuccess: () => {
+    onSuccess: (session) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.jiraStories });
       void queryClient.invalidateQueries({ queryKey: queryKeys.scanStatus });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.sessionInfo(session.jira_key) });
+    },
+  });
+}
+
+export function useResumeSessionMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (jiraKey: string) => resumeSession(jiraKey),
+    onSuccess: (session) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.scanStatus });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.sessionInfo(session.jira_key) });
     },
   });
 }

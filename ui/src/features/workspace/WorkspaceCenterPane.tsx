@@ -12,18 +12,24 @@ import styles from '@/features/workspace/workspace.module.css';
 type WorkspaceCenterPaneProps = {
   activeSession: StartNegotiationResponse | null;
   activeView: WorkspaceCenterView;
+  draftFeedback: string;
   focusRef: RefObject<HTMLElement | null>;
   isTransitionPending: boolean;
   onViewChange: (view: WorkspaceCenterView) => void;
+  selectedAcceptanceCriterionIndex: number | null;
+  selectedPhaseNumber: number | null;
   statusLabel: string;
 };
 
 export function WorkspaceCenterPane({
   activeSession,
   activeView,
+  draftFeedback,
   focusRef,
   isTransitionPending,
   onViewChange,
+  selectedAcceptanceCriterionIndex,
+  selectedPhaseNumber,
   statusLabel,
 }: WorkspaceCenterPaneProps) {
   if (!activeSession) {
@@ -107,15 +113,35 @@ export function WorkspaceCenterPane({
       </section>
 
       <section className={styles.focusRegion} ref={focusRef} tabIndex={-1}>
-        {activeView === 'overview' ? <OverviewContent activeSession={activeSession} /> : null}
-        {activeView === 'negotiation' ? <NegotiationContent activeSession={activeSession} /> : null}
-        {activeView === 'traceability' ? <TraceabilityContent activeSession={activeSession} /> : null}
+        {activeView === 'overview' ? (
+          <OverviewContent activeSession={activeSession} selectedPhaseNumber={selectedPhaseNumber} />
+        ) : null}
+        {activeView === 'negotiation' ? (
+          <NegotiationContent
+            activeSession={activeSession}
+            draftFeedback={draftFeedback}
+            selectedAcceptanceCriterionIndex={selectedAcceptanceCriterionIndex}
+            selectedPhaseNumber={selectedPhaseNumber}
+          />
+        ) : null}
+        {activeView === 'traceability' ? (
+          <TraceabilityContent
+            activeSession={activeSession}
+            selectedAcceptanceCriterionIndex={selectedAcceptanceCriterionIndex}
+          />
+        ) : null}
       </section>
     </div>
   );
 }
 
-function OverviewContent({ activeSession }: { activeSession: StartNegotiationResponse }) {
+function OverviewContent({
+  activeSession,
+  selectedPhaseNumber,
+}: {
+  activeSession: StartNegotiationResponse;
+  selectedPhaseNumber: number | null;
+}) {
   return (
     <div className={styles.sectionStack}>
       <SectionHeader
@@ -146,6 +172,14 @@ function OverviewContent({ activeSession }: { activeSession: StartNegotiationRes
             Intake, negotiation, traceability review, and verification stay in one route context.
           </Text>
         </div>
+        <div className={styles.detailRow}>
+          <Text as="p" size="xs" tone="muted">
+            Selected phase
+          </Text>
+          <Text as="p" size="sm">
+            {selectedPhaseNumber ? `Phase ${selectedPhaseNumber}` : 'Live phase focus'}
+          </Text>
+        </div>
       </div>
       <Divider />
       <Text as="p" size="sm" tone="muted">
@@ -155,7 +189,17 @@ function OverviewContent({ activeSession }: { activeSession: StartNegotiationRes
   );
 }
 
-function NegotiationContent({ activeSession }: { activeSession: StartNegotiationResponse }) {
+function NegotiationContent({
+  activeSession,
+  draftFeedback,
+  selectedAcceptanceCriterionIndex,
+  selectedPhaseNumber,
+}: {
+  activeSession: StartNegotiationResponse;
+  draftFeedback: string;
+  selectedAcceptanceCriterionIndex: number | null;
+  selectedPhaseNumber: number | null;
+}) {
   return (
     <div className={styles.sectionStack}>
       <SectionHeader
@@ -180,12 +224,44 @@ function NegotiationContent({ activeSession }: { activeSession: StartNegotiation
             Non-urgent updates use React transitions so selection and typing stay responsive.
           </Text>
         </div>
+        <div className={styles.detailRow}>
+          <Text as="p" size="xs" tone="muted">
+            Selected acceptance criterion
+          </Text>
+          <Text as="p" size="sm">
+            {selectedAcceptanceCriterionIndex !== null
+              ? `AC ${selectedAcceptanceCriterionIndex + 1}`
+              : 'No rail selection'}
+          </Text>
+        </div>
+        <div className={styles.detailRow}>
+          <Text as="p" size="xs" tone="muted">
+            Selected phase focus
+          </Text>
+          <Text as="p" size="sm">
+            {selectedPhaseNumber ? `Phase ${selectedPhaseNumber}` : `Phase ${activeSession.phase_number}`}
+          </Text>
+        </div>
+        <div className={styles.detailRow}>
+          <Text as="p" size="xs" tone="muted">
+            Draft feedback
+          </Text>
+          <Text as="p" size="sm">
+            {draftFeedback || 'No draft feedback'}
+          </Text>
+        </div>
       </div>
     </div>
   );
 }
 
-function TraceabilityContent({ activeSession }: { activeSession: StartNegotiationResponse }) {
+function TraceabilityContent({
+  activeSession,
+  selectedAcceptanceCriterionIndex,
+}: {
+  activeSession: StartNegotiationResponse;
+  selectedAcceptanceCriterionIndex: number | null;
+}) {
   return (
     <div className={styles.sectionStack}>
       <SectionHeader
@@ -207,7 +283,9 @@ function TraceabilityContent({ activeSession }: { activeSession: StartNegotiatio
         </div>
         <div className={styles.matrixRow}>
           <Text as="p" size="sm">
-            Operator can stay inside one workspace route.
+            {selectedAcceptanceCriterionIndex !== null
+              ? `AC ${selectedAcceptanceCriterionIndex + 1}`
+              : 'Operator can stay inside one workspace route.'}
           </Text>
           <Text as="p" size="sm">
             Phase {activeSession.phase_number} review surface

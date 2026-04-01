@@ -1,10 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SessionBootstrap } from '@/features/session/SessionBootstrap';
 import * as api from '@/lib/api/client';
+import type { StartNegotiationResponse } from '@/lib/api/types';
 
 function createWrapper() {
   const client = new QueryClient({
@@ -23,6 +24,43 @@ afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
 });
+
+const activeCheckpointSession: StartNegotiationResponse = {
+  acceptance_criteria: [
+    {
+      checked: false,
+      index: 0,
+      text: 'Operator can resume a checkpointed session without rebuilding local state',
+    },
+    {
+      checked: false,
+      index: 1,
+      text: 'Operators can start a fresh session when a checkpoint exists for a story with a very long acceptance criterion that should still remain readable inside the rail without blowing out the compact layout',
+    },
+  ],
+  approved: false,
+  classifications: [{ ac_index: 0, type: 'workflow_state' }],
+  current_phase: 'phase_3',
+  done: false,
+  jira_key: 'MAG-31',
+  jira_summary: 'Recover active checkpoint sessions',
+  log_entries: 12,
+  phase_number: 3,
+  phase_title: 'Precondition Formalization',
+  resumed: true,
+  session_id: 'session-restore-31',
+  total_phases: 7,
+  usage: {
+    api_calls: 12,
+    budget_state: 'warning',
+    cost_usd: 0.42,
+    max_api_calls: 50,
+    max_tokens: 500_000,
+    tokens_used: 420_000,
+    wall_clock_seconds: 272,
+  },
+  verdicts: [{ ac_checkbox: 0, passed: true }],
+};
 
 describe('Session bootstrap query layer', () => {
   it('renders loading state while bootstrap queries resolve', () => {
@@ -224,5 +262,166 @@ describe('Session bootstrap query layer', () => {
         summary: 'Capture manual intake',
       }),
     );
+  });
+
+  it('shows resume affordances when checkpoint data exists and hydrates the saved session context', async () => {
+    const user = userEvent.setup();
+    const onSessionStarted = vi.fn();
+
+    vi.spyOn(api, 'fetchJiraConfigured').mockResolvedValue({ configured: true });
+    vi.spyOn(api, 'fetchJiraStories').mockResolvedValue({
+      stories: [{ key: 'MAG-31', summary: 'Recover active checkpoint sessions' }],
+    });
+    vi.spyOn(api, 'fetchSessionInfo').mockResolvedValue({
+      has_checkpoint: true,
+      session: {
+        approved: false,
+        current_phase: 'phase_3',
+        jira_key: 'MAG-31',
+        jira_summary: 'Recover active checkpoint sessions',
+        log_entries: 12,
+        phase_number: 3,
+        phase_title: 'Precondition Formalization',
+      },
+    });
+    vi.spyOn(api, 'resumeSession').mockResolvedValue(activeCheckpointSession);
+
+    render(<SessionBootstrap onSessionStarted={onSessionStarted} />, {
+      wrapper: createWrapper(),
+    });
+
+    await user.click(await screen.findByRole('button', { name: /select story mag-31/i }));
+
+    expect(await screen.findByRole('button', { name: /resume session/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /start fresh session/i })).toBeInTheDocument();
+    expect(screen.getByText(/phase 3/i)).toBeInTheDocument();
+    expect(screen.getByText(/12 log entries/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /resume session/i }));
+
+    await waitFor(() => {
+      expect(onSessionStarted).toHaveBeenCalledWith(
+        expect.objectContaining({
+          jira_key: 'MAG-31',
+          resumed: true,
+          session_id: 'session-restore-31',
+        }),
+        expect.objectContaining({
+          acceptanceCriteria: activeCheckpointSession.acceptance_criteria,
+          key: 'MAG-31',
+          source: 'jira',
+          summary: 'Recover active checkpoint sessions',
+        }),
+      );
+    });
+  });
+
+  it('returns controlled error feedback when a resume attempt fails', async () => {
+    const user = userEvent.setup();
+    const onSessionStarted = vi.fn();
+
+    vi.spyOn(api, 'fetchJiraConfigured').mockResolvedValue({ configured: true });
+    vi.spyOn(api, 'fetchJiraStories').mockResolvedValue({
+      stories: [{ key: 'MAG-31', summary: 'Recover active checkpoint sessions' }],
+    });
+    vi.spyOn(api, 'fetchSessionInfo').mockResolvedValue({
+      has_checkpoint: true,
+      session: {
+        current_phase: 'phase_3',
+        jira_key: 'MAG-31',
+        jira_summary: 'Recover active checkpoint sessions',
+        log_entries: 12,
+        phase_number: 3,
+        phase_title: 'Precondition Formalization',
+      },
+    });
+    vi.spyOn(api, 'resumeSession').mockRejectedValue(new Error('Checkpoint restore failed'));
+
+    render(<SessionBootstrap onSessionStarted={onSessionStarted} />, {
+      wrapper: createWrapper(),
+    });
+
+    await user.click(await screen.findByRole('button', { name: /select story mag-31/i }));
+    await user.click(await screen.findByRole('button', { name: /resume session/i }));
+
+    expect(await screen.findByText(/checkpoint restore failed/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /start fresh session/i })).toBeInTheDocument();
+    expect(onSessionStarted).not.toHaveBeenCalled();
+  });
+
+  it('renders a phase-aware checklist and timeline for the active session', async () => {
+    const user = userEvent.setup();
+    const onAcceptanceCriterionSelect = vi.fn();
+    const onPhaseSelect = vi.fn();
+
+    vi.spyOn(api, 'fetchJiraConfigured').mockResolvedValue({ configured: false });
+    vi.spyOn(api, 'fetchJiraStories').mockResolvedValue({ stories: [] });
+
+    render(
+      <SessionBootstrap
+        activeSession={activeCheckpointSession}
+        onAcceptanceCriterionSelect={onAcceptanceCriterionSelect}
+        onPhaseSelect={onPhaseSelect}
+        selectedAcceptanceCriterionIndex={1}
+        selectedPhaseNumber={2}
+      />,
+      { wrapper: createWrapper() },
+    );
+
+    const checklist = await screen.findByRole('list', { name: /story checklist/i });
+    const criteriaRows = within(checklist).getAllByRole('button');
+
+    expect(criteriaRows).toHaveLength(2);
+    expect(screen.getByText('workflow_state')).toBeInTheDocument();
+    expect(screen.getByText(/passed/i)).toBeInTheDocument();
+
+    await user.click(criteriaRows[0]);
+    expect(onAcceptanceCriterionSelect).toHaveBeenCalledWith(0);
+
+    const phaseTimeline = screen.getByRole('list', { name: /left rail phase timeline/i });
+    const phaseItems = within(phaseTimeline).getAllByRole('button');
+
+    expect(phaseItems).toHaveLength(7);
+    expect(phaseItems[0]).toHaveAttribute('data-state', 'complete');
+    expect(phaseItems[1]).toHaveAttribute('data-state', 'complete');
+    expect(phaseItems[2]).toHaveAttribute('data-state', 'active');
+    expect(phaseItems[3]).toHaveAttribute('data-state', 'pending');
+
+    await user.click(phaseItems[1]);
+    expect(onPhaseSelect).toHaveBeenCalledWith(2);
+  });
+
+  it('renders session health telemetry when usage data is available', async () => {
+    vi.spyOn(api, 'fetchJiraConfigured').mockResolvedValue({ configured: false });
+    vi.spyOn(api, 'fetchJiraStories').mockResolvedValue({ stories: [] });
+
+    render(<SessionBootstrap activeSession={activeCheckpointSession} />, {
+      wrapper: createWrapper(),
+    });
+
+    const progress = await screen.findByRole('progressbar', { name: /token budget utilization/i });
+
+    expect(progress).toHaveAttribute('aria-valuenow', '84');
+    expect(screen.getByText(/12 \/ 50 calls/i)).toBeInTheDocument();
+    expect(screen.getByText(/4m 32s/i)).toBeInTheDocument();
+    expect(screen.getByText(/\$0.42/i)).toBeInTheDocument();
+    expect(screen.getByText(/warning state/i)).toBeInTheDocument();
+  });
+
+  it('renders a clear fallback when usage telemetry is unavailable', async () => {
+    vi.spyOn(api, 'fetchJiraConfigured').mockResolvedValue({ configured: false });
+    vi.spyOn(api, 'fetchJiraStories').mockResolvedValue({ stories: [] });
+
+    render(
+      <SessionBootstrap
+        activeSession={{
+          ...activeCheckpointSession,
+          usage: null,
+        }}
+      />,
+      { wrapper: createWrapper() },
+    );
+
+    expect(await screen.findByText(/telemetry unavailable/i)).toBeInTheDocument();
   });
 });

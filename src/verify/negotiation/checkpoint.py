@@ -16,6 +16,15 @@ from verify.context import VerificationContext
 logger = logging.getLogger(__name__)
 
 SESSIONS_DIR = Path(".verify/sessions")
+PHASE_TITLES = {
+    1: "Interface & Actor Discovery",
+    2: "Happy Path Contract",
+    3: "Precondition Formalization",
+    4: "Failure Mode Enumeration",
+    5: "Invariant Extraction",
+    6: "Routing & Completeness Sweep",
+    7: "EARS Formalization",
+}
 
 
 def save_checkpoint(context: VerificationContext, phase: str) -> Path:
@@ -57,6 +66,8 @@ def save_checkpoint(context: VerificationContext, phase: str) -> Path:
         "verdicts": context.verdicts,
         "all_passed": context.all_passed,
         "negotiation_log": context.negotiation_log,
+        "session_id": context.session_id,
+        "usage": context.usage,
     }
 
     checkpoint_path = session_dir / f"checkpoint_{phase}.json"
@@ -124,6 +135,8 @@ def load_checkpoint(jira_key: str) -> Optional[Tuple[VerificationContext, int]]:
     context.verdicts = checkpoint_data.get("verdicts", [])
     context.all_passed = checkpoint_data.get("all_passed", False)
     context.negotiation_log = checkpoint_data.get("negotiation_log", [])
+    context.session_id = checkpoint_data.get("session_id", "")
+    context.usage = checkpoint_data.get("usage", {})
 
     # Extract phase index from phase name (e.g., "phase_1" -> 0, "phase_2" -> 1)
     phase_name = context.current_phase
@@ -178,10 +191,16 @@ def get_session_info(jira_key: str) -> Optional[dict]:
 
     return {
         "jira_key": jira_key,
+        "jira_summary": data.get("jira_summary", ""),
+        "acceptance_criteria_count": len(data.get("raw_acceptance_criteria", [])),
         "current_phase": data.get("current_phase", "unknown"),
         "checkpoint_path": str(latest_checkpoint),
         "log_entries": len(data.get("negotiation_log", [])),
         "approved": data.get("approved", False),
+        "phase_number": _resume_phase_number(data.get("current_phase", "unknown")),
+        "phase_title": PHASE_TITLES.get(_resume_phase_number(data.get("current_phase", "unknown"))),
+        "session_id": data.get("session_id", ""),
+        "usage": data.get("usage", {}),
     }
 
 
@@ -206,3 +225,13 @@ def clear_session(jira_key: str) -> bool:
     shutil.rmtree(session_dir)
     logger.info(f"Cleared session for {jira_key}")
     return True
+
+
+def _resume_phase_number(current_phase: str) -> int:
+    if not current_phase.startswith("phase_"):
+        return 0
+
+    try:
+        return int(current_phase.split("_", 1)[1])
+    except ValueError:
+        return 0

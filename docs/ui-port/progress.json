@@ -2,18 +2,18 @@
   "meta": {
     "project": "Magic Agents Operator Workspace UI port",
     "created": "2026-03-31",
-    "last_updated": "2026-04-01T09:12:35Z",
+    "last_updated": "2026-04-01T10:37:19Z",
     "total_epics": 8,
     "total_stories": 36
   },
   "summary": {
-    "epics_complete": 2,
-    "epics_in_progress": 1,
+    "epics_complete": 3,
+    "epics_in_progress": 0,
     "epics_not_started": 5,
-    "stories_complete": 11,
+    "stories_complete": 16,
     "stories_in_progress": 0,
-    "stories_not_started": 25,
-    "stories_tested": 11
+    "stories_not_started": 20,
+    "stories_tested": 16
   },
   "epics": [
     {
@@ -49,14 +49,14 @@
       "title": "Story Intake and Session Lifecycle",
       "file": "U03-story-intake-session-lifecycle.md",
       "priority": 3,
-      "status": "in_progress",
+      "status": "complete",
       "stories": [
         { "id": "U3.1", "title": "Unify Jira intake and manual entry in the left rail", "status": "complete", "tested": true, "notes": "Rebuilt the left rail as a two-mode intake workflow with explicit Jira loading/configuration/empty states, deferred local filtering, Jira ticket hydration into a normalized story model, and shared manual/Jira session-start normalization covered by Vitest component tests." },
-        { "id": "U3.2", "title": "Start, resume, and recover sessions from checkpoints", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U3.3", "title": "Model session state in React without UI drift", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U3.4", "title": "Render a phase-aware acceptance criteria checklist", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U3.5", "title": "Display a left-rail phase progress timeline", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U3.6", "title": "Surface session health and usage telemetry", "status": "not_started", "tested": false, "notes": "" }
+        { "id": "U3.2", "title": "Start, resume, and recover sessions from checkpoints", "status": "complete", "tested": true, "notes": "Added checkpoint lookup and resume endpoints, resumable left-rail affordances, explicit fresh-start actions, and controlled resume-failure handling with backend and frontend integration coverage." },
+        { "id": "U3.3", "title": "Model session state in React without UI drift", "status": "complete", "tested": true, "notes": "Centralized confirmed session metadata, preserved per-session draft feedback across pane switches and refreshes, and tightened query invalidation so only session-related surfaces refresh." },
+        { "id": "U3.4", "title": "Render a phase-aware acceptance criteria checklist", "status": "complete", "tested": true, "notes": "Rendered compact AC rail items with selection, classification, verdict state, and long-text truncation while keeping active story context synchronized across workspace panes." },
+        { "id": "U3.5", "title": "Display a left-rail phase progress timeline", "status": "complete", "tested": true, "notes": "Added a seven-phase left-rail timeline tied to backend-confirmed progress with distinct pending, active, and complete states plus phase-selection propagation into the center workspace." },
+        { "id": "U3.6", "title": "Surface session health and usage telemetry", "status": "complete", "tested": true, "notes": "Surfaced compact session health telemetry with available, warning, and unavailable states using backend usage metadata and targeted Vitest coverage." }
       ]
     },
     {

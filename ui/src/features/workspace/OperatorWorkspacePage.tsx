@@ -40,6 +40,11 @@ export function OperatorWorkspacePage({
   const [activeSession, setActiveSession] = useState<StartNegotiationResponse | null>(initialSession);
   const [activeStory, setActiveStory] = useState<SessionIntakeStory | null>(null);
   const [storySummary, setStorySummary] = useState<string | null>(initialStorySummary);
+  const [sessionDrafts, setSessionDrafts] = useState<Record<string, string>>({});
+  const [selectedAcceptanceCriterionIndex, setSelectedAcceptanceCriterionIndex] = useState<number | null>(null);
+  const [selectedPhaseNumber, setSelectedPhaseNumber] = useState<number | null>(
+    initialSession?.phase_number ?? null,
+  );
   const [layoutMode, setLayoutMode] = useState(() => getWorkspaceLayoutMode(window.innerWidth));
   const [panelPreferences, setPanelPreferences] = useState<PanelPreferences>(readPanelPreferences);
   const [tabletInspectorOpen, setTabletInspectorOpen] = useState(false);
@@ -58,6 +63,7 @@ export function OperatorWorkspacePage({
     centerWorkspaceViews.find((view) => view.value === centerView)?.label ?? 'Overview';
   const rightPaneCollapsed =
     layoutMode === 'desktop' ? panelPreferences.rightCollapsed : layoutMode !== 'tablet' || !tabletInspectorOpen;
+  const draftFeedback = activeSession ? sessionDrafts[activeSession.session_id] ?? '' : '';
 
   useEffect(() => {
     function handleResize() {
@@ -127,7 +133,11 @@ export function OperatorWorkspacePage({
     startShellTransition(() => {
       setActiveSession(session);
       setActiveStory(story);
-      setStorySummary(story.summary);
+      setStorySummary(session.jira_summary ?? story.summary);
+      setSelectedAcceptanceCriterionIndex((current) =>
+        story.acceptanceCriteria.some((criterion) => criterion.index === current) ? current : null,
+      );
+      setSelectedPhaseNumber(session.phase_number);
 
       const next = new URLSearchParams(searchParams);
       next.set('view', 'negotiation');
@@ -135,6 +145,25 @@ export function OperatorWorkspacePage({
       next.set('pane', 'workspace');
       setSearchParams(next, { replace: true });
     });
+  }
+
+  function handleDraftFeedbackChange(value: string) {
+    if (!activeSession) {
+      return;
+    }
+
+    setSessionDrafts((current) => ({
+      ...current,
+      [activeSession.session_id]: value,
+    }));
+  }
+
+  function handleAcceptanceCriterionSelect(index: number) {
+    setSelectedAcceptanceCriterionIndex(index);
+  }
+
+  function handlePhaseSelect(phaseNumber: number) {
+    setSelectedPhaseNumber(phaseNumber);
   }
 
   function handleCenterViewChange(view: string) {
@@ -184,15 +213,29 @@ export function OperatorWorkspacePage({
         <WorkspaceCenterPane
           activeSession={activeSession}
           activeView={centerView}
+          draftFeedback={draftFeedback}
           focusRef={centerFocusRef}
           isTransitionPending={isTransitionPending}
           onViewChange={handleCenterViewChange}
+          selectedAcceptanceCriterionIndex={selectedAcceptanceCriterionIndex}
+          selectedPhaseNumber={selectedPhaseNumber}
           statusLabel={statusLabel}
         />
       }
       layoutMode={layoutMode}
       leftPaneCollapsed={panelPreferences.leftCollapsed}
-      leftRail={<SessionBootstrap onSessionStarted={handleSessionStarted} />}
+      leftRail={
+        <SessionBootstrap
+          activeSession={activeSession}
+          draftFeedback={draftFeedback}
+          onAcceptanceCriterionSelect={handleAcceptanceCriterionSelect}
+          onDraftFeedbackChange={handleDraftFeedbackChange}
+          onPhaseSelect={handlePhaseSelect}
+          onSessionStarted={handleSessionStarted}
+          selectedAcceptanceCriterionIndex={selectedAcceptanceCriterionIndex}
+          selectedPhaseNumber={selectedPhaseNumber}
+        />
+      }
       mobilePane={mobilePane}
       onMobilePaneChange={handleMobilePaneChange}
       onToggleLeftPane={handleToggleLeftPane}
@@ -205,6 +248,7 @@ export function OperatorWorkspacePage({
           activeView={inspectorView}
           focusRef={inspectorFocusRef}
           onViewChange={handleInspectorViewChange}
+          selectedAcceptanceCriterionIndex={selectedAcceptanceCriterionIndex}
         />
       }
       sessionState={getWorkspaceSessionState(activeSession)}

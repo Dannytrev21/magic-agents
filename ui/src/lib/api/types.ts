@@ -46,23 +46,68 @@ export type StartNegotiationRequest = {
   jira_summary: string;
 };
 
+export type AcceptanceCriterionClassification = {
+  ac_index: number;
+  actor?: string;
+  type?: string;
+  [key: string]: unknown;
+};
+
+export type AcceptanceCriterionVerdict = {
+  ac_checkbox?: number;
+  ac_index?: number;
+  ac_text?: string;
+  passed?: boolean;
+  status?: 'pass' | 'fail' | 'pending';
+  [key: string]: unknown;
+};
+
+export type SessionUsageSummary = {
+  api_calls?: number;
+  budget_state?: 'healthy' | 'warning' | 'blocked';
+  cost_usd?: number;
+  max_api_calls?: number;
+  max_tokens?: number;
+  tokens_used?: number;
+  wall_clock_seconds?: number;
+};
+
 export type StartNegotiationResponse = {
+  acceptance_criteria?: AcceptanceCriterionInput[];
+  approved?: boolean;
+  classifications?: AcceptanceCriterionClassification[];
+  current_phase?: string;
   done: boolean;
   jira_key: string;
+  jira_summary?: string;
+  log_entries?: number;
   phase_number: number;
   phase_title: string;
   revised?: boolean;
+  resumed?: boolean;
   session_id: string;
   total_phases: number;
+  usage?: SessionUsageSummary | null;
+  verdicts?: AcceptanceCriterionVerdict[];
+};
+
+export type SessionCheckpointSummary = {
+  acceptance_criteria_count?: number;
+  approved?: boolean;
+  checkpoint_path?: string;
+  current_phase?: string;
+  jira_key?: string;
+  jira_summary?: string;
+  log_entries?: number;
+  phase_number?: number;
+  phase_title?: string;
+  session_id?: string;
+  usage?: SessionUsageSummary | null;
 };
 
 export type SessionInfoResponse = {
   has_checkpoint: boolean;
-  session?: {
-    current_phase?: string;
-    jira_key?: string;
-    jira_summary?: string;
-  };
+  session?: SessionCheckpointSummary;
 };
 
 export type PipelineEvent = {

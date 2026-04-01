@@ -25,9 +25,12 @@ describe('WorkspaceCenterPane', () => {
       <WorkspaceCenterPane
         activeSession={activeSession}
         activeView="negotiation"
+        draftFeedback=""
         focusRef={focusRef}
         isTransitionPending={false}
         onViewChange={vi.fn()}
+        selectedAcceptanceCriterionIndex={null}
+        selectedPhaseNumber={null}
         statusLabel="Awaiting operator input"
       />,
     );
@@ -55,9 +58,12 @@ describe('WorkspaceCenterPane', () => {
       <WorkspaceCenterPane
         activeSession={activeSession}
         activeView="overview"
+        draftFeedback=""
         focusRef={createRef<HTMLElement>()}
         isTransitionPending
         onViewChange={onViewChange}
+        selectedAcceptanceCriterionIndex={null}
+        selectedPhaseNumber={null}
         statusLabel="Awaiting operator input"
       />,
     );

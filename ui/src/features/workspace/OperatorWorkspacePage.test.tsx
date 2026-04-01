@@ -10,35 +10,109 @@ import type { StartNegotiationResponse } from '@/lib/api/types';
 
 vi.mock('@/features/session/SessionBootstrap', () => {
   type SessionBootstrapProps = {
+    activeSession?: StartNegotiationResponse | null;
+    draftFeedback?: string;
+    onAcceptanceCriterionSelect?: (index: number) => void;
+    onDraftFeedbackChange?: (value: string) => void;
+    onPhaseSelect?: (phaseNumber: number) => void;
     onSessionStarted?: (session: StartNegotiationResponse, story: SessionIntakeStory) => void;
+    selectedAcceptanceCriterionIndex?: number | null;
+    selectedPhaseNumber?: number | null;
   };
 
   return {
-    SessionBootstrap: ({ onSessionStarted }: SessionBootstrapProps) => (
-      <button
-        onClick={() =>
-          onSessionStarted?.(
-            {
-              done: false,
-              jira_key: 'MAG-222',
-              phase_number: 2,
-              phase_title: 'Happy Path Contract',
-              session_id: 'session-started',
-              total_phases: 7,
-            },
-            {
-              acceptanceCriteria: [],
-              key: 'MAG-222',
-              source: 'jira',
-              status: 'In Progress',
-              summary: 'Recovered story summary',
-            },
-          )
-        }
-        type="button"
-      >
-        Start mock session
-      </button>
+    SessionBootstrap: ({
+      activeSession,
+      draftFeedback,
+      onAcceptanceCriterionSelect,
+      onDraftFeedbackChange,
+      onPhaseSelect,
+      onSessionStarted,
+      selectedAcceptanceCriterionIndex,
+      selectedPhaseNumber,
+    }: SessionBootstrapProps) => (
+      <div>
+        <button
+          onClick={() =>
+            onSessionStarted?.(
+              {
+                acceptance_criteria: [
+                  { checked: false, index: 0, text: 'Recovered acceptance criterion' },
+                  { checked: false, index: 1, text: 'Selected AC should update the workspace' },
+                ],
+                done: false,
+                jira_key: 'MAG-222',
+                jira_summary: 'Recovered story summary',
+                phase_number: 2,
+                phase_title: 'Happy Path Contract',
+                session_id: 'session-started',
+                total_phases: 7,
+              },
+              {
+                acceptanceCriteria: [
+                  { checked: false, index: 0, text: 'Recovered acceptance criterion' },
+                  { checked: false, index: 1, text: 'Selected AC should update the workspace' },
+                ],
+                key: 'MAG-222',
+                source: 'jira',
+                status: 'In Progress',
+                summary: 'Recovered story summary',
+              },
+            )
+          }
+          type="button"
+        >
+          Start mock session
+        </button>
+        <button
+          onClick={() =>
+            onSessionStarted?.(
+              {
+                acceptance_criteria: [
+                  { checked: false, index: 0, text: 'Recovered acceptance criterion' },
+                  { checked: false, index: 1, text: 'Selected AC should update the workspace' },
+                ],
+                done: false,
+                jira_key: 'MAG-222',
+                jira_summary: 'Recovered story summary',
+                phase_number: 4,
+                phase_title: 'Failure Mode Enumeration',
+                session_id: 'session-started',
+                total_phases: 7,
+              },
+              {
+                acceptanceCriteria: [
+                  { checked: false, index: 0, text: 'Recovered acceptance criterion' },
+                  { checked: false, index: 1, text: 'Selected AC should update the workspace' },
+                ],
+                key: 'MAG-222',
+                source: 'jira',
+                status: 'In Progress',
+                summary: 'Recovered story summary',
+              },
+            )
+          }
+          type="button"
+        >
+          Refresh confirmed session
+        </button>
+        <button onClick={() => onAcceptanceCriterionSelect?.(1)} type="button">
+          Select AC 2
+        </button>
+        <button onClick={() => onPhaseSelect?.(2)} type="button">
+          Select phase 2
+        </button>
+        <label>
+          Draft feedback
+          <textarea
+            onChange={(event) => onDraftFeedbackChange?.(event.target.value)}
+            value={draftFeedback ?? ''}
+          />
+        </label>
+        <p>Bootstrap session: {activeSession?.session_id ?? 'idle'}</p>
+        <p>Bootstrap selected AC: {selectedAcceptanceCriterionIndex ?? 'none'}</p>
+        <p>Bootstrap selected phase: {selectedPhaseNumber ?? 'none'}</p>
+      </div>
     ),
   };
 });
@@ -46,12 +120,22 @@ vi.mock('@/features/session/SessionBootstrap', () => {
 vi.mock('@/features/workspace/WorkspaceCenterPane', () => {
   type WorkspaceCenterPaneProps = {
     activeView: string;
+    draftFeedback?: string;
     focusRef: RefObject<HTMLElement | null>;
     onViewChange: (view: 'overview' | 'negotiation' | 'traceability') => void;
+    selectedAcceptanceCriterionIndex?: number | null;
+    selectedPhaseNumber?: number | null;
   };
 
   return {
-    WorkspaceCenterPane: ({ activeView, focusRef, onViewChange }: WorkspaceCenterPaneProps) => (
+    WorkspaceCenterPane: ({
+      activeView,
+      draftFeedback,
+      focusRef,
+      onViewChange,
+      selectedAcceptanceCriterionIndex,
+      selectedPhaseNumber,
+    }: WorkspaceCenterPaneProps) => (
       <div>
         <button onClick={() => onViewChange('overview')} type="button">
           Center overview
@@ -65,6 +149,9 @@ vi.mock('@/features/workspace/WorkspaceCenterPane', () => {
         <section ref={focusRef} tabIndex={-1}>
           Center view: {activeView}
         </section>
+        <p>Center selected AC: {selectedAcceptanceCriterionIndex ?? 'none'}</p>
+        <p>Center selected phase: {selectedPhaseNumber ?? 'none'}</p>
+        <p>Center draft: {draftFeedback || 'empty'}</p>
       </div>
     ),
   };
@@ -75,10 +162,16 @@ vi.mock('@/features/workspace/WorkspaceInspector', () => {
     activeView: string;
     focusRef: RefObject<HTMLElement | null>;
     onViewChange: (view: 'evidence' | 'scan' | 'traceability') => void;
+    selectedAcceptanceCriterionIndex?: number | null;
   };
 
   return {
-    WorkspaceInspector: ({ activeView, focusRef, onViewChange }: WorkspaceInspectorProps) => (
+    WorkspaceInspector: ({
+      activeView,
+      focusRef,
+      onViewChange,
+      selectedAcceptanceCriterionIndex,
+    }: WorkspaceInspectorProps) => (
       <div>
         <button onClick={() => onViewChange('evidence')} type="button">
           Inspector evidence
@@ -92,6 +185,7 @@ vi.mock('@/features/workspace/WorkspaceInspector', () => {
         <section ref={focusRef} tabIndex={-1}>
           Inspector view: {activeView}
         </section>
+        <p>Inspector selected AC: {selectedAcceptanceCriterionIndex ?? 'none'}</p>
       </div>
     ),
   };
@@ -278,5 +372,51 @@ describe('OperatorWorkspacePage', () => {
     expect(await screen.findByText('MAG-222')).toBeInTheDocument();
     expect(screen.getByText(/recovered story summary/i)).toBeInTheDocument();
     expect(screen.getByText('Center view: negotiation')).toBeInTheDocument();
+  });
+
+  it('preserves draft feedback across view switches and confirmed session refreshes', async () => {
+    const user = userEvent.setup();
+
+    setViewport(1440);
+    installStorage();
+    renderPage({
+      initialEntry: '/',
+      initialSessionValue: null,
+      initialStorySummary: null,
+    });
+
+    await user.click(screen.getByRole('button', { name: /start mock session/i }));
+    await user.type(screen.getByLabelText(/draft feedback/i), 'Need clearer preconditions');
+
+    expect(screen.getByText(/center draft: need clearer preconditions/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /inspector scan/i }));
+    await user.click(screen.getByRole('button', { name: /refresh confirmed session/i }));
+
+    expect(await screen.findByDisplayValue('Need clearer preconditions')).toBeInTheDocument();
+    expect(screen.getByText(/center draft: need clearer preconditions/i)).toBeInTheDocument();
+    expect(screen.getByText(/failure mode enumeration/i)).toBeInTheDocument();
+  });
+
+  it('propagates selected acceptance criterion and phase context across workspace panes', async () => {
+    const user = userEvent.setup();
+
+    setViewport(1440);
+    installStorage();
+    renderPage({
+      initialEntry: '/',
+      initialSessionValue: null,
+      initialStorySummary: null,
+    });
+
+    await user.click(screen.getByRole('button', { name: /start mock session/i }));
+    await user.click(screen.getByRole('button', { name: /select ac 2/i }));
+    await user.click(screen.getByRole('button', { name: /select phase 2/i }));
+
+    expect(screen.getByText('Bootstrap selected AC: 1')).toBeInTheDocument();
+    expect(screen.getByText('Center selected AC: 1')).toBeInTheDocument();
+    expect(screen.getByText('Inspector selected AC: 1')).toBeInTheDocument();
+    expect(screen.getByText('Bootstrap selected phase: 2')).toBeInTheDocument();
+    expect(screen.getByText('Center selected phase: 2')).toBeInTheDocument();
   });
 });

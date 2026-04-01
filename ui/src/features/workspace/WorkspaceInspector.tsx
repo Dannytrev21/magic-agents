@@ -18,6 +18,7 @@ type WorkspaceInspectorProps = {
   activeView: WorkspaceInspectorView;
   focusRef: RefObject<HTMLElement | null>;
   onViewChange: (view: WorkspaceInspectorView) => void;
+  selectedAcceptanceCriterionIndex: number | null;
 };
 
 export function WorkspaceInspector({
@@ -25,6 +26,7 @@ export function WorkspaceInspector({
   activeView,
   focusRef,
   onViewChange,
+  selectedAcceptanceCriterionIndex,
 }: WorkspaceInspectorProps) {
   const { isLoading, scanStatus, skills } = useInspectorQueries();
   const contractState = activeSession ? 'Session-bound' : 'Waiting for session';
@@ -68,13 +70,19 @@ export function WorkspaceInspector({
           </div>
           <Divider />
           {activeView === 'evidence' ? (
-            <EvidenceView activeSession={activeSession} />
+            <EvidenceView
+              activeSession={activeSession}
+              selectedAcceptanceCriterionIndex={selectedAcceptanceCriterionIndex}
+            />
           ) : null}
           {activeView === 'scan' ? (
             <ScanView isLoading={isLoading} projectRoot={scanStatus.project_root} scanned={scanStatus.scanned} skillCount={skills.length} />
           ) : null}
           {activeView === 'traceability' ? (
-            <TraceabilityView activeSession={activeSession} />
+            <TraceabilityView
+              activeSession={activeSession}
+              selectedAcceptanceCriterionIndex={selectedAcceptanceCriterionIndex}
+            />
           ) : null}
         </div>
       </section>
@@ -82,7 +90,13 @@ export function WorkspaceInspector({
   );
 }
 
-function EvidenceView({ activeSession }: { activeSession: StartNegotiationResponse | null }) {
+function EvidenceView({
+  activeSession,
+  selectedAcceptanceCriterionIndex,
+}: {
+  activeSession: StartNegotiationResponse | null;
+  selectedAcceptanceCriterionIndex: number | null;
+}) {
   return (
     <>
       <div className={styles.detailList}>
@@ -95,6 +109,16 @@ function EvidenceView({ activeSession }: { activeSession: StartNegotiationRespon
             <Mono>/api/respond</Mono>
             <Mono>/api/compile</Mono>
           </div>
+        </div>
+        <div className={styles.detailRow}>
+          <Text as="p" size="xs" tone="muted">
+            Selected AC
+          </Text>
+          <Text as="p" size="sm">
+            {selectedAcceptanceCriterionIndex !== null
+              ? `AC ${selectedAcceptanceCriterionIndex + 1}`
+              : 'Awaiting rail selection'}
+          </Text>
         </div>
       </div>
       {!activeSession ? (
@@ -149,7 +173,13 @@ function ScanView({ isLoading, projectRoot, scanned, skillCount }: ScanViewProps
   );
 }
 
-function TraceabilityView({ activeSession }: { activeSession: StartNegotiationResponse | null }) {
+function TraceabilityView({
+  activeSession,
+  selectedAcceptanceCriterionIndex,
+}: {
+  activeSession: StartNegotiationResponse | null;
+  selectedAcceptanceCriterionIndex: number | null;
+}) {
   return (
     <div className={styles.matrix}>
       <div className={styles.matrixHeader}>
@@ -165,7 +195,9 @@ function TraceabilityView({ activeSession }: { activeSession: StartNegotiationRe
       </div>
       <div className={styles.matrixRow}>
         <Text as="p" size="sm">
-          Story context
+          {selectedAcceptanceCriterionIndex !== null
+            ? `AC ${selectedAcceptanceCriterionIndex + 1}`
+            : 'Story context'}
         </Text>
         <Text as="p" size="sm">
           {activeSession?.jira_key ?? 'Manual draft'}
