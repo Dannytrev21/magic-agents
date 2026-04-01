@@ -43,6 +43,7 @@ Magic Agents is not only a phase-by-phase chat tool. Its value is that each acce
 
 - Add component tests for tab switching and state preservation.
 - Add a lazy-loading test for heavier inspector surfaces.
+- Verify the idle evidence tab shows a single compact waiting state before a story is selected.
 - Manually verify the center pane remains stable while switching tabs.
 
 ---
@@ -199,6 +200,7 @@ Magic Agents is not only a phase-by-phase chat tool. Its value is that each acce
 
 ## Implementation Notes
 
+- The evidence surface now collapses to a compact "Pick a story" prompt until a session exists, keeping the inspector visually secondary to the center workspace.
 - The scan surface now launches `/api/scan` directly from the inspector, keeps the latest `/api/scan/status` payload mounted, and preserves the prior summary when reruns fail.
 - Traceability uses shared AC selection state so the inspector can cross-highlight the same acceptance criterion already selected in the left rail and center pane.
 - Planner, critique, and spec-diff results are session-scoped inspector actions rather than route-level screens, keeping the active phase composer intact.

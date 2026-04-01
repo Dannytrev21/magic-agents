@@ -15,6 +15,7 @@ The React workspace needs a right-side inspector that can surface proof-of-corre
 - Share acceptance-criterion selection between the left rail, center pane, and inspector so traceability and contract views can cross-highlight the same proof chain.
 - Extend `/api/compile` with parsed `requirements` and `traceability` fields so the UI can render a structured contract viewer without adding client-side YAML parsing.
 - Keep raw YAML available beside the structured contract so operators can compare the human-readable artifact and the rendered requirement view.
+- Keep idle evidence states compact. When no session exists, the inspector should show a single prompt and stable full-width tabs rather than stacked empty evidence sections.
 
 ## Consequences
 
@@ -22,3 +23,4 @@ The React workspace needs a right-side inspector that can surface proof-of-corre
 - The UI can render per-AC traceability, matrix scanning, and contract routing details from stable backend-generated identifiers.
 - Backend changes remain additive and low-risk for existing consumers.
 - Future inspector work should continue treating evidence surfaces as secondary tools around the main negotiation loop, not as primary navigation destinations.
+- The no-session workspace remains calmer and visually subordinate, which reduces false affordances before any proof artifacts exist.

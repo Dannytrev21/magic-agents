@@ -9,6 +9,7 @@ Every arrow below represents a handoff between components. Each handoff has a de
 - The React + TypeScript operator workspace now covers epics U1 through U8 of the UI port.
 - As of 2026-04-01, [`/Users/dannytrevino/development/magic-agents/docs/ui-port/progress.json`](/Users/dannytrevino/development/magic-agents/docs/ui-port/progress.json) reports 36 of 36 UI stories complete and the U1 through U8 epic markdown EARS checklists are synchronized to that state.
 - The right inspector exposes evidence, scan output, per-AC traceability, planner/critique tools, spec diff, and a structured spec contract viewer beside raw YAML.
+- When no session is active, the evidence inspector now stays visually quiet with a single compact prompt instead of stacked empty session/spec sections, while the tab strip remains keyboard reachable.
 - The center pane now includes a verification console with backend-confirmed EARS approval, inline spec/test artifact viewers, live SSE pipeline events, and post-run Jira feedback controls.
 - The shared UI design system now ships from a typed token source mirrored into CSS variables, keeping graphite/bone surfaces, mono artifact treatment, and restrained glass chrome aligned across the shell, rails, and verification surfaces.
 - Workspace navigation and execution surfaces now announce session, phase, and pipeline changes through live regions while focus follows the active workspace flow after session start, phase advancement, and pipeline completion.
@@ -25,6 +26,7 @@ Every arrow below represents a handoff between components. Each handoff has a de
 - UI verification now runs through `npm run test:ci` for Vitest + build + bundle budgets, with browser coverage authored under `npm run test:e2e` after `npm run test:e2e:install` in [`/Users/dannytrevino/development/magic-agents/ui`](/Users/dannytrevino/development/magic-agents/ui). The Playwright harness supports `PLAYWRIGHT_BROWSER=chromium|firefox|webkit`, a dedicated remote browser server via `npm run test:e2e:server`, and Codex-friendly remote execution through `npm run test:e2e:remote` or `PW_TEST_CONNECT_WS_ENDPOINT=... npm run test:e2e`.
 - On 2026-04-01, a local Chromium rerun of the mocked operator journey (`npm run test:e2e:chromium`) revalidated intake fallback, in-place phase approval, and pipeline execution after browser coverage caught stale UI-contract drift in the Jira fallback and approval path.
 - The current non-browser shell CSS budget remains 33.5 kB raw and 7 kB gzip. The 2026-04-01 verification run brought the shipped shell back under that cap at 32,760 raw bytes (31.99 KiB in the budget report) and 6.07 kB gzip by simplifying chrome instead of raising thresholds.
+- A follow-up 2026-04-01 workspace verification reran `npm run test:ui`, `npm run build`, and `npm run test:budgets` after tightening the inspector tab chrome and idle evidence state; all three gates remained green.
 
 ```
 ┌──────────┐     jira_ticket.yaml      ┌───────────────┐

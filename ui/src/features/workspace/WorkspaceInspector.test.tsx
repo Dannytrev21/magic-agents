@@ -202,11 +202,10 @@ describe('WorkspaceInspector', () => {
     const { onViewChange } = renderInspector();
 
     const tablist = screen.getByRole('tablist', { name: /inspector views/i });
+    const evidenceTab = within(tablist).getByRole('tab', { name: /evidence/i });
 
-    expect(within(tablist).getByRole('tab', { name: /evidence/i })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
+    expect(evidenceTab).toHaveAttribute('aria-selected', 'true');
+    expect(evidenceTab).not.toHaveClass('undefined');
     expect(within(tablist).getByRole('tab', { name: /^scan$/i })).toBeInTheDocument();
     expect(within(tablist).getByRole('tab', { name: /^links$/i })).toBeInTheDocument();
 
@@ -359,5 +358,26 @@ describe('WorkspaceInspector', () => {
     await waitFor(() => {
       expect(screen.getByText(/requirements:/i)).toBeInTheDocument();
     });
+  });
+
+  it('keeps the evidence rail compact when no session is loaded', () => {
+    render(
+      <WorkspaceInspector
+        activeSession={null}
+        activeView="evidence"
+        focusRef={createRef<HTMLElement>()}
+        onAcceptanceCriterionSelect={vi.fn()}
+        onViewChange={vi.fn()}
+        selectedAcceptanceCriterionIndex={null}
+      />,
+      { wrapper: createWrapper() },
+    );
+
+    expect(screen.getByText(/Pick a story/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Choose a story on the left to load evidence and spec details here\./i),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/No session yet/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Session$/i)).not.toBeInTheDocument();
   });
 });

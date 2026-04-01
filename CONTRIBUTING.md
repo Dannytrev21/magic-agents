@@ -8,6 +8,7 @@
 - Keep shared UI tokens in [`/Users/dannytrevino/development/magic-agents/ui/src/styles/system.ts`](/Users/dannytrevino/development/magic-agents/ui/src/styles/system.ts) and mirror any new cross-cutting values into [`/Users/dannytrevino/development/magic-agents/ui/src/styles/tokens.css`](/Users/dannytrevino/development/magic-agents/ui/src/styles/tokens.css) before consuming them in component CSS.
 - Treat sans copy, mono refs, and the single signal accent as invariants; dense operator surfaces should prefer whitespace, dividers, and layered panels over mosaics of heavy cards.
 - Inspector actions must not reset the center-pane negotiation draft or route the operator away from the active workspace.
+- Idle inspector states should stay compact. Before a session exists, prefer one focused prompt over stacked empty disclosures or artifact shells that compete with the center pane.
 - Shared acceptance-criterion selection should remain the source of truth for left-rail, center-pane, and inspector cross-highlighting.
 - Verification console state must remain session-scoped inside the center pane so approval, artifacts, live pipeline events, and Jira feedback survive tab changes without forcing a second route model.
 - Real-time event handling should use the `EventStoreProvider` + typed selector hooks (`usePhaseEvents`, `useBudgetEvents`, etc.) from `eventStore.ts` rather than ad-hoc component state. The SSE connection is managed by `useSSE` and should not be duplicated.

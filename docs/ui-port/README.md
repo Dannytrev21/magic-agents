@@ -70,6 +70,7 @@
 - A follow-up browser rerun on 2026-04-01 confirmed `npm run test:e2e:chromium` passes for the mocked operator journey after restoring the explicit Jira-configuration fallback copy and aligning the approval-step selector to the shipped workspace action label.
 - U8.2 browser coverage remains implemented; when Codex-hosted macOS cannot launch Playwright locally, the supported path is `npm run test:e2e:server` outside Codex plus `npm run test:e2e:remote` or `PW_TEST_CONNECT_WS_ENDPOINT=... npm run test:e2e` inside Codex.
 - The shell, rails, workspace, and verification console now consume a typed graphite/bone/signal design system mirrored into CSS tokens.
+- The evidence inspector now keeps its idle state to a single compact prompt until a story/session exists, which preserves a calmer right rail without hiding the tab structure.
 - Workspace announcements, pane focus handoff, busy states, and the pipeline log now support keyboard and screen-reader operation without pointer-only assumptions.
 - Reduced-motion fallbacks and shared timing tokens now govern pane transitions, live console behavior, and responsive shell refinements.
 - The frontend now ships explicit quality gates: `npm run test:ci` for Vitest + build + bundle budgets, `npm run test:e2e` for deterministic mock-mode browser journeys, and a FastAPI rollout switch that can force either React or legacy HTML at request or process scope.

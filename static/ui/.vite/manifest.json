@@ -1,6 +1,6 @@
 {
   "index.html": {
-    "file": "assets/index-DynYBAFn.js",
+    "file": "assets/index-DGWN64tL.js",
     "name": "index",
     "src": "index.html",
     "isEntry": true,
@@ -9,11 +9,11 @@
       "src/features/workspace/WorkspaceInspectorAnalysisView.tsx"
     ],
     "css": [
-      "assets/index-BScpF9kq.css"
+      "assets/index-D1zoPmCt.css"
     ]
   },
   "src/features/workspace/WorkspaceInspectorAnalysisView.tsx": {
-    "file": "assets/WorkspaceInspectorAnalysisView-CZrc6Z35.js",
+    "file": "assets/WorkspaceInspectorAnalysisView-B-Sa7fQK.js",
     "name": "WorkspaceInspectorAnalysisView",
     "src": "src/features/workspace/WorkspaceInspectorAnalysisView.tsx",
     "isDynamicEntry": true,
@@ -22,7 +22,7 @@
     ]
   },
   "src/features/workspace/WorkspaceVerificationConsole.tsx": {
-    "file": "assets/WorkspaceVerificationConsole-Cz_6qMnp.js",
+    "file": "assets/WorkspaceVerificationConsole-D0_PXPR1.js",
     "name": "WorkspaceVerificationConsole",
     "src": "src/features/workspace/WorkspaceVerificationConsole.tsx",
     "isDynamicEntry": true,

@@ -64,12 +64,16 @@ export function WorkspaceInspector({
   }, [activeSession?.session_id]);
 
   return (
-    <div className={styles.stack}>
+    <div className={`${styles.stack} ${styles.inspectorStack}`}>
       <SectionHeader
         title="Inspector"
         action={<Badge tone={activeSession ? 'success' : 'warning'}>{contractState}</Badge>}
       />
-      <div aria-label="Inspector views" className={styles.viewTabs} role="tablist">
+      <div
+        aria-label="Inspector views"
+        className={`${styles.viewTabs} ${styles.inspectorViewTabs}`}
+        role="tablist"
+      >
         {inspectorViews.map((view) => (
           <button
             aria-selected={activeView === view.value}
@@ -159,6 +163,21 @@ function EvidenceView({
     selectedAcceptanceCriterionIndex,
   );
 
+  if (!activeSession) {
+    return (
+      <article className={styles.inspectorEmptyCard}>
+        <div className={styles.inspectorEmptyBody}>
+          <Text as="h3" size="sm" weight="semibold">
+            Pick a story
+          </Text>
+          <Text as="p" size="sm" tone="muted">
+            Choose a story on the left to load evidence and spec details here.
+          </Text>
+        </div>
+      </article>
+    );
+  }
+
   return (
     <div className={styles.sectionStack}>
       <WorkspaceDisclosure
@@ -193,70 +212,63 @@ function EvidenceView({
           </div>
         </div>
       </WorkspaceDisclosure>
-      {!activeSession ? (
-        <EmptyState
-          title="No session yet"
-          description="Start a story to load spec data here."
+      <div className={styles.sectionStack}>
+        <SectionHeader
+          title="Spec"
+          action={
+            <Button
+              loading={compileMutation.isPending}
+              onClick={() => compileMutation.mutate()}
+              variant="secondary"
+            >
+              {compileMutation.data ? 'Refresh spec' : 'Load spec'}
+            </Button>
+          }
         />
-      ) : (
-        <div className={styles.sectionStack}>
-          <SectionHeader
-            title="Spec"
-            action={
-              <Button
-                loading={compileMutation.isPending}
-                onClick={() => compileMutation.mutate()}
-                variant="secondary"
-              >
-                {compileMutation.data ? 'Refresh spec' : 'Load spec'}
-              </Button>
-            }
+        {compileMutation.isError ? (
+          <Text as="p" className={styles.actionMessage} data-state="error" size="sm">
+            {resolveErrorMessage(compileMutation.error, 'Unable to compile the current spec.')}
+          </Text>
+        ) : null}
+        {!compileMutation.data ? (
+          <EmptyState
+            title="No spec yet"
+            description="Load the compiled spec to inspect routes and YAML."
           />
-          {compileMutation.isError ? (
-            <Text as="p" className={styles.actionMessage} data-state="error" size="sm">
-              {resolveErrorMessage(compileMutation.error, 'Unable to compile the current spec.')}
-            </Text>
-          ) : null}
-          {!compileMutation.data ? (
-            <EmptyState
-              title="No spec yet"
-              description="Load the compiled spec to inspect routes and YAML."
-            />
-          ) : (
-            <div className={styles.sectionStack}>
-              <div aria-label="Spec contract views" className={styles.viewTabs} role="tablist">
-                <button
-                  aria-selected={specView === 'structured'}
-                  className={styles.viewTab}
-                  onClick={() => onSpecViewChange('structured')}
-                  role="tab"
-                  type="button"
-                >
-                  Details
-                </button>
-                <button
-                  aria-selected={specView === 'raw'}
-                  className={styles.viewTab}
-                  onClick={() => onSpecViewChange('raw')}
-                  role="tab"
-                  type="button"
-                >
-                  YAML
-                </button>
-              </div>
-              {specView === 'structured' ? (
-                <StructuredContractView
-                  compiledSpec={compileMutation.data}
-                  onAcceptanceCriterionSelect={onAcceptanceCriterionSelect}
-                  selectedRequirement={selectedRequirement}
-                />
-              ) : (
-                <pre className={styles.rawPayloadPre}>{compileMutation.data.spec_content}</pre>
-              )}
+        ) : (
+          <div className={styles.sectionStack}>
+            <div aria-label="Spec contract views" className={styles.viewTabs} role="tablist">
+              <button
+                aria-selected={specView === 'structured'}
+                className={styles.viewTab}
+                onClick={() => onSpecViewChange('structured')}
+                role="tab"
+                type="button"
+              >
+                Details
+              </button>
+              <button
+                aria-selected={specView === 'raw'}
+                className={styles.viewTab}
+                onClick={() => onSpecViewChange('raw')}
+                role="tab"
+                type="button"
+              >
+                YAML
+              </button>
             </div>
-          )}
-        </div>
-      )}
+            {specView === 'structured' ? (
+              <StructuredContractView
+                compiledSpec={compileMutation.data}
+                onAcceptanceCriterionSelect={onAcceptanceCriterionSelect}
+                selectedRequirement={selectedRequirement}
+              />
+            ) : (
+              <pre className={styles.rawPayloadPre}>{compileMutation.data.spec_content}</pre>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
