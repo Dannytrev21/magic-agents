@@ -20,6 +20,12 @@ class PytestSkill(VerificationSkill):
     """
 
     skill_id = "pytest_unit_test"
+    name = "Pytest Unit Test Generator"
+    description = "Generates tagged pytest verification artifacts from spec contracts."
+    input_types = frozenset({"api_behavior", "security_invariant", "data_constraint"})
+    output_format = ".py"
+    framework = "pytest"
+    version = "1.0.0"
 
     def generate(self, spec: dict, requirement: dict, constitution: dict) -> str:
         """Generate a complete pytest test file from a spec requirement."""

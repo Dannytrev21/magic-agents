@@ -19,7 +19,12 @@ class CucumberJavaSkill(VerificationSkill):
     """
 
     skill_id = "cucumber_java"
-    description = "Generate Cucumber/Gherkin + Java step definitions from spec contracts"
+    name = "Cucumber Java Generator"
+    description = "Generate Cucumber feature files and Java step definitions from spec contracts."
+    input_types = frozenset({"api_behavior", "compliance"})
+    output_format = ".feature"
+    framework = "cucumber"
+    version = "1.0.0"
 
     def generate(
         self,
@@ -65,3 +70,14 @@ class CucumberJavaSkill(VerificationSkill):
             return ""
         finally:
             os.unlink(temp_spec_path)
+
+    def output_path(self, spec: dict, requirement: dict) -> str:
+        """Return the feature output path from the verification block."""
+        for verification in requirement.get("verification", []):
+            output = verification.get("output")
+            if output:
+                return output
+
+        jira_key = spec.get("meta", {}).get("jira_key", "unknown")
+        safe_key = jira_key.lower().replace("-", "_")
+        return f".verify/generated/{safe_key}.feature"

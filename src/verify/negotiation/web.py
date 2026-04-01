@@ -20,6 +20,7 @@ from verify.generator import generate_and_write
 from verify.runner import run_and_parse
 from verify.evaluator import evaluate_spec
 from verify.pipeline import update_jira
+from verify.skills.framework import list_skill_descriptors
 
 app = FastAPI(title="Negotiation UI")
 
@@ -61,6 +62,12 @@ async def jira_configured():
         and os.environ.get("JIRA_API_TOKEN")
     )
     return JSONResponse({"configured": configured})
+
+
+@app.get("/api/skills")
+async def skills_index():
+    """List registered verification skill descriptors."""
+    return JSONResponse([descriptor.as_dict() for descriptor in list_skill_descriptors()])
 
 
 @app.get("/api/jira/stories")
