@@ -1,11 +1,16 @@
 import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query';
 import {
+  compileSpec,
+  evaluatePhase,
+  fetchPlan,
+  fetchSpecDiff,
   fetchJiraConfigured,
   fetchJiraStories,
   fetchScanStatus,
   fetchSessionInfo,
   fetchSkills,
   respondToSession,
+  runCodebaseScan,
   resumeSession,
   startNegotiation,
 } from '@/lib/api/client';
@@ -72,6 +77,8 @@ export function useInspectorQueries() {
       ({
         project_root: '',
         scanned: false,
+        status: undefined,
+        summary: undefined,
       } as const),
     skills: skillsQuery.data ?? [],
   };
@@ -100,6 +107,42 @@ export function useResumeSessionMutation() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.sessionInfo(session.jira_key) });
     },
   });
+}
+
+export function useInspectorActions() {
+  const queryClient = useQueryClient();
+
+  const scanMutation = useMutation({
+    mutationFn: (projectRoot: string) => runCodebaseScan(projectRoot),
+    onSuccess: (scanStatus) => {
+      queryClient.setQueryData(queryKeys.scanStatus, scanStatus);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.scanStatus });
+    },
+  });
+
+  const compileMutation = useMutation({
+    mutationFn: () => compileSpec(),
+  });
+
+  const planningMutation = useMutation({
+    mutationFn: () => fetchPlan(),
+  });
+
+  const critiqueMutation = useMutation({
+    mutationFn: (phase: string) => evaluatePhase({ phase }),
+  });
+
+  const specDiffMutation = useMutation({
+    mutationFn: () => fetchSpecDiff(),
+  });
+
+  return {
+    compileMutation,
+    critiqueMutation,
+    planningMutation,
+    scanMutation,
+    specDiffMutation,
+  };
 }
 
 export function useRespondMutation() {

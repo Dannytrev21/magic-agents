@@ -2,18 +2,18 @@
   "meta": {
     "project": "Magic Agents Operator Workspace UI port",
     "created": "2026-03-31",
-    "last_updated": "2026-04-01T11:40:43Z",
+    "last_updated": "2026-04-01T12:39:32Z",
     "total_epics": 8,
     "total_stories": 36
   },
   "summary": {
-    "epics_complete": 4,
+    "epics_complete": 5,
     "epics_in_progress": 0,
-    "epics_not_started": 4,
-    "stories_complete": 21,
+    "epics_not_started": 3,
+    "stories_complete": 26,
     "stories_in_progress": 0,
-    "stories_not_started": 15,
-    "stories_tested": 21
+    "stories_not_started": 10,
+    "stories_tested": 26
   },
   "epics": [
     {
@@ -78,13 +78,13 @@
       "title": "Inspector, Evidence, and Traceability",
       "file": "U05-inspector-evidence-traceability.md",
       "priority": 5,
-      "status": "not_started",
+      "status": "complete",
       "stories": [
-        { "id": "U5.1", "title": "Build a tabbed inspector for evidence surfaces", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U5.2", "title": "Integrate codebase scan output into the inspector", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U5.3", "title": "Render per-AC traceability as linked evidence", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U5.4", "title": "Expose planner, critique, and spec diff as analyst tools", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U5.5", "title": "Add a spec contract viewer in the inspector", "status": "not_started", "tested": false, "notes": "" }
+        { "id": "U5.1", "title": "Build a tabbed inspector for evidence surfaces", "status": "complete", "tested": true, "notes": "Expanded the persistent right rail to evidence, scan, traceability, and planning/critique tabs, preserved center-pane draft state across inspector changes, and lazy-loaded the heavier analyst surface." },
+        { "id": "U5.2", "title": "Integrate codebase scan output into the inspector", "status": "complete", "tested": true, "notes": "Added in-workspace scan launch, editable project-root targeting, progress/error/success rendering, readable persisted summaries, and backend rehydration through `/api/scan/status`." },
+        { "id": "U5.3", "title": "Render per-AC traceability as linked evidence", "status": "complete", "tested": true, "notes": "Shipped a per-AC traceability browser plus matrix view, AC-linked evidence chains, copyable verification refs, and shared AC selection that keeps traceability subordinate to the active workspace." },
+        { "id": "U5.4", "title": "Expose planner, critique, and spec diff as analyst tools", "status": "complete", "tested": true, "notes": "Wired planner, phase-critique, and spec-diff endpoints into the inspector as on-demand analyst tools with explicit empty states for missing historical comparisons." },
+        { "id": "U5.5", "title": "Add a spec contract viewer in the inspector", "status": "complete", "tested": true, "notes": "Added a structured spec contract viewer beside raw YAML, surfaced immutable requirement IDs and verification routing, and linked requirement selection back to the originating acceptance criterion." }
       ]
     },
     {

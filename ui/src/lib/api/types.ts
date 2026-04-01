@@ -37,8 +37,11 @@ export type SkillDescriptor = {
 export type ScanStatusResponse = {
   project_root: string;
   scanned: boolean;
-  summary?: string;
+  status?: string;
+  summary?: Record<string, unknown> | string;
 };
+
+export type ScanRunResponse = ScanStatusResponse;
 
 export type StartNegotiationRequest = {
   acceptance_criteria: AcceptanceCriterionInput[];
@@ -119,7 +122,22 @@ export type EarsStatementResult = {
 
 export type TraceabilityMap = {
   [key: string]: unknown;
-  ac_mappings?: Array<Record<string, unknown>>;
+  ac_mappings?: TraceabilityMapping[];
+};
+
+export type TraceabilityVerificationRef = {
+  description?: string;
+  ref: string;
+  verification_type?: string;
+  [key: string]: unknown;
+};
+
+export type TraceabilityMapping = {
+  ac_checkbox?: number;
+  ac_text?: string;
+  pass_condition?: string;
+  required_verifications?: TraceabilityVerificationRef[];
+  [key: string]: unknown;
 };
 
 export type NegotiationLogEntry = {
@@ -185,6 +203,75 @@ export type StartNegotiationResponse = {
   usage?: SessionUsageSummary | null;
   verdicts?: AcceptanceCriterionVerdict[];
   verification_routing?: VerificationRoutingResult;
+};
+
+export type PlanningGroup = {
+  ac_indices: number[];
+  endpoint: string;
+  methods: string[];
+};
+
+export type PlanResponse = {
+  ac_groups: PlanningGroup[];
+  cross_ac_dependencies?: string[];
+  estimated_complexity?: string;
+};
+
+export type PhaseCritiqueResponse = {
+  has_issues: boolean;
+  issues: string[];
+  suggestions: string[];
+};
+
+export type SpecDiffResponse = {
+  diff: string | null;
+  has_old_spec: boolean;
+  jira_key: string;
+};
+
+export type CompiledSpecVerification = {
+  output?: string;
+  refs?: string[];
+  skill?: string;
+  [key: string]: unknown;
+};
+
+export type CompiledSpecContract = {
+  failures?: FailureModeResult[];
+  interface?: {
+    auth?: string;
+    method?: string;
+    path?: string;
+    [key: string]: unknown;
+  };
+  invariants?: InvariantResult[];
+  preconditions?: PreconditionResult[];
+  success?: {
+    content_type?: string;
+    required?: string[];
+    schema?: Record<string, unknown>;
+    status?: number;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+};
+
+export type CompiledSpecRequirement = {
+  ac_checkbox?: number;
+  ac_text?: string;
+  contract?: CompiledSpecContract;
+  id: string;
+  title?: string;
+  type?: string;
+  verification?: CompiledSpecVerification[];
+  [key: string]: unknown;
+};
+
+export type CompileSpecResponse = {
+  requirements?: CompiledSpecRequirement[];
+  spec_content: string;
+  spec_path: string;
+  traceability?: TraceabilityMap;
 };
 
 export type SessionCheckpointSummary = {

@@ -63,6 +63,13 @@
 - Move the negotiation and evidence workflow into the new app before removing the legacy screen model.
 - Keep API compatibility with the existing FastAPI endpoints during the port.
 
+## Current Status
+
+- U1 through U5 are now complete in the React workspace.
+- The right inspector now owns the evidence, scan, traceability, planning/critique, and structured spec-contract surfaces.
+- Inspector actions stay session-scoped and keep the center-pane negotiation flow stable while scan, critique, planning, and spec-compare requests run.
+- The next delivery slice is Epic U6: verification console and pipeline execution.
+
 ## Success Criteria
 
 - An operator can load a story, negotiate through all phases, inspect supporting evidence, run verification, and understand verdicts without navigating across disconnected screens.

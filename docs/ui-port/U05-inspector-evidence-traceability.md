@@ -34,10 +34,10 @@ Magic Agents is not only a phase-by-phase chat tool. Its value is that each acce
 
 ### Acceptance Criteria
 
-- [ ] The right rail supports at least scan, traceability, and planning/critique tabs.
-- [ ] Switching inspector tabs does not reset draft input in the center pane.
-- [ ] Inspector tabs can be lazy-loaded when they contain heavier artifact viewers.
-- [ ] The selected inspector tab is visually clear and keyboard reachable.
+- [x] The right rail supports at least scan, traceability, and planning/critique tabs.
+- [x] Switching inspector tabs does not reset draft input in the center pane.
+- [x] Inspector tabs can be lazy-loaded when they contain heavier artifact viewers.
+- [x] The selected inspector tab is visually clear and keyboard reachable.
 
 ### How to Test
 
@@ -71,10 +71,10 @@ Magic Agents is not only a phase-by-phase chat tool. Its value is that each acce
 
 ### Acceptance Criteria
 
-- [ ] The scan action can be launched from the workspace without moving to a separate page.
-- [ ] The inspector shows scan progress, success, and failure states.
-- [ ] Successful scans expose the textual summary in a readable format.
-- [ ] Existing scan status can be rehydrated from the backend status endpoint.
+- [x] The scan action can be launched from the workspace without moving to a separate page.
+- [x] The inspector shows scan progress, success, and failure states.
+- [x] Successful scans expose the textual summary in a readable format.
+- [x] Existing scan status can be rehydrated from the backend status endpoint.
 
 ### How to Test
 
@@ -109,11 +109,11 @@ Magic Agents is not only a phase-by-phase chat tool. Its value is that each acce
 
 ### Acceptance Criteria
 
-- [ ] The inspector supports a per-AC traceability browser.
-- [ ] Selecting an AC reveals classification, postconditions, preconditions, failure modes, and verification refs.
-- [ ] A denser traceability matrix or table view exists for cross-AC scanning.
-- [ ] Ref IDs are easy to scan and copy.
-- [ ] Large traceability trees remain usable without collapsing the entire inspector.
+- [x] The inspector supports a per-AC traceability browser.
+- [x] Selecting an AC reveals classification, postconditions, preconditions, failure modes, and verification refs.
+- [x] A denser traceability matrix or table view exists for cross-AC scanning.
+- [x] Ref IDs are easy to scan and copy.
+- [x] Large traceability trees remain usable without collapsing the entire inspector.
 
 ### How to Test
 
@@ -147,10 +147,10 @@ Magic Agents is not only a phase-by-phase chat tool. Its value is that each acce
 
 ### Acceptance Criteria
 
-- [ ] The inspector includes access to planner output for the current session.
-- [ ] The inspector includes access to phase critique for the active phase.
-- [ ] The inspector includes spec-diff output when an old spec exists.
-- [ ] Missing historical data produces a clear "nothing to compare" state.
+- [x] The inspector includes access to planner output for the current session.
+- [x] The inspector includes access to phase critique for the active phase.
+- [x] The inspector includes spec-diff output when an old spec exists.
+- [x] Missing historical data produces a clear "nothing to compare" state.
 
 ### How to Test
 
@@ -184,13 +184,22 @@ Magic Agents is not only a phase-by-phase chat tool. Its value is that each acce
 
 ### Acceptance Criteria
 
-- [ ] The inspector exposes a structured spec contract view when a spec exists.
-- [ ] Requirement IDs, types, and verification routing are visible.
-- [ ] The operator can navigate between a requirement and its originating AC or traceability context.
-- [ ] A clear "spec not yet compiled" state exists when no spec is available.
+- [x] The inspector exposes a structured spec contract view when a spec exists.
+- [x] Requirement IDs, types, and verification routing are visible.
+- [x] The operator can navigate between a requirement and its originating AC or traceability context.
+- [x] A clear "spec not yet compiled" state exists when no spec is available.
 
 ### How to Test
 
 - Add component tests for populated and empty spec viewer states.
 - Verify requirement-to-AC navigation behavior in integration tests.
 - Manually inspect a compiled session and confirm the spec view complements the raw YAML artifact.
+
+---
+
+## Implementation Notes
+
+- The scan surface now launches `/api/scan` directly from the inspector, keeps the latest `/api/scan/status` payload mounted, and preserves the prior summary when reruns fail.
+- Traceability uses shared AC selection state so the inspector can cross-highlight the same acceptance criterion already selected in the left rail and center pane.
+- Planner, critique, and spec-diff results are session-scoped inspector actions rather than route-level screens, keeping the active phase composer intact.
+- The compile endpoint now returns parsed requirement and traceability payloads so the UI can render a structured contract view beside the raw YAML artifact without client-side YAML parsing.

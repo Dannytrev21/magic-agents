@@ -20,6 +20,7 @@ export const inspectorViews = [
   { value: 'evidence', label: 'Evidence' },
   { value: 'scan', label: 'Scan output' },
   { value: 'traceability', label: 'Traceability' },
+  { value: 'analysis', label: 'Planning & critique' },
 ] as const;
 
 export const mobileWorkspacePanes = [
