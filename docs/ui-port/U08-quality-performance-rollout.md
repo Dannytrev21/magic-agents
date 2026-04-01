@@ -11,7 +11,7 @@ The new UI should not become a second prototype. Once the workflow is ported, th
 ## Implementation Status
 
 - `U8.1` is implemented with new left-rail component coverage, page-level integration coverage, and expanded typed API contract tests. `npm run test:ui` and `npm run test:ci` both pass.
-- `U8.2` is implemented with Playwright specs for the deterministic manual-entry happy path and a mocked pipeline failure path, plus retained traces/screenshots on failure. The harness is now environment-selectable so Chromium, Firefox, and WebKit can be tried from one config, but browser validation remains blocked in the current Codex macOS 26 sandbox because every tested engine aborts before any page code runs.
+- `U8.2` is implemented with Playwright specs for the deterministic manual-entry happy path and a mocked pipeline failure path, plus retained traces/screenshots on failure. The harness is environment-selectable, and the remote-browser path is now first-class: `playwright run-server` can host the browser outside Codex while `npm run test:e2e` or `npm run test:e2e:remote` connects to it. Direct browser launch inside Codex-hosted macOS can still fail, but remote-browser execution is now validated.
 - `U8.3` is implemented with a lazy-loaded verification console chunk, manifest-backed bundle budgets, and a reversible FastAPI frontend switch via `MAGIC_AGENTS_FRONTEND_MODE` or the `frontend` query parameter. The targeted backend rollout tests pass.
 
 ---
@@ -88,6 +88,8 @@ The new UI should not become a second prototype. Once the workflow is ported, th
 - Intentionally inject one failing API response and confirm the failure path is asserted.
 - Review captured traces or screenshots from a failed test run.
 - Use `npm run test:e2e` for the default Chromium path in this repo, or `npm run test:e2e:chromium`, `npm run test:e2e:firefox`, and `npm run test:e2e:webkit` when isolating host-specific browser failures.
+- For Codex-hosted runs, start `npm run test:e2e:server` outside Codex and then run `npm run test:e2e:remote` or `PW_TEST_CONNECT_WS_ENDPOINT=ws://127.0.0.1:3000/ npm run test:e2e` from Codex.
+- If the app under test is already running elsewhere, set `PW_SKIP_WEBSERVER=1` and point Playwright at it with `PW_BASE_URL=http://host:port`.
 
 ---
 

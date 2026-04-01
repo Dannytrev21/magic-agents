@@ -2,16 +2,24 @@ import { defineConfig } from '@playwright/test';
 
 const supportedBrowsers = new Set(['chromium', 'firefox', 'webkit']);
 const requestedBrowser = process.env.PLAYWRIGHT_BROWSER ?? 'chromium';
-const browserName = supportedBrowsers.has(requestedBrowser) ? requestedBrowser : 'webkit';
+const browserName = supportedBrowsers.has(requestedBrowser) ? requestedBrowser : 'chromium';
+const baseURL = process.env.PW_BASE_URL ?? 'http://127.0.0.1:4173';
+const webServerHost = process.env.PW_WEB_SERVER_HOST ?? '127.0.0.1';
+const webServerPort = Number(process.env.PW_WEB_SERVER_PORT ?? '4173');
+const skipWebServer = ['1', 'true', 'yes'].includes(
+  (process.env.PW_SKIP_WEBSERVER ?? '').toLowerCase(),
+);
+const usingRemoteBrowser = Boolean(process.env.PW_TEST_CONNECT_WS_ENDPOINT);
 const sharedUse = {
-  baseURL: 'http://127.0.0.1:4173',
+  baseURL,
   browserName,
   screenshot: 'only-on-failure' as const,
   trace: 'retain-on-failure' as const,
   viewport: { width: 1440, height: 980 },
 };
-const browserUse = browserName === 'chromium' ? { channel: 'chromium' as const } : {};
-const webServerCommand = `${JSON.stringify(process.execPath)} ./node_modules/vite/bin/vite.js --host 127.0.0.1 --port 4173`;
+const browserUse =
+  !usingRemoteBrowser && browserName === 'chromium' ? { channel: 'chromium' as const } : {};
+const webServerCommand = `${JSON.stringify(process.execPath)} ./node_modules/vite/bin/vite.js --host ${webServerHost} --port ${webServerPort}`;
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -27,10 +35,12 @@ export default defineConfig({
   ],
   reporter: [['list'], ['html', { open: 'never' }]],
   retries: 0,
-  webServer: {
-    command: webServerCommand,
-    port: 4173,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-  },
+  webServer: skipWebServer
+    ? undefined
+    : {
+        command: webServerCommand,
+        port: webServerPort,
+        reuseExistingServer: !process.env.CI,
+        timeout: 120_000,
+      },
 });
