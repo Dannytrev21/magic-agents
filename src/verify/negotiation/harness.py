@@ -3,11 +3,20 @@
 Implements Sherpa's state machine pattern with guard conditions on every transition.
 """
 
-from datetime import datetime, timezone
+from __future__ import annotations
 
+import time
+from datetime import datetime, timezone
+from typing import TYPE_CHECKING
+
+from verify.backpressure import PhaseCostReport
 from verify.context import VerificationContext
 from verify.negotiation.checkpoint import save_checkpoint
 from verify.observability import HarnessLogger
+
+if TYPE_CHECKING:
+    from verify.backpressure import BackPressureController
+    from verify.llm_client import LLMClient
 
 PHASES = [
     "phase_0",  # Intake & classification
@@ -24,8 +33,14 @@ PHASES = [
 class NegotiationHarness:
     """Orchestrates phase-by-phase negotiation over a VerificationContext."""
 
-    def __init__(self, ctx: VerificationContext) -> None:
+    def __init__(
+        self,
+        ctx: VerificationContext,
+        backpressure: BackPressureController | None = None,
+    ) -> None:
         self.ctx = ctx
+        self.backpressure = backpressure
+        self.cost_reports: list[PhaseCostReport] = []
         self.logger = HarnessLogger(ctx.jira_key)
 
     # ------------------------------------------------------------------
@@ -50,6 +65,83 @@ class NegotiationHarness:
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         )
+
+    # ------------------------------------------------------------------
+    # Run current phase with budget enforcement
+    # ------------------------------------------------------------------
+
+    def run_current_phase(
+        self,
+        llm: LLMClient,
+        feedback: str | None = None,
+    ) -> dict:
+        """Execute the current phase with optional backpressure enforcement.
+
+        Returns a dict with at least a 'status' key. If the budget is exceeded
+        before the phase runs, returns {"status": "budget_exceeded", "usage_summary": ...}.
+        """
+        phase = self.ctx.current_phase
+
+        # Budget gate: check before invoking the LLM
+        if self.backpressure and not self.backpressure.can_proceed():
+            save_checkpoint(self.ctx, phase)
+            return {
+                "status": "budget_exceeded",
+                "phase": phase,
+                "usage_summary": self.backpressure.get_usage_summary(),
+            }
+
+        # Snapshot counters for per-phase cost reporting
+        bp = self.backpressure
+        calls_before = bp.api_calls if bp else 0
+        tokens_before = bp.tokens_used if bp else 0
+        retries_before = bp.retries_by_phase.get(phase, 0) if bp else 0
+        phase_start = time.time()
+
+        # Dispatch to the appropriate phase function
+        from verify.negotiation.phase1 import run_phase1
+        from verify.negotiation.phase2 import run_phase2
+        from verify.negotiation.phase3 import run_phase3
+        from verify.negotiation.phase4 import run_phase4
+
+        phase_runners = {
+            "phase_0": run_phase1,
+            "phase_1": run_phase2,
+            "phase_2": run_phase3,
+            "phase_3": run_phase4,
+        }
+
+        runner = phase_runners.get(phase)
+        if runner is None:
+            return {"status": "no_runner", "phase": phase}
+
+        result = runner(self.ctx, llm, feedback=feedback)
+
+        # Record per-phase cost report
+        phase_elapsed = time.time() - phase_start
+        if bp:
+            calls_delta = bp.api_calls - calls_before
+            tokens_in_delta = (bp.tokens_used - tokens_before) // 2
+            tokens_out_delta = bp.tokens_used - tokens_before - tokens_in_delta
+            retries_delta = bp.retries_by_phase.get(phase, 0) - retries_before
+        else:
+            calls_delta = 0
+            tokens_in_delta = 0
+            tokens_out_delta = 0
+            retries_delta = 0
+
+        report = PhaseCostReport(
+            phase_name=phase,
+            api_calls=calls_delta,
+            tokens_in=tokens_in_delta,
+            tokens_out=tokens_out_delta,
+            wall_clock_seconds=phase_elapsed,
+            retries=retries_delta,
+            status="success",
+        )
+        self.cost_reports.append(report)
+
+        return {"status": "completed", "phase": phase, "result": result}
 
     # ------------------------------------------------------------------
     # Phase advancement
