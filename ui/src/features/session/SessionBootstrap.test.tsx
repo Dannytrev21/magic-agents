@@ -55,7 +55,8 @@ describe('SessionBootstrap', () => {
 
     render(<SessionBootstrap />, { wrapper: createWrapper() });
 
-    expect(await screen.findByText(/jira is unavailable/i)).toBeInTheDocument();
+    expect(await screen.findByText(/jira configuration required/i)).toBeInTheDocument();
+    expect(screen.getByText(/jira is unavailable/i)).toBeInTheDocument();
     expect(screen.getByText(/manual entry stays available/i)).toBeInTheDocument();
     expect(screen.queryByLabelText(/story search/i)).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /start session from jira/i })).not.toBeInTheDocument();

@@ -352,10 +352,11 @@ export function SessionBootstrap({
               <div className={styles.inlineNotice} data-tone="warning">
                 <div className={styles.inlineNoticeBody}>
                   <Text as="p" size="sm" weight="semibold">
-                    Jira is unavailable
+                    Jira configuration required
                   </Text>
                   <Text as="p" size="sm" tone="muted">
-                    Credentials or access are missing. Manual entry stays available in this rail.
+                    Jira is unavailable until credentials or access are restored. Manual entry
+                    stays available in this rail.
                   </Text>
                 </div>
                 <Button onClick={() => handleModeChange('manual')} type="button" variant="secondary">

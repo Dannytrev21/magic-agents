@@ -29,6 +29,7 @@ Make the Playwright browser runtime explicit and environment-selectable. Keep Ch
 - Frontend regressions now have explicit coverage layers instead of relying on convention.
 - Contributors now have a single non-browser gate that remains valid even when local browser launch is restricted.
 - Browser journeys can be exercised without a live FastAPI or Jira backend because the Playwright suite owns its mocks.
+- Browser coverage is the layer that catches rendered workflow copy and selector drift in the intake-to-verification journey when component and integration tests still pass.
 - Browser choice no longer blocks diagnosis when one engine is incompatible with the host sandbox.
 - Restricted hosts can keep using the same Playwright suite by connecting to a separately launched browser runtime.
 - Rollout and rollback decisions no longer require code edits or branch-specific static file shuffling.

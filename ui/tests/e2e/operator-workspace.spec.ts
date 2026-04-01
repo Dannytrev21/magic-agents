@@ -10,6 +10,8 @@ const phaseTitles = [
   'EARS Formalization',
 ] as const;
 
+const approvePhaseButtonName = /^approve(?: phase)?$/i;
+
 type MockWorkspaceOptions = {
   pipelineError?: string;
   startDone?: boolean;
@@ -39,11 +41,11 @@ test.describe('Operator workspace browser flow', () => {
     await expect(page.getByText(/browser journey coverage/i)).toBeVisible();
 
     for (let index = 0; index < 6; index += 1) {
-      await page.getByRole('button', { name: /approve phase/i }).click();
+      await page.getByRole('button', { name: approvePhaseButtonName }).click();
       await expect(page.locator('header')).toContainText(phaseTitles[index + 1]);
     }
 
-    await page.getByRole('button', { name: /approve phase/i }).click();
+    await page.getByRole('button', { name: approvePhaseButtonName }).click();
     await expect(page.getByText(/verification console/i)).toBeVisible();
 
     await page.getByRole('button', { name: /approve ears/i }).click();
