@@ -544,3 +544,263 @@ class TestEdgeCases:
 
         with pytest.raises(BackPressureLimitExceeded):
             controller.record_api_call(tokens_in=60, tokens_out=60)
+
+
+# =========================================================================
+# P1.2 — Enforce Budget Checks Before Each Negotiation Turn
+# =========================================================================
+
+
+class TestHarnessBudgetEnforcement:
+    """P1.2: NegotiationHarness respects BackPressureController limits."""
+
+    def _make_context(self):
+        """Helper to create a minimal VerificationContext."""
+        from verify.context import VerificationContext
+
+        return VerificationContext(
+            jira_key="TEST-BP",
+            jira_summary="Budget enforcement test",
+            raw_acceptance_criteria=[{"index": 0, "text": "GET /api/v1/dogs returns 200"}],
+            constitution={},
+        )
+
+    def test_harness_accepts_backpressure(self):
+        """NegotiationHarness constructor should accept an optional BackPressureController."""
+        from verify.negotiation.harness import NegotiationHarness
+
+        controller = BackPressureController()
+        ctx = self._make_context()
+        harness = NegotiationHarness(ctx, backpressure=controller)
+
+        assert harness.backpressure is controller
+
+    def test_harness_works_without_backpressure(self):
+        """NegotiationHarness should work without backpressure (backwards compatible)."""
+        from verify.negotiation.harness import NegotiationHarness
+
+        ctx = self._make_context()
+        harness = NegotiationHarness(ctx)
+
+        assert harness.backpressure is None
+
+    def test_run_current_phase_returns_budget_exceeded(self):
+        """When budget is exhausted, run_current_phase should return budget_exceeded status."""
+        from verify.negotiation.harness import NegotiationHarness
+
+        controller = BackPressureController(max_api_calls=2)
+        controller.api_calls = 2  # Already at limit
+        ctx = self._make_context()
+        harness = NegotiationHarness(ctx, backpressure=controller)
+
+        os.environ["LLM_MOCK"] = "true"
+        try:
+            llm = LLMClient()
+            result = harness.run_current_phase(llm)
+            assert result["status"] == "budget_exceeded"
+            assert "usage_summary" in result
+            assert "api_calls" in result["usage_summary"]
+        finally:
+            os.environ.pop("LLM_MOCK", None)
+
+    def test_run_current_phase_succeeds_when_budget_ok(self):
+        """When budget is available, run_current_phase should proceed normally."""
+        from verify.negotiation.harness import NegotiationHarness
+
+        controller = BackPressureController(max_api_calls=100)
+        ctx = self._make_context()
+        harness = NegotiationHarness(ctx, backpressure=controller)
+
+        os.environ["LLM_MOCK"] = "true"
+        try:
+            llm = LLMClient(backpressure=controller)
+            result = harness.run_current_phase(llm)
+            # Should NOT be budget_exceeded
+            assert result.get("status") != "budget_exceeded"
+        finally:
+            os.environ.pop("LLM_MOCK", None)
+
+    def test_checkpoint_saved_on_budget_exceeded(self):
+        """When budget exceeded, a checkpoint should be saved for resumption."""
+        from verify.negotiation.harness import NegotiationHarness
+
+        controller = BackPressureController(max_api_calls=0)
+        ctx = self._make_context()
+        harness = NegotiationHarness(ctx, backpressure=controller)
+
+        os.environ["LLM_MOCK"] = "true"
+        try:
+            llm = LLMClient()
+            result = harness.run_current_phase(llm)
+            assert result["status"] == "budget_exceeded"
+            # Phase should not have advanced
+            assert ctx.current_phase == "phase_0"
+        finally:
+            os.environ.pop("LLM_MOCK", None)
+
+
+# =========================================================================
+# P1.3 — Per-Phase Cost Reporting in Usage Summary
+# =========================================================================
+
+
+class TestPhaseCostReport:
+    """P1.3: Per-phase cost reporting dataclass and session-level aggregation."""
+
+    def test_phase_cost_report_dataclass(self):
+        """PhaseCostReport should store phase_name, api_calls, tokens_in, tokens_out, etc."""
+        from verify.backpressure import PhaseCostReport
+
+        report = PhaseCostReport(
+            phase_name="phase_1",
+            api_calls=2,
+            tokens_in=500,
+            tokens_out=300,
+            wall_clock_seconds=4.5,
+            retries=0,
+            status="success",
+        )
+
+        assert report.phase_name == "phase_1"
+        assert report.api_calls == 2
+        assert report.tokens_in == 500
+        assert report.tokens_out == 300
+        assert report.wall_clock_seconds == 4.5
+        assert report.retries == 0
+        assert report.status == "success"
+
+    def test_harness_generates_cost_report_after_phase(self):
+        """NegotiationHarness should generate a PhaseCostReport after each phase."""
+        from verify.context import VerificationContext
+        from verify.negotiation.harness import NegotiationHarness
+
+        controller = BackPressureController(max_api_calls=100)
+        ctx = VerificationContext(
+            jira_key="TEST-COST",
+            jira_summary="Cost report test",
+            raw_acceptance_criteria=[{"index": 0, "text": "GET /api/v1/dogs returns 200"}],
+            constitution={},
+        )
+        harness = NegotiationHarness(ctx, backpressure=controller)
+
+        os.environ["LLM_MOCK"] = "true"
+        try:
+            llm = LLMClient(backpressure=controller)
+            harness.run_current_phase(llm)
+            assert len(harness.cost_reports) == 1
+            assert harness.cost_reports[0].phase_name == "phase_0"
+            assert harness.cost_reports[0].api_calls >= 1
+            assert harness.cost_reports[0].status == "success"
+        finally:
+            os.environ.pop("LLM_MOCK", None)
+
+    def test_aggregate_cost_summary(self):
+        """get_cost_summary should aggregate across all PhaseCostReports."""
+        from verify.backpressure import PhaseCostReport
+
+        reports = [
+            PhaseCostReport(
+                phase_name="phase_1",
+                api_calls=2,
+                tokens_in=500,
+                tokens_out=300,
+                wall_clock_seconds=4.5,
+                retries=0,
+                status="success",
+            ),
+            PhaseCostReport(
+                phase_name="phase_2",
+                api_calls=3,
+                tokens_in=800,
+                tokens_out=600,
+                wall_clock_seconds=6.2,
+                retries=1,
+                status="success",
+            ),
+        ]
+
+        summary = PhaseCostReport.aggregate(reports)
+        assert summary["total_api_calls"] == 5
+        assert summary["total_tokens_in"] == 1300
+        assert summary["total_tokens_out"] == 900
+        assert summary["total_tokens"] == 2200
+        assert summary["total_wall_clock_seconds"] == pytest.approx(10.7)
+        assert summary["total_retries"] == 1
+        assert summary["phases"] == 2
+
+
+# =========================================================================
+# P1.4 — Configurable Budget Limits via Constitution
+# =========================================================================
+
+
+class TestConstitutionBudgetConfig:
+    """P1.4: BackPressureController.from_constitution() class method."""
+
+    def test_from_constitution_overrides(self):
+        """from_constitution should override defaults with budget section values."""
+        constitution = {"budget": {"max_api_calls": 100, "max_tokens": 1_000_000}}
+        controller = BackPressureController.from_constitution(constitution)
+
+        assert controller.max_api_calls == 100
+        assert controller.max_tokens == 1_000_000
+        assert controller.max_wall_clock_seconds == 600  # default
+
+    def test_from_constitution_no_budget_section(self):
+        """from_constitution should use all defaults when no budget section."""
+        controller = BackPressureController.from_constitution({})
+
+        assert controller.max_api_calls == 50
+        assert controller.max_tokens == 500_000
+
+    def test_from_constitution_empty_budget(self):
+        """from_constitution should use all defaults when budget section is empty."""
+        controller = BackPressureController.from_constitution({"budget": {}})
+
+        assert controller.max_api_calls == 50
+        assert controller.max_tokens == 500_000
+
+    def test_from_constitution_rejects_negative(self):
+        """from_constitution should reject negative values."""
+        constitution = {"budget": {"max_api_calls": -1}}
+
+        with pytest.raises(ValueError, match="positive"):
+            BackPressureController.from_constitution(constitution)
+
+    def test_from_constitution_rejects_warn_above_max(self):
+        """from_constitution should reject warn > max."""
+        constitution = {"budget": {"max_api_calls": 10, "warn_api_calls": 20}}
+
+        with pytest.raises(ValueError, match="warn.*max"):
+            BackPressureController.from_constitution(constitution)
+
+    def test_from_constitution_partial_overrides(self):
+        """from_constitution should allow overriding some fields while keeping defaults for others."""
+        constitution = {"budget": {"max_api_calls": 200, "warn_api_calls": 150}}
+        controller = BackPressureController.from_constitution(constitution)
+
+        assert controller.max_api_calls == 200
+        assert controller.warn_api_calls == 150
+        assert controller.max_tokens == 500_000  # default
+        assert controller.warn_tokens == 400_000  # default
+
+    def test_from_constitution_all_fields(self):
+        """from_constitution should accept all known budget fields."""
+        constitution = {
+            "budget": {
+                "max_api_calls": 100,
+                "max_tokens": 2_000_000,
+                "max_wall_clock_seconds": 1200,
+                "max_retries_per_phase": 5,
+                "warn_api_calls": 80,
+                "warn_tokens": 1_500_000,
+            }
+        }
+        controller = BackPressureController.from_constitution(constitution)
+
+        assert controller.max_api_calls == 100
+        assert controller.max_tokens == 2_000_000
+        assert controller.max_wall_clock_seconds == 1200
+        assert controller.max_retries_per_phase == 5
+        assert controller.warn_api_calls == 80
+        assert controller.warn_tokens == 1_500_000

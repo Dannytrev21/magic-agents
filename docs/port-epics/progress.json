@@ -1,333 +1,143 @@
 {
-  "meta": {
-    "project": "claw-code → magic-agents port",
-    "created": "2026-03-31",
-    "last_updated": "2026-03-31T00:00:00Z",
-    "total_epics": 10,
-    "total_stories": 32
-  },
-  "summary": {
-    "epics_complete": 0,
-    "epics_in_progress": 1,
-    "epics_not_started": 9,
-    "stories_complete": 1,
-    "stories_in_progress": 0,
-    "stories_not_started": 31,
-    "stories_tested": 1
-  },
+  "last_updated": "2026-03-31T23:15:00Z",
   "epics": [
     {
-      "id": "P1",
-      "title": "Token Budget Enforcement & Cost Tracking",
+      "id": "P01",
+      "name": "Token Budget Enforcement & Cost Tracking",
       "file": "P01-token-budget-enforcement.md",
+      "stories": [
+        { "id": "P1.1", "name": "Wire BackPressureController into LLMClient", "status": "done" },
+        { "id": "P1.2", "name": "Enforce Budget Checks Before Each Negotiation Turn", "status": "done" },
+        { "id": "P1.3", "name": "Per-Phase Cost Reporting in Usage Summary", "status": "done" },
+        { "id": "P1.4", "name": "Configurable Budget Limits via Constitution", "status": "done" }
+      ]
+    },
+    {
+      "id": "P02",
+      "name": "Skill Registry & Capability Discovery",
+      "file": "P02-skill-registry-discovery-v1.md",
+      "stories": [
+        { "id": "P2.R1", "name": "Descriptor Registration", "status": "done" },
+        { "id": "P2.R2", "name": "Capability Discovery", "status": "done" },
+        { "id": "P2.R3", "name": "Dispatch Validation", "status": "done" },
+        { "id": "P2.R4", "name": "Web Introspection", "status": "done" }
+      ]
+    },
+    { "id": "P03", "name": "Transcript Compaction", "file": "P03-transcript-compaction.md", "stories": [], "status": "not_started" },
+    { "id": "P04", "name": "Command Routing Engine", "file": "P04-command-routing-engine.md", "stories": [], "status": "not_started" },
+    { "id": "P05", "name": "Permission & Access Control", "file": "P05-permission-access-control.md", "stories": [], "status": "not_started" },
+    { "id": "P06", "name": "Structured Streaming Events", "file": "P06-structured-streaming-events.md", "stories": [], "status": "not_started" },
+    { "id": "P07", "name": "Session Cost Accounting", "file": "P07-session-cost-accounting.md", "stories": [], "status": "not_started" },
+    { "id": "P08", "name": "Bootstrap & Initialization Graph", "file": "P08-bootstrap-initialization-graph.md", "stories": [], "status": "not_started" },
+    { "id": "P09", "name": "Hook & Event System", "file": "P09-hook-event-system.md", "stories": [], "status": "not_started" },
+    { "id": "P10", "name": "MCP Server Wrapper", "file": "P10-mcp-server-wrapper.md", "stories": [], "status": "not_started" },
+    {
+      "id": "P11",
+      "name": "Codebase Discovery & Explore Agent",
+      "file": "P11-codebase-discovery-explorer.md",
+      "priority": 2.5,
+      "stories": [
+        { "id": "P11.1", "name": "Language & Framework Auto-Detection", "status": "not_started" },
+        { "id": "P11.2", "name": "Structural Index Builder (Multi-Language)", "status": "not_started" },
+        { "id": "P11.3", "name": "Auto-Generate Draft Constitution from Index", "status": "not_started" },
+        { "id": "P11.4", "name": "Explore Agent CLI & Web Endpoint", "status": "not_started" },
+        { "id": "P11.5", "name": "Inject Codebase Context into Negotiation Phases", "status": "not_started" }
+      ]
+    }
+  ],
+  "ui_epics": [
+    {
+      "id": "U01",
+      "name": "Foundation & Design System",
+      "file": "docs/ui-port-claude/U01-foundation-design-system.md",
       "priority": 1,
-      "status": "in_progress",
       "stories": [
-        {
-          "id": "P1.1",
-          "title": "Wire BackPressureController into LLMClient",
-          "status": "complete",
-          "tested": true,
-          "notes": "Fixed mock mode to call record_api_call(0,0) per spec invariant. 41 tests passing including 3 new mock-tracking tests."
-        },
-        {
-          "id": "P1.2",
-          "title": "Enforce Budget Checks Before Each Negotiation Turn",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        },
-        {
-          "id": "P1.3",
-          "title": "Per-Phase Cost Reporting in Usage Summary",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        },
-        {
-          "id": "P1.4",
-          "title": "Configurable Budget Limits via Constitution",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        }
+        { "id": "U01.1", "name": "Vite + React + TypeScript Project Scaffold", "status": "not_started" },
+        { "id": "U01.2", "name": "Design Token System (CSS Custom Properties)", "status": "not_started" },
+        { "id": "U01.3", "name": "Typography & Font Loading", "status": "not_started" },
+        { "id": "U01.4", "name": "Base Component Primitives", "status": "not_started" }
       ]
     },
     {
-      "id": "P2",
-      "title": "Skill Registry & Capability Discovery",
-      "file": "P02-skill-registry-discovery.md",
+      "id": "U02",
+      "name": "Three-Panel Layout Shell",
+      "file": "docs/ui-port-claude/U02-three-panel-layout.md",
       "priority": 2,
-      "status": "not_started",
       "stories": [
-        {
-          "id": "P2.1",
-          "title": "Enrich Skill Metadata with SkillDescriptor",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        },
-        {
-          "id": "P2.2",
-          "title": "Skill Search and Filtering",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        },
-        {
-          "id": "P2.3",
-          "title": "Skill Validation at Dispatch Time",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        },
-        {
-          "id": "P2.4",
-          "title": "Skill Registry Introspection Endpoint",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        }
+        { "id": "U02.1", "name": "AppShell with Three-Panel Grid", "status": "not_started" },
+        { "id": "U02.2", "name": "Panel Collapse & Expand", "status": "not_started" },
+        { "id": "U02.3", "name": "Responsive Breakpoint Behavior", "status": "not_started" },
+        { "id": "U02.4", "name": "Top Bar with Session Context", "status": "not_started" }
       ]
     },
     {
-      "id": "P3",
-      "title": "Transcript Compaction & Context Preservation",
-      "file": "P03-transcript-compaction.md",
+      "id": "U03",
+      "name": "Story Intake & Session Rail (Left Panel)",
+      "file": "docs/ui-port-claude/U03-story-intake-session-rail.md",
       "priority": 3,
-      "status": "not_started",
       "stories": [
-        {
-          "id": "P3.1",
-          "title": "Implement TranscriptCompactor with Summarization Strategy",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        },
-        {
-          "id": "P3.2",
-          "title": "Integrate Compaction into SessionState Record Methods",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        },
-        {
-          "id": "P3.3",
-          "title": "History Log Compaction with Event Deduplication",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        }
+        { "id": "U03.1", "name": "Jira Story Picker", "status": "not_started" },
+        { "id": "U03.2", "name": "Acceptance Criteria Checklist", "status": "not_started" },
+        { "id": "U03.3", "name": "Phase Progress Timeline", "status": "not_started" },
+        { "id": "U03.4", "name": "Session Health Indicators", "status": "not_started" }
       ]
     },
     {
-      "id": "P4",
-      "title": "Command Routing Engine",
-      "file": "P04-command-routing-engine.md",
+      "id": "U04",
+      "name": "Active Phase Workspace (Center Panel)",
+      "file": "docs/ui-port-claude/U04-active-phase-workspace.md",
       "priority": 4,
-      "status": "not_started",
       "stories": [
-        {
-          "id": "P4.1",
-          "title": "Command Registry with Metadata",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        },
-        {
-          "id": "P4.2",
-          "title": "Tokenized Prompt Routing",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        },
-        {
-          "id": "P4.3",
-          "title": "Dynamic Command Discovery in Web UI",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        }
+        { "id": "U04.1", "name": "Phase Content Container with Transitions", "status": "not_started" },
+        { "id": "U04.2", "name": "Phase Output Display", "status": "not_started" },
+        { "id": "U04.3", "name": "Inline Approve & Revise Actions", "status": "not_started" },
+        { "id": "U04.4", "name": "Conversation Transcript View", "status": "not_started" }
       ]
     },
     {
-      "id": "P5",
-      "title": "Permission & Access Control",
-      "file": "P05-permission-access-control.md",
+      "id": "U05",
+      "name": "Evidence Inspector (Right Panel)",
+      "file": "docs/ui-port-claude/U05-evidence-inspector.md",
       "priority": 5,
-      "status": "not_started",
       "stories": [
-        {
-          "id": "P5.1",
-          "title": "Define SkillPermissionContext with Deny Rules",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        },
-        {
-          "id": "P5.2",
-          "title": "Permission Modes for Pipeline Actions",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        },
-        {
-          "id": "P5.3",
-          "title": "Permission Audit Log",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        }
+        { "id": "U05.1", "name": "Inspector Tab System", "status": "not_started" },
+        { "id": "U05.2", "name": "Codebase Scan Results View", "status": "not_started" },
+        { "id": "U05.3", "name": "Spec Contract Viewer", "status": "not_started" },
+        { "id": "U05.4", "name": "Traceability Matrix", "status": "not_started" }
       ]
     },
     {
-      "id": "P6",
-      "title": "Structured Streaming Events",
-      "file": "P06-structured-streaming-events.md",
+      "id": "U06",
+      "name": "Phase Rail & Navigation",
+      "file": "docs/ui-port-claude/U06-phase-rail-navigation.md",
       "priority": 6,
-      "status": "not_started",
       "stories": [
-        {
-          "id": "P6.1",
-          "title": "Define Typed Event Schema",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        },
-        {
-          "id": "P6.2",
-          "title": "Emit Structured Events from NegotiationHarness",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        },
-        {
-          "id": "P6.3",
-          "title": "SSE Endpoint with Event Filtering",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        }
+        { "id": "U06.1", "name": "Sticky Phase Mini-Rail in Center Workspace", "status": "not_started" },
+        { "id": "U06.2", "name": "Breadcrumb Trail with Phase Context", "status": "not_started" },
+        { "id": "U06.3", "name": "Phase Quick-Jump Keyboard Shortcuts", "status": "not_started" }
       ]
     },
     {
-      "id": "P7",
-      "title": "Session Cost Accounting",
-      "file": "P07-session-cost-accounting.md",
+      "id": "U07",
+      "name": "Real-time Updates & Streaming",
+      "file": "docs/ui-port-claude/U07-realtime-updates-streaming.md",
       "priority": 7,
-      "status": "not_started",
       "stories": [
-        {
-          "id": "P7.1",
-          "title": "Persist Token Usage in Checkpoints",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        },
-        {
-          "id": "P7.2",
-          "title": "Session Cost Summary Endpoint",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        },
-        {
-          "id": "P7.3",
-          "title": "Cost Alerts via SSE Events",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        }
+        { "id": "U07.1", "name": "SSE Client with Auto-Reconnection", "status": "not_started" },
+        { "id": "U07.2", "name": "Client-Side Event Store", "status": "not_started" },
+        { "id": "U07.3", "name": "Live Phase Progress Indicator", "status": "not_started" }
       ]
     },
     {
-      "id": "P8",
-      "title": "Bootstrap & Initialization Graph",
-      "file": "P08-bootstrap-initialization-graph.md",
+      "id": "U08",
+      "name": "Verification & Results Dashboard",
+      "file": "docs/ui-port-claude/U08-verification-results-dashboard.md",
       "priority": 8,
-      "status": "not_started",
       "stories": [
-        {
-          "id": "P8.1",
-          "title": "Define BootstrapGraph with Ordered Stages",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        },
-        {
-          "id": "P8.2",
-          "title": "Replace Ad-Hoc Initialization with Bootstrap Graph",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        },
-        {
-          "id": "P8.3",
-          "title": "Health Check Endpoint with Stage Status",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        }
-      ]
-    },
-    {
-      "id": "P9",
-      "title": "Hook & Event System",
-      "file": "P09-hook-event-system.md",
-      "priority": 9,
-      "status": "not_started",
-      "stories": [
-        {
-          "id": "P9.1",
-          "title": "Hook Registry with Lifecycle Points",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        },
-        {
-          "id": "P9.2",
-          "title": "Integrate Hooks into NegotiationHarness",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        },
-        {
-          "id": "P9.3",
-          "title": "Configurable Hooks via Constitution",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        }
-      ]
-    },
-    {
-      "id": "P10",
-      "title": "MCP Server Wrapper",
-      "file": "P10-mcp-server-wrapper.md",
-      "priority": 10,
-      "status": "not_started",
-      "stories": [
-        {
-          "id": "P10.1",
-          "title": "Expose Core Pipeline as MCP Tools",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        },
-        {
-          "id": "P10.2",
-          "title": "Expose Specs and Sessions as MCP Resources",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        },
-        {
-          "id": "P10.3",
-          "title": "MCP Server Configuration and Launch",
-          "status": "not_started",
-          "tested": false,
-          "notes": ""
-        }
+        { "id": "U08.1", "name": "Results Summary Header", "status": "not_started" },
+        { "id": "U08.2", "name": "Verdict Cards per AC", "status": "not_started" },
+        { "id": "U08.3", "name": "Cost Summary & Session Report", "status": "not_started" },
+        { "id": "U08.4", "name": "Empty & Error States", "status": "not_started" }
       ]
     }
   ]
