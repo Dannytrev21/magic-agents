@@ -1,0 +1,56 @@
+.stack {
+  display: grid;
+  gap: var(--space-4);
+  height: 100%;
+}
+
+.phaseStrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.summaryGrid {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+}
+
+.summaryTile {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-surface-strong) 70%, transparent);
+}
+
+.timeline {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.timelineItem {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-3);
+  align-items: start;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-surface-strong) 70%, transparent);
+}
+
+.timelineMarker {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 999px;
+  margin-top: 0.45rem;
+  background: var(--color-signal);
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-signal) 12%, transparent);
+}
+
+.inspectorList {
+  display: grid;
+  gap: var(--space-3);
+}

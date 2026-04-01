@@ -44,7 +44,14 @@ PHASE_SKILLS = [
 
 @app.get("/", response_class=HTMLResponse)
 async def index():
-    return (STATIC_DIR / "index.html").read_text()
+    return _resolve_frontend_index().read_text()
+
+
+def _resolve_frontend_index() -> Path:
+    built_index = STATIC_DIR / "ui" / "index.html"
+    if built_index.exists():
+        return built_index
+    return STATIC_DIR / "index.html"
 
 
 # ------------------------------------------------------------------

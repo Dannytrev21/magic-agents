@@ -1,0 +1,93 @@
+.stack {
+  display: grid;
+  gap: var(--space-4);
+  height: 100%;
+}
+
+.section {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.list {
+  display: grid;
+  gap: var(--space-2);
+  max-height: 18rem;
+  overflow: auto;
+  padding-right: var(--space-1);
+}
+
+.storyButton {
+  display: grid;
+  gap: var(--space-1);
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-surface-strong) 72%, transparent);
+  text-align: left;
+  transition:
+    border-color var(--motion-fast) var(--easing-standard),
+    transform var(--motion-fast) var(--easing-standard),
+    background-color var(--motion-fast) var(--easing-standard);
+}
+
+.storyButton:hover {
+  border-color: color-mix(in srgb, var(--color-signal) 50%, var(--color-border));
+  transform: translateY(-1px);
+}
+
+.storyButton:focus-visible,
+.input:focus-visible,
+.textarea:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 2px;
+}
+
+.storyKey {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.form {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.field {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.input,
+.textarea {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-bg-elevated) 35%, var(--color-surface));
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--text-sm);
+  padding: var(--space-3);
+}
+
+.textarea {
+  min-height: 8.5rem;
+  resize: vertical;
+}
+
+.metaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.sessionSummary {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-success) 8%, var(--color-surface));
+}

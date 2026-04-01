@@ -8,6 +8,8 @@ build/
 
 # Virtual environment
 .venv/
+node_modules/
+*.tsbuildinfo
 
 # IDE
 .idea/
