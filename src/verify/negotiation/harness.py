@@ -13,6 +13,7 @@ from verify.backpressure import PhaseCostReport
 from verify.context import VerificationContext
 from verify.negotiation.checkpoint import save_checkpoint
 from verify.observability import HarnessLogger
+from verify.transcript import TranscriptCompactor
 
 if TYPE_CHECKING:
     from verify.backpressure import BackPressureController
@@ -37,9 +38,11 @@ class NegotiationHarness:
         self,
         ctx: VerificationContext,
         backpressure: BackPressureController | None = None,
+        transcript_compactor: TranscriptCompactor | None = None,
     ) -> None:
         self.ctx = ctx
         self.backpressure = backpressure
+        self.transcript_compactor = transcript_compactor or TranscriptCompactor()
         self.cost_reports: list[PhaseCostReport] = []
         self.logger = HarnessLogger(ctx.jira_key)
 
@@ -64,6 +67,9 @@ class NegotiationHarness:
                 "content": content,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
+        )
+        self.ctx.negotiation_log = self.transcript_compactor.compact(
+            self.ctx.negotiation_log
         )
 
     # ------------------------------------------------------------------
