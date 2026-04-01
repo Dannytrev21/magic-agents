@@ -19,6 +19,14 @@ export type JiraStoriesResponse = {
   stories: JiraStory[];
 };
 
+export type JiraTicketResponse = {
+  acceptance_criteria: AcceptanceCriterionInput[];
+  error?: string;
+  key: string;
+  status?: string;
+  summary: string;
+};
+
 export type SkillDescriptor = {
   name?: string;
   path?: string;

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import { SessionBootstrap } from '@/features/session/SessionBootstrap';
+import type { SessionIntakeStory } from '@/features/session/sessionIntakeModel';
 import { WorkspaceCenterPane } from '@/features/workspace/WorkspaceCenterPane';
 import { WorkspaceInspector } from '@/features/workspace/WorkspaceInspector';
 import {
@@ -37,6 +38,7 @@ export function OperatorWorkspacePage({
   initialStorySummary = null,
 }: OperatorWorkspacePageProps) {
   const [activeSession, setActiveSession] = useState<StartNegotiationResponse | null>(initialSession);
+  const [activeStory, setActiveStory] = useState<SessionIntakeStory | null>(null);
   const [storySummary, setStorySummary] = useState<string | null>(initialStorySummary);
   const [layoutMode, setLayoutMode] = useState(() => getWorkspaceLayoutMode(window.innerWidth));
   const [panelPreferences, setPanelPreferences] = useState<PanelPreferences>(readPanelPreferences);
@@ -121,10 +123,11 @@ export function OperatorWorkspacePage({
     });
   }
 
-  function handleSessionStarted(session: StartNegotiationResponse, summary?: string) {
+  function handleSessionStarted(session: StartNegotiationResponse, story: SessionIntakeStory) {
     startShellTransition(() => {
       setActiveSession(session);
-      setStorySummary(summary ?? null);
+      setActiveStory(story);
+      setStorySummary(story.summary);
 
       const next = new URLSearchParams(searchParams);
       next.set('view', 'negotiation');
@@ -206,8 +209,8 @@ export function OperatorWorkspacePage({
       }
       sessionState={getWorkspaceSessionState(activeSession)}
       statusLabel={statusLabel}
-      storyKey={activeSession?.jira_key}
-      storySummary={storySummary}
+      storyKey={activeStory?.key ?? activeSession?.jira_key}
+      storySummary={activeStory?.summary ?? storySummary}
       workspaceLabel={workspaceLabel}
     />
   );

@@ -9,6 +9,35 @@
   gap: var(--space-3);
 }
 
+.modeTabs {
+  display: inline-flex;
+  gap: var(--space-2);
+  padding: var(--space-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--color-surface-strong) 55%, transparent);
+}
+
+.modeTab {
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  padding: var(--space-2) var(--space-3);
+  transition:
+    background-color var(--motion-fast) var(--easing-standard),
+    color var(--motion-fast) var(--easing-standard);
+}
+
+.modeTab[aria-selected='true'] {
+  background: color-mix(in srgb, var(--color-signal) 16%, var(--color-surface));
+  color: var(--color-text);
+}
+
 .list {
   display: grid;
   gap: var(--space-2);
@@ -37,11 +66,24 @@
   transform: translateY(-1px);
 }
 
+.storyButton[data-selected='true'] {
+  border-color: color-mix(in srgb, var(--color-signal) 75%, var(--color-border));
+  background: color-mix(in srgb, var(--color-signal) 10%, var(--color-surface));
+}
+
 .storyButton:focus-visible,
+.modeTab:focus-visible,
 .input:focus-visible,
 .textarea:focus-visible {
   outline: 2px solid var(--color-signal);
   outline-offset: 2px;
+}
+
+.storyMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
 }
 
 .storyKey {
@@ -58,6 +100,16 @@
 .field {
   display: grid;
   gap: var(--space-2);
+}
+
+.selectionSummary,
+.sessionSummary {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-bg-elevated) 42%, var(--color-surface));
 }
 
 .input,
@@ -81,13 +133,4 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-}
-
-.sessionSummary {
-  display: grid;
-  gap: var(--space-2);
-  padding: var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--color-success) 8%, var(--color-surface));
 }

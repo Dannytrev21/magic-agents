@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   fetchJiraConfigured,
   fetchJiraStories,
+  fetchJiraTicket,
   fetchSessionInfo,
   startNegotiation,
 } from '@/lib/api/client';
@@ -40,6 +41,30 @@ describe('API client', () => {
     await expect(fetchJiraStories()).resolves.toEqual({
       stories: [{ key: 'MAG-1', summary: 'Story' }],
     });
+  });
+
+  it('requests Jira ticket detail through a typed helper', async () => {
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          acceptance_criteria: [{ checked: false, index: 0, text: 'Hydrate ACs from Jira' }],
+          key: 'MAG-1',
+          summary: 'Story',
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(fetchJiraTicket('MAG-1')).resolves.toEqual({
+      acceptance_criteria: [{ checked: false, index: 0, text: 'Hydrate ACs from Jira' }],
+      key: 'MAG-1',
+      summary: 'Story',
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/api/jira/ticket/MAG-1', expect.any(Object));
   });
 
   it('posts typed negotiation payloads for story intake', async () => {

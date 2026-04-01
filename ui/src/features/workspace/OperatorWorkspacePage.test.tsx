@@ -3,13 +3,14 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { SessionIntakeStory } from '@/features/session/sessionIntakeModel';
 import { workspacePanelStorageKey } from '@/features/workspace/workspaceModel';
 import { OperatorWorkspacePage } from '@/features/workspace/OperatorWorkspacePage';
 import type { StartNegotiationResponse } from '@/lib/api/types';
 
 vi.mock('@/features/session/SessionBootstrap', () => {
   type SessionBootstrapProps = {
-    onSessionStarted?: (session: StartNegotiationResponse, summary?: string) => void;
+    onSessionStarted?: (session: StartNegotiationResponse, story: SessionIntakeStory) => void;
   };
 
   return {
@@ -25,7 +26,13 @@ vi.mock('@/features/session/SessionBootstrap', () => {
               session_id: 'session-started',
               total_phases: 7,
             },
-            'Recovered story summary',
+            {
+              acceptanceCriteria: [],
+              key: 'MAG-222',
+              source: 'jira',
+              status: 'In Progress',
+              summary: 'Recovered story summary',
+            },
           )
         }
         type="button"

@@ -1,4 +1,12 @@
-import { useDeferredValue, useState, type ChangeEvent, type FormEvent } from 'react';
+import {
+  startTransition,
+  useDeferredValue,
+  useId,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import styles from '@/features/session/session-bootstrap.module.css';
 import { Badge } from '@/components/primitives/Badge';
 import { Button } from '@/components/primitives/Button';
@@ -8,87 +16,115 @@ import { Mono } from '@/components/primitives/Mono';
 import { SectionHeader } from '@/components/primitives/SectionHeader';
 import { Skeleton } from '@/components/primitives/Skeleton';
 import { Text } from '@/components/primitives/Text';
-import type { JiraStory, StartNegotiationRequest, StartNegotiationResponse } from '@/lib/api/types';
+import {
+  buildStartNegotiationPayload,
+  defaultSessionIntakeDraft,
+  filterStories,
+  normalizeJiraTicket,
+  normalizeManualStory,
+  type SessionIntakeDraft,
+  type SessionIntakeMode,
+  type SessionIntakeStory,
+} from '@/features/session/sessionIntakeModel';
+import { fetchJiraTicket } from '@/lib/api/client';
+import type { JiraStory, StartNegotiationResponse } from '@/lib/api/types';
+import { queryKeys } from '@/lib/query/queryKeys';
 import { useSessionBootstrapQueries, useStartNegotiationMutation } from '@/lib/query/sessionHooks';
 
 type SessionBootstrapProps = {
-  onSessionStarted?: (session: StartNegotiationResponse, summary?: string) => void;
+  onSessionStarted?: (session: StartNegotiationResponse, story: SessionIntakeStory) => void;
 };
-
-type IntakeDraft = {
-  jiraKey: string;
-  jiraSummary: string;
-  acceptanceCriteria: string;
-  storyFilter: string;
-};
-
-const defaultDraft: IntakeDraft = {
-  jiraKey: 'DEMO-UI',
-  jiraSummary: 'Operator workspace foundation',
-  acceptanceCriteria: [
-    'Operator can review the new React shell without changing backend routes',
-    'Story intake uses typed client helpers and query hooks',
-    'Shared primitives expose visible focus and async loading states',
-  ].join('\n'),
-  storyFilter: '',
-};
-
-function criteriaFromText(text: string) {
-  return text
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line, index) => ({
-      index,
-      text: line,
-      checked: false,
-    }));
-}
-
-function buildStartPayload(draft: IntakeDraft): StartNegotiationRequest {
-  return {
-    jira_key: draft.jiraKey,
-    jira_summary: draft.jiraSummary,
-    acceptance_criteria: criteriaFromText(draft.acceptanceCriteria),
-  };
-}
 
 export function SessionBootstrap({ onSessionStarted }: SessionBootstrapProps) {
-  const [draft, setDraft] = useState(defaultDraft);
+  const [draft, setDraft] = useState(defaultSessionIntakeDraft);
+  const [mode, setMode] = useState<SessionIntakeMode>('jira');
+  const [selectedStoryKey, setSelectedStoryKey] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isHydratingStory, setIsHydratingStory] = useState(false);
+  const queryClient = useQueryClient();
   const deferredFilter = useDeferredValue(draft.storyFilter);
-  const { configured, isError, isLoading, stories } = useSessionBootstrapQueries();
+  const { configured, isError, isLoading, stories, storiesError } = useSessionBootstrapQueries();
   const startMutation = useStartNegotiationMutation();
+  const tabGroupId = useId();
+  const jiraTabId = `${tabGroupId}-jira`;
+  const manualTabId = `${tabGroupId}-manual`;
+  const jiraPanelId = `${tabGroupId}-jira-panel`;
+  const manualPanelId = `${tabGroupId}-manual-panel`;
 
-  const filteredStories = stories.filter((story) => {
-    if (!deferredFilter.trim()) {
-      return true;
-    }
+  const filteredStories = filterStories(stories, deferredFilter);
+  const selectedStory = stories.find((story) => story.key === selectedStoryKey) ?? null;
+  const showConfigurationFallback = !isLoading && !isError && (!configured || Boolean(storiesError));
+  const showEmptyState =
+    !isLoading && !isError && configured && !storiesError && stories.length === 0;
+  const showNoMatches =
+    !isLoading &&
+    !isError &&
+    configured &&
+    !storiesError &&
+    stories.length > 0 &&
+    filteredStories.length === 0;
+  const isSubmitting = startMutation.isPending || isHydratingStory;
 
-    const query = deferredFilter.toLowerCase();
-    return `${story.key} ${story.summary}`.toLowerCase().includes(query);
-  });
-
-  function updateDraft(key: keyof IntakeDraft) {
+  function updateDraft(key: keyof SessionIntakeDraft) {
     return (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setDraft((current) => ({ ...current, [key]: event.target.value }));
     };
   }
 
-  function applyStory(story: JiraStory) {
-    setDraft((current) => ({
-      ...current,
-      jiraKey: story.key,
-      jiraSummary: story.summary,
-    }));
+  function handleModeChange(nextMode: SessionIntakeMode) {
+    startTransition(() => {
+      setMode(nextMode);
+      setSubmitError(null);
+    });
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    startMutation.mutate(buildStartPayload(draft), {
-      onSuccess: (session) => {
-        onSessionStarted?.(session, draft.jiraSummary);
-      },
+  function applyStory(story: JiraStory) {
+    startTransition(() => {
+      setSelectedStoryKey(story.key);
+      setSubmitError(null);
     });
+  }
+
+  async function resolveSelectedStory(): Promise<SessionIntakeStory> {
+    if (mode === 'manual') {
+      return normalizeManualStory({
+        acceptanceCriteriaText: draft.acceptanceCriteriaText,
+        jiraKey: draft.jiraKey,
+        jiraSummary: draft.jiraSummary,
+      });
+    }
+
+    if (!selectedStoryKey) {
+      throw new Error('Select a Jira story before starting a session.');
+    }
+
+    setIsHydratingStory(true);
+
+    try {
+      const ticket = await queryClient.fetchQuery({
+        queryKey: queryKeys.jiraTicket(selectedStoryKey),
+        queryFn: () => fetchJiraTicket(selectedStoryKey),
+        staleTime: 30_000,
+      });
+
+      return normalizeJiraTicket(ticket);
+    } finally {
+      setIsHydratingStory(false);
+    }
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSubmitError(null);
+
+    try {
+      const story = await resolveSelectedStory();
+      const session = await startMutation.mutateAsync(buildStartNegotiationPayload(story));
+
+      onSessionStarted?.(session, story);
+    } catch (error) {
+      setSubmitError(resolveIntakeError(error));
+    }
   }
 
   return (
@@ -96,102 +132,197 @@ export function SessionBootstrap({ onSessionStarted }: SessionBootstrapProps) {
       <div className={styles.section}>
         <SectionHeader
           title="Story intake"
-          description="Bootstrap the workspace with Jira availability and a manual session start form."
-          action={<Badge tone={configured ? 'success' : 'warning'}>{configured ? 'Jira ready' : 'Manual mode'}</Badge>}
+          description="Choose Jira intake or manual entry without leaving the left rail."
+          action={
+            <Badge tone={configured && !storiesError ? 'success' : 'warning'}>
+              {configured && !storiesError ? 'Jira ready' : 'Manual fallback'}
+            </Badge>
+          }
         />
         <div className={styles.metaRow}>
           <Badge tone="neutral">Parallel bootstrap</Badge>
-          <Badge tone="info">{stories.length} stories visible</Badge>
+          <Badge tone="info">{stories.length} Jira stories</Badge>
+          {selectedStory ? <Badge tone="success">Selection ready</Badge> : null}
         </div>
-      </div>
-      <Divider />
-      <div className={styles.section}>
-        <Text as="label" htmlFor="story-filter" size="xs" tone="muted">
-          Story search
-        </Text>
-        <input
-          className={styles.input}
-          id="story-filter"
-          onChange={updateDraft('storyFilter')}
-          placeholder="Filter by key or summary"
-          type="search"
-          value={draft.storyFilter}
-        />
-        {isLoading ? <Text size="sm">Loading workspace context</Text> : null}
-        {isLoading ? <Skeleton aria-label="Loading panel" /> : null}
-        {isError ? (
-          <Text size="sm" tone="muted">
-            Workspace bootstrap failed
-          </Text>
-        ) : null}
-        {!isLoading && !filteredStories.length ? (
-          <EmptyState
-            title="No active Jira stories"
-            description="Keep working from manual intake until the backend exposes in-progress tickets."
-          />
-        ) : null}
-        {!isLoading && filteredStories.length ? (
-          <div className={styles.list}>
-            {filteredStories.map((story) => (
-              <button className={styles.storyButton} key={story.key} onClick={() => applyStory(story)} type="button">
-                <div className={styles.storyKey}>
-                  <Mono>{story.key}</Mono>
-                  <Badge tone="neutral">intake</Badge>
-                </div>
-                <Text as="span" size="sm">
-                  {story.summary}
-                </Text>
-              </button>
-            ))}
-          </div>
-        ) : null}
+        <div aria-label="Story intake modes" className={styles.modeTabs} role="tablist">
+          <button
+            aria-controls={jiraPanelId}
+            aria-selected={mode === 'jira'}
+            className={styles.modeTab}
+            id={jiraTabId}
+            onClick={() => handleModeChange('jira')}
+            role="tab"
+            type="button"
+          >
+            Jira intake
+          </button>
+          <button
+            aria-controls={manualPanelId}
+            aria-selected={mode === 'manual'}
+            className={styles.modeTab}
+            id={manualTabId}
+            onClick={() => handleModeChange('manual')}
+            role="tab"
+            type="button"
+          >
+            Manual entry
+          </button>
+        </div>
       </div>
       <Divider />
       <form className={styles.form} onSubmit={handleSubmit}>
-        <SectionHeader
-          title="Manual session start"
-          description="Keep the working surface usable even when Jira or checkpoints are unavailable."
-        />
-        <div className={styles.field}>
-          <Text as="label" htmlFor="jira-key" size="xs" tone="muted">
-            Jira key
+        {mode === 'jira' ? (
+          <section
+            aria-labelledby={jiraTabId}
+            className={styles.section}
+            id={jiraPanelId}
+            role="tabpanel"
+          >
+            <SectionHeader
+              title="Jira intake"
+              description="Select an active Jira story and hydrate its acceptance criteria into the workspace session."
+            />
+            <div className={styles.field}>
+              <Text as="label" htmlFor="story-filter" size="xs" tone="muted">
+                Story search
+              </Text>
+              <input
+                className={styles.input}
+                id="story-filter"
+                onChange={updateDraft('storyFilter')}
+                placeholder="Filter by key or summary"
+                type="search"
+                value={draft.storyFilter}
+              />
+            </div>
+            {isLoading ? <Text size="sm">Loading Jira intake</Text> : null}
+            {isLoading ? <Skeleton aria-label="Loading Jira intake" /> : null}
+            {isError ? (
+              <EmptyState
+                title="Jira intake is temporarily unavailable"
+                description="Refresh the workspace or continue in manual entry while the bootstrap query recovers."
+              />
+            ) : null}
+            {showConfigurationFallback ? (
+              <EmptyState
+                title="Jira configuration required"
+                description="Jira credentials or access are unavailable. Manual entry remains available in this rail."
+              />
+            ) : null}
+            {showEmptyState ? (
+              <EmptyState
+                title="No in-progress Jira stories"
+                description="Choose manual entry to keep working until the backend exposes active tickets."
+              />
+            ) : null}
+            {showNoMatches ? (
+              <EmptyState
+                title="No stories match this filter"
+                description="Try a different key or summary term to narrow the Jira list."
+              />
+            ) : null}
+            {!isLoading && !isError && !showConfigurationFallback && filteredStories.length ? (
+              <div className={styles.list}>
+                {filteredStories.map((story) => (
+                  <button
+                    aria-label={`Select story ${story.key}`}
+                    className={styles.storyButton}
+                    data-selected={selectedStoryKey === story.key}
+                    key={story.key}
+                    onClick={() => applyStory(story)}
+                    type="button"
+                  >
+                    <div className={styles.storyMeta}>
+                      <div className={styles.storyKey}>
+                        <Mono>{story.key}</Mono>
+                        <Badge tone="neutral">{story.status || 'In Progress'}</Badge>
+                      </div>
+                      {selectedStoryKey === story.key ? <Badge tone="success">Selected</Badge> : null}
+                    </div>
+                    <Text as="span" size="sm">
+                      {story.summary}
+                    </Text>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            {selectedStory ? (
+              <div className={styles.selectionSummary}>
+                <Text as="p" size="xs" tone="muted">
+                  Selected story
+                </Text>
+                <div className={styles.storyMeta}>
+                  <Mono>{selectedStory.key}</Mono>
+                  <Badge tone="info">Ready to hydrate</Badge>
+                </div>
+                <Text as="p" size="sm">
+                  {selectedStory.summary}
+                </Text>
+              </div>
+            ) : null}
+          </section>
+        ) : (
+          <section
+            aria-labelledby={manualTabId}
+            className={styles.section}
+            id={manualPanelId}
+            role="tabpanel"
+          >
+            <SectionHeader
+              title="Manual entry"
+              description="Capture story metadata and acceptance criteria when Jira is unavailable or the operator is working from raw notes."
+            />
+            <div className={styles.field}>
+              <Text as="label" htmlFor="jira-key" size="xs" tone="muted">
+                Jira key
+              </Text>
+              <input
+                className={styles.input}
+                id="jira-key"
+                onChange={updateDraft('jiraKey')}
+                required
+                type="text"
+                value={draft.jiraKey}
+              />
+            </div>
+            <div className={styles.field}>
+              <Text as="label" htmlFor="jira-summary" size="xs" tone="muted">
+                Summary
+              </Text>
+              <input
+                className={styles.input}
+                id="jira-summary"
+                onChange={updateDraft('jiraSummary')}
+                required
+                type="text"
+                value={draft.jiraSummary}
+              />
+            </div>
+            <div className={styles.field}>
+              <Text as="label" htmlFor="acceptance-criteria" size="xs" tone="muted">
+                Acceptance criteria
+              </Text>
+              <textarea
+                className={styles.textarea}
+                id="acceptance-criteria"
+                onChange={updateDraft('acceptanceCriteriaText')}
+                required
+                value={draft.acceptanceCriteriaText}
+              />
+            </div>
+          </section>
+        )}
+        {submitError ? (
+          <Text as="p" size="sm" tone="muted">
+            {submitError}
           </Text>
-          <input
-            className={styles.input}
-            id="jira-key"
-            onChange={updateDraft('jiraKey')}
-            required
-            type="text"
-            value={draft.jiraKey}
-          />
-        </div>
-        <div className={styles.field}>
-          <Text as="label" htmlFor="jira-summary" size="xs" tone="muted">
-            Summary
-          </Text>
-          <input
-            className={styles.input}
-            id="jira-summary"
-            onChange={updateDraft('jiraSummary')}
-            required
-            type="text"
-            value={draft.jiraSummary}
-          />
-        </div>
-        <div className={styles.field}>
-          <Text as="label" htmlFor="acceptance-criteria" size="xs" tone="muted">
-            Acceptance criteria
-          </Text>
-          <textarea
-            className={styles.textarea}
-            id="acceptance-criteria"
-            onChange={updateDraft('acceptanceCriteria')}
-            required
-            value={draft.acceptanceCriteria}
-          />
-        </div>
-        <Button loading={startMutation.isPending} type="submit">
-          Start negotiation session
+        ) : null}
+        <Button
+          disabled={mode === 'jira' && !selectedStoryKey}
+          loading={isSubmitting}
+          type="submit"
+        >
+          {mode === 'jira' ? 'Start session from Jira' : 'Start session from manual story'}
         </Button>
         {startMutation.data?.session_id ? (
           <div className={styles.sessionSummary}>
@@ -204,4 +335,12 @@ export function SessionBootstrap({ onSessionStarted }: SessionBootstrapProps) {
       </form>
     </div>
   );
+}
+
+function resolveIntakeError(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return 'Unable to start the intake session.';
 }

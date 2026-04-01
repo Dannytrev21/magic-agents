@@ -1,6 +1,7 @@
 import type {
   JiraConfiguredResponse,
   JiraStoriesResponse,
+  JiraTicketResponse,
   PipelineEvent,
   ScanStatusResponse,
   SessionInfoResponse,
@@ -49,6 +50,10 @@ export function fetchJiraConfigured() {
 
 export function fetchJiraStories() {
   return requestJson<JiraStoriesResponse>('/api/jira/stories');
+}
+
+export function fetchJiraTicket(jiraKey: string) {
+  return requestJson<JiraTicketResponse>(`/api/jira/ticket/${jiraKey}`);
 }
 
 export function fetchSkills() {

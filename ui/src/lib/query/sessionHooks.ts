@@ -27,6 +27,7 @@ export function useSessionBootstrapQueries() {
     configured: configuredQuery.data?.configured ?? false,
     isError: configuredQuery.isError || storiesQuery.isError,
     isLoading: configuredQuery.isLoading || storiesQuery.isLoading,
+    storiesError: storiesQuery.data?.error ?? null,
     stories: storiesQuery.data?.stories ?? [],
   };
 }
