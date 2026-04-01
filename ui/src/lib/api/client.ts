@@ -37,7 +37,7 @@ export async function jsonRequest<T>(
     body: body ? JSON.stringify(body) : undefined,
   });
   const rawText = await response.text();
-  const parsed = rawText ? (JSON.parse(rawText) as T | Record<string, unknown>) : null;
+  const parsed = rawText ? (JSON.parse(rawText) as JsonValue | Record<string, unknown>) : null;
 
   if (!response.ok) {
     const message =

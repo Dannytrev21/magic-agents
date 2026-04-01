@@ -1,21 +1,23 @@
 .shell {
   min-height: 100vh;
-  padding: var(--space-5);
+  padding: var(--space-4);
 }
 
 .frame {
   display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: var(--space-4);
+  min-height: calc(100vh - (var(--space-4) * 2));
 }
 
 .topBar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
   gap: var(--space-4);
   padding: var(--space-4) var(--space-5);
   border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, var(--color-surface), var(--color-surface-strong));
+  background:
+    linear-gradient(135deg, rgba(121, 231, 196, 0.12), transparent 38%),
+    linear-gradient(180deg, var(--color-surface), var(--color-surface-strong));
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-ambient);
 }
@@ -38,7 +40,47 @@
   line-height: var(--line-tight);
 }
 
+.context {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.story {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.storyMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.storyKey {
+  font-size: var(--font-size-sm);
+  color: var(--color-info);
+}
+
+.storySummary {
+  margin: 0;
+  max-width: 48rem;
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+}
+
+.sessionCluster {
+  display: grid;
+  gap: var(--space-3);
+}
+
 .status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.controls {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
@@ -46,17 +88,134 @@
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(17rem, 21rem) minmax(0, 1fr) minmax(18rem, 24rem);
   gap: var(--space-4);
-  align-items: start;
+  min-height: 0;
+  align-items: stretch;
 }
 
-.center {
+.workspace[data-layout="full"] {
+  grid-template-columns: minmax(18rem, 22rem) minmax(0, 1.75fr) minmax(17rem, 21rem);
+}
+
+.workspace[data-layout="left-collapsed"] {
+  grid-template-columns: minmax(0, 1.8fr) minmax(17rem, 21rem);
+}
+
+.workspace[data-layout="right-collapsed"] {
+  grid-template-columns: minmax(18rem, 22rem) minmax(0, 1.8fr);
+}
+
+.workspace[data-layout="center-only"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.workspace[data-compact="true"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.sidePane,
+.centerPane {
   min-width: 0;
+  min-height: 0;
+  overflow: auto;
 }
 
-@media (max-width: 1100px) {
-  .workspace {
-    grid-template-columns: 1fr;
+.centerPane {
+  display: grid;
+  align-content: start;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+}
+
+.overlayBackdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(6, 10, 18, 0.72);
+}
+
+.overlayDrawer {
+  position: absolute;
+  inset-block: var(--space-4);
+  inset-inline-end: var(--space-4);
+  inline-size: min(26rem, calc(100vw - (var(--space-4) * 2)));
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: linear-gradient(180deg, var(--color-surface), var(--color-surface-strong));
+  box-shadow: var(--shadow-ambient);
+  animation: slide-in var(--motion-standard) ease;
+}
+
+.overlayHeader {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.overlayLabel {
+  display: block;
+  margin-bottom: var(--space-1);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+}
+
+.overlayTitle {
+  display: block;
+  font-size: var(--font-size-lg);
+}
+
+.overlayBody {
+  min-height: 0;
+  overflow: auto;
+}
+
+@media (min-width: 1181px) {
+  .topBar {
+    grid-template-columns: minmax(0, 18rem) minmax(0, 1fr);
+    align-items: end;
+  }
+
+  .context {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+  }
+}
+
+@media (max-width: 1180px) {
+  .shell {
+    padding: var(--space-3);
+  }
+
+  .frame {
+    min-height: calc(100vh - (var(--space-3) * 2));
+  }
+
+  .overlayDrawer {
+    inset: auto var(--space-3) var(--space-3) var(--space-3);
+    inline-size: auto;
+    block-size: min(75vh, 44rem);
+  }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

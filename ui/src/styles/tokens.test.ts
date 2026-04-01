@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
@@ -29,7 +29,7 @@ describe("design tokens", () => {
   });
 
   it("keeps shared component styles on tokens instead of hex values", () => {
-    const stylesRoot = fileURLToPath(new URL("../components", import.meta.url));
+    const stylesRoot = resolve(process.cwd(), "src/components");
 
     for (const filePath of walkStyleFiles(stylesRoot)) {
       const contents = readFileSync(filePath, "utf8");

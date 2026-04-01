@@ -1,0 +1,45 @@
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.region {
+  display: grid;
+  gap: var(--space-2);
+  outline: none;
+}
+
+.region:focus-visible {
+  box-shadow: var(--shadow-focus);
+}
+
+.regionHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.label {
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+}
+
+.title {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-lg);
+}
+
+.activityFeed {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.activityItem {
+  display: grid;
+  gap: var(--space-1);
+}

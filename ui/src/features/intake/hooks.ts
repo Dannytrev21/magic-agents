@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import type { WorkspaceApi } from "@/lib/api/contracts";
+import type { PhaseResponse, StartSessionRequest, WorkspaceApi } from "@/lib/api/contracts";
 import { workspaceApi } from "@/lib/api/workspaceApi";
 
 export const WORKSPACE_QUERY_KEYS = {
@@ -27,8 +27,8 @@ export function useJiraStoriesQuery(api: WorkspaceApi = workspaceApi) {
 export function useStartSessionMutation(api: WorkspaceApi = workspaceApi) {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: api.startSession,
+  return useMutation<PhaseResponse, Error, StartSessionRequest>({
+    mutationFn: (request) => api.startSession(request),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: WORKSPACE_QUERY_KEYS.jiraStories() }),

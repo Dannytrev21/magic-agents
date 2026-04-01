@@ -1,4 +1,4 @@
-import type { ErrorInfo, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Component } from "react";
 
 import styles from "@/app/AppErrorBoundary.module.css";
@@ -18,8 +18,6 @@ export class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorB
   static getDerivedStateFromError() {
     return { hasError: true };
   }
-
-  componentDidCatch(_error: Error, _errorInfo: ErrorInfo) {}
 
   private handleReset = () => {
     this.setState({ hasError: false });

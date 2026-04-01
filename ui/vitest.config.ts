@@ -16,6 +16,7 @@ export default defineConfig({
     css: true,
     setupFiles: ["./src/test/setup.ts"],
     coverage: {
+      provider: "v8",
       reporter: ["text"],
     },
   },

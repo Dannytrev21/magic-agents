@@ -2,18 +2,18 @@
   "meta": {
     "project": "Magic Agents Operator Workspace UI port",
     "created": "2026-03-31",
-    "last_updated": "2026-04-01T04:32:56Z",
+    "last_updated": "2026-04-01T05:23:56Z",
     "total_epics": 8,
     "total_stories": 36
   },
   "summary": {
-    "epics_complete": 0,
-    "epics_in_progress": 1,
-    "epics_not_started": 7,
-    "stories_complete": 0,
-    "stories_in_progress": 5,
-    "stories_not_started": 31,
-    "stories_tested": 0
+    "epics_complete": 2,
+    "epics_in_progress": 0,
+    "epics_not_started": 6,
+    "stories_complete": 10,
+    "stories_in_progress": 0,
+    "stories_not_started": 26,
+    "stories_tested": 10
   },
   "epics": [
     {
@@ -21,13 +21,13 @@
       "title": "Frontend Foundation and App Shell",
       "file": "U01-frontend-foundation.md",
       "priority": 1,
-      "status": "in_progress",
+      "status": "complete",
       "stories": [
-        { "id": "U1.1", "title": "Scaffold the React + TypeScript + Vite frontend", "status": "in_progress", "tested": false, "notes": "Created a new ui/ React + TypeScript + Vite workspace with lint, prettier, Vitest config, Vite API proxy, and FastAPI support for serving ui/dist assets when built. Backend contract tests pass; npm install/build is blocked in this environment." },
-        { "id": "U1.2", "title": "Establish a typed API client and query layer", "status": "in_progress", "tested": false, "notes": "Added a typed workspace API contract, JSON request helper, SSE adapter, query keys, and TanStack Query hooks for Jira intake and session start flows." },
-        { "id": "U1.3", "title": "Build the application shell and provider stack", "status": "in_progress", "tested": false, "notes": "Added AppProviders, ThemeProvider, router wiring, AppErrorBoundary, NotFoundView, AppShell, and a placeholder three-pane workspace route." },
-        { "id": "U1.4", "title": "Establish the tokenized visual system and typography rules", "status": "in_progress", "tested": false, "notes": "Added centralized CSS tokens for color, spacing, typography, radius, and motion plus global base styles that reserve mono typography for refs and code-like content." },
-        { "id": "U1.5", "title": "Build accessible UI primitives for the workspace", "status": "in_progress", "tested": false, "notes": "Added reusable Button, Badge, Text, MonoText, Divider, SectionHeader, Skeleton, EmptyState, Rail, WorkspaceSection, and ArtifactPanel primitives for the new shell." }
+        { "id": "U1.1", "title": "Scaffold the React + TypeScript + Vite frontend", "status": "complete", "tested": true, "notes": "The ui/ React + TypeScript + Vite workspace now builds reproducibly with npm, serves a compiled bundle through FastAPI, and passes the frontend foundation backend contract tests." },
+        { "id": "U1.2", "title": "Establish a typed API client and query layer", "status": "complete", "tested": true, "notes": "Typed request helpers, workspace API contracts, SSE support, and TanStack Query hooks are in place and covered by Vitest plus backend foundation coverage." },
+        { "id": "U1.3", "title": "Build the application shell and provider stack", "status": "complete", "tested": true, "notes": "AppProviders, ThemeProvider, router wiring, AppErrorBoundary, NotFoundView, and the reusable AppShell now support a routed operator workspace with tested shell states." },
+        { "id": "U1.4", "title": "Establish the tokenized visual system and typography rules", "status": "complete", "tested": true, "notes": "Central CSS tokens and base styles now drive color, spacing, typography, radius, and motion, with token enforcement verified in the shared style tests." },
+        { "id": "U1.5", "title": "Build accessible UI primitives for the workspace", "status": "complete", "tested": true, "notes": "Buttons, badges, text primitives, rails, sections, artifact panels, empty states, and skeletons are shared across the shell and covered by component tests." }
       ]
     },
     {
@@ -35,13 +35,13 @@
       "title": "Operator Workspace Layout",
       "file": "U02-operator-workspace-layout.md",
       "priority": 2,
-      "status": "not_started",
+      "status": "complete",
       "stories": [
-        { "id": "U2.1", "title": "Implement the three-pane workspace layout", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U2.2", "title": "Add the sticky phase rail and session status strip", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U2.3", "title": "Replace screen jumps with panel state transitions", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U2.4", "title": "Add a top bar with session context and workspace controls", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U2.5", "title": "Support panel collapse, persistence, and responsive fallbacks", "status": "not_started", "tested": false, "notes": "" }
+        { "id": "U2.1", "title": "Implement the three-pane workspace layout", "status": "complete", "tested": true, "notes": "The shell now renders a center-dominant three-pane workspace on desktop with independent pane scroll regions and tested landmarks." },
+        { "id": "U2.2", "title": "Add the sticky phase rail and session status strip", "status": "complete", "tested": true, "notes": "A sticky seven-phase rail and persistent session status strip stay visible inside the center workspace while content scrolls." },
+        { "id": "U2.3", "title": "Replace screen jumps with panel state transitions", "status": "complete", "tested": true, "notes": "Center and inspector surfaces now swap in place with React-owned transitions and focus handoff instead of full-screen route changes." },
+        { "id": "U2.4", "title": "Add a top bar with session context and workspace controls", "status": "complete", "tested": true, "notes": "The top bar now exposes product identity, current story context, current phase summary, session status, and pane controls in one stable strip." },
+        { "id": "U2.5", "title": "Support panel collapse, persistence, and responsive fallbacks", "status": "complete", "tested": true, "notes": "Operators can collapse either side pane with persisted preferences, and compact widths switch to overlay panels while restoring the desktop layout predictably." }
       ]
     },
     {

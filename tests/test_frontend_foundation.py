@@ -15,7 +15,13 @@ def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     return TestClient(web.app)
 
 
-def test_root_falls_back_to_legacy_frontend_when_bundle_missing(client: TestClient) -> None:
+def test_root_falls_back_to_legacy_frontend_when_bundle_missing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    client: TestClient,
+) -> None:
+    monkeypatch.setattr(web, "UI_DIST_DIR", tmp_path / "missing-dist", raising=False)
+
     response = client.get("/")
 
     assert response.status_code == 200
