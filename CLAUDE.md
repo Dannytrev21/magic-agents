@@ -52,13 +52,13 @@ pytest --cov=src tests/                   # with coverage
 - **`evaluator.py`** — Maps test results back to AC verdicts via spec traceability.
 - **`jira_client.py`** — Jira Cloud REST API v3 (search, fetch, extract AC, update).
 - **`permissions.py`** — Permission & access control: `ToolPermissionContext` (frozen dataclass with deny rules), `PermissionDenial` (denial event), skill filtering, and constitution-driven defaults. Ported from claw-code P05.
-- **`runtime.py`** — `NegotiationEvent` enum (closed set of SSE event types), `EVENT_SCHEMAS` (payload field contracts per type), `RuntimeEvent` (validates type against enum + legacy types, emits typed SSE with `event:` prefix). `SessionState.event_buffer` stores events for SSE streaming.
+- **`runtime.py`** — `NegotiationEvent` enum (closed set of SSE event types), `EVENT_SCHEMAS` (payload field contracts per type), `RuntimeEvent` (validates type against enum + legacy types, emits typed SSE with `event:` prefix). `SessionState` includes `event_buffer` for SSE streaming, `backpressure` (`BackPressureController`), and `phase_cost_reports` (`list[PhaseCostReport]`) for P7 cost accounting.
 - **`skills/framework.py`** — Skill agent framework with `SkillDescriptor`, `SkillDispatchError`, `find_skills()`, `find_skills_by_type()`, `validate_dispatch()`, and registry discovery.
 - **`dog-service/`** — Spring Boot demo target (Dog CRUD API at `/api/v1/dogs` with Bearer auth, Lombok, Cucumber tests).
 
 ### Web UI
 
-- **`src/verify/negotiation/web.py`** — FastAPI backend with endpoints for Jira integration (`/api/jira/*`) and negotiation (`/api/start`, `/api/respond`). In-memory single-user session.
+- **`src/verify/negotiation/web.py`** — FastAPI backend with endpoints for Jira integration (`/api/jira/*`), negotiation (`/api/start`, `/api/respond`), and session cost (`GET /api/session/{id}/cost`). In-memory single-user session.
 - **`static/index.html`** — Single-page app: story picker → AC overview → negotiation chat → traceability view.
 
 ### Agent Skills (`.claude/skills/phase*-*/`)

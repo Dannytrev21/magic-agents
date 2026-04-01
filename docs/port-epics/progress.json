@@ -64,7 +64,16 @@
         { "id": "P6.3", "name": "SSE Endpoint with Event Filtering", "status": "done" }
       ]
     },
-    { "id": "P07", "name": "Session Cost Accounting", "file": "P07-session-cost-accounting.md", "stories": [], "status": "not_started" },
+    {
+      "id": "P07",
+      "name": "Session Cost Accounting",
+      "file": "P07-session-cost-accounting.md",
+      "stories": [
+        { "id": "P7.1", "name": "Persist Token Usage in Checkpoints", "status": "done" },
+        { "id": "P7.2", "name": "Session Cost Summary Endpoint", "status": "done" },
+        { "id": "P7.3", "name": "Cost Alerts via SSE Events", "status": "done" }
+      ]
+    },
     { "id": "P08", "name": "Bootstrap & Initialization Graph", "file": "P08-bootstrap-initialization-graph.md", "stories": [], "status": "not_started" },
     { "id": "P09", "name": "Hook & Event System", "file": "P09-hook-event-system.md", "stories": [], "status": "not_started" },
     { "id": "P10", "name": "MCP Server Wrapper", "file": "P10-mcp-server-wrapper.md", "stories": [], "status": "not_started" },

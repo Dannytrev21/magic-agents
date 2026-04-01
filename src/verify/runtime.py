@@ -18,6 +18,7 @@ from datetime import datetime, timezone
 from typing import Any, Callable
 from uuid import uuid4
 
+from verify.backpressure import BackPressureController, PhaseCostReport
 from verify.context import VerificationContext
 from verify.llm_client import LLMClient
 from verify.negotiation.checkpoint import load_checkpoint
@@ -121,6 +122,8 @@ class SessionState:
     latest_questions: list[dict[str, str]] = field(default_factory=list)
     latest_pipeline: dict[str, Any] = field(default_factory=dict)
     event_buffer: list = field(default_factory=list)
+    backpressure: BackPressureController = field(default_factory=BackPressureController)
+    phase_cost_reports: list[PhaseCostReport] = field(default_factory=list)
     compaction_threshold: int = 30
     keep_recent: int = 15
     history_compaction_threshold: int = 60
@@ -318,7 +321,7 @@ class SessionStore:
         if loaded is None:
             return None
 
-        context, _ = loaded
+        context, _, _controller = loaded
         session_id = getattr(context, "session_id", None) or None
 
         if session_id and session_id in self.sessions:

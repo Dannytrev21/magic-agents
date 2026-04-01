@@ -23,6 +23,13 @@
 - Execution endpoints that compile specs, generate tests, or stream the pipeline must enforce the EARS approval gate on the server, not only through disabled frontend controls.
 - When comparing React and legacy entrypoints during rollout, prefer `MAGIC_AGENTS_FRONTEND_MODE=legacy` for a process-wide fallback and `/?frontend=react` or `/?frontend=legacy` for per-request cutover checks without editing the backend.
 
+## Port Epics (Backend)
+
+- Track backend port epic progress in [`/Users/dannytrevino/development/magic-agents/docs/port-epics/progress.json`](/Users/dannytrevino/development/magic-agents/docs/port-epics/progress.json).
+- When adding checkpoint-serializable state, implement `to_dict()`/`from_dict()` on the dataclass and wire it through `save_checkpoint()`/`load_checkpoint()` in `checkpoint.py`.
+- New web endpoints should follow the existing FastAPI pattern in `web.py` and include test coverage in `tests/test_session_cost_accounting.py` or an appropriate test module.
+- Budget events (`budget_warning`, `budget_exceeded`) use the `RuntimeEvent` type and must be registered in the `NegotiationEvent` enum and `EVENT_SCHEMAS` dict.
+
 ## Documentation
 
 - Update [`/Users/dannytrevino/development/magic-agents/docs/ui-port/progress.json`](/Users/dannytrevino/development/magic-agents/docs/ui-port/progress.json) when a UI story changes status.

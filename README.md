@@ -16,6 +16,7 @@ Every arrow below represents a handoff between components. Each handoff has a de
 - The inspector consumes the current FastAPI routes directly: `/api/scan`, `/api/scan/status`, `/api/plan`, `/api/evaluate-phase`, `/api/spec-diff`, and `/api/compile`.
 - The verification console consumes `/api/ears-approve`, `/api/compile`, `/api/generate-tests`, `/api/pipeline/stream`, and `/api/jira/update`, and the backend now enforces approval before execution endpoints run.
 - Structured streaming events (P06) provide a closed set of typed SSE event types (`NegotiationEvent` enum) with documented payload schemas. The `NegotiationHarness` emits `phase_start`, `phase_complete`, `phase_error`, `validation_result`, `budget_exceeded`, and `session_checkpoint` events through an optional `event_emitter` callback. The `GET /api/events/{session_id}?types=` endpoint streams filtered SSE events per session.
+- Session cost accounting (P07) persists `BackPressureController` state in checkpoints via `to_dict()`/`from_dict()` serialization, exposes `GET /api/session/{session_id}/cost` for cumulative token usage with per-phase breakdowns and estimated USD cost, and emits deduplicated `budget_warning`/`budget_exceeded` SSE events when soft/hard token limits are crossed.
 - UI verification now runs through `npm run test:ci` for Vitest + build + bundle budgets, with browser coverage authored under `npm run test:e2e` after `npm run test:e2e:install` in [`/Users/dannytrevino/development/magic-agents/ui`](/Users/dannytrevino/development/magic-agents/ui).
 
 ```

@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 import yaml
 
+from verify.backpressure import BackPressureController, PhaseCostReport
 from verify.context import VerificationContext
 from verify.llm_client import LLMClient
 from verify.negotiation.checkpoint import get_session_info
@@ -101,6 +102,57 @@ async def events_endpoint(session_id: str, request: Request):
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+# ------------------------------------------------------------------
+# P7.2: Session Cost Summary Endpoint
+# ------------------------------------------------------------------
+
+# Default per-token pricing (USD per million tokens)
+_DEFAULT_INPUT_RATE = 3.0   # $3/M input tokens
+_DEFAULT_OUTPUT_RATE = 15.0  # $15/M output tokens
+
+
+@app.get("/api/session/{session_id}/cost")
+async def session_cost_endpoint(session_id: str):
+    """Return cumulative token usage, per-phase breakdowns, and estimated cost."""
+    state = SESSION_STORE.get(session_id)
+    if state is None:
+        return JSONResponse({"error": "Session not found"}, status_code=404)
+
+    controller = getattr(state, "backpressure", None) or BackPressureController()
+    reports: list[PhaseCostReport] = getattr(state, "phase_cost_reports", [])
+
+    total_in = sum(r.tokens_in for r in reports)
+    total_out = sum(r.tokens_out for r in reports)
+
+    estimated_cost = (
+        total_in / 1_000_000 * _DEFAULT_INPUT_RATE
+        + total_out / 1_000_000 * _DEFAULT_OUTPUT_RATE
+    )
+
+    max_tokens = controller.max_tokens
+    budget_pct = (controller.tokens_used / max_tokens * 100) if max_tokens > 0 else 0.0
+
+    return JSONResponse({
+        "total_input_tokens": total_in,
+        "total_output_tokens": total_out,
+        "total_api_calls": controller.api_calls,
+        "estimated_cost_usd": round(estimated_cost, 6),
+        "budget_utilization_pct": round(budget_pct, 2),
+        "phases": [
+            {
+                "phase_name": r.phase_name,
+                "api_calls": r.api_calls,
+                "tokens_in": r.tokens_in,
+                "tokens_out": r.tokens_out,
+                "wall_clock_seconds": r.wall_clock_seconds,
+                "retries": r.retries,
+                "status": r.status,
+            }
+            for r in reports
+        ],
+    })
 
 
 # ------------------------------------------------------------------
