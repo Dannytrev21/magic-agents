@@ -25,6 +25,7 @@ from verify.runtime import RuntimeEvent, SessionState, SessionStore
 app = FastAPI(title="Negotiation UI")
 
 STATIC_DIR = Path(__file__).parent.parent.parent.parent / "static"
+FRONTEND_MODE_ENV = "MAGIC_AGENTS_FRONTEND_MODE"
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 SESSION_STORE = SessionStore()
@@ -78,15 +79,34 @@ async def explore_endpoint(request: Request):
 
 
 @app.get("/", response_class=HTMLResponse)
-async def index():
-    return _resolve_frontend_index().read_text()
+async def index(request: Request):
+    return _resolve_frontend_index(request).read_text()
 
 
-def _resolve_frontend_index() -> Path:
+def _resolve_frontend_index(request: Request | None = None) -> Path:
     built_index = STATIC_DIR / "ui" / "index.html"
+    legacy_index = STATIC_DIR / "index.html"
+    frontend_mode = _resolve_frontend_mode(request)
+
+    if frontend_mode == "legacy":
+        return legacy_index
+
     if built_index.exists():
         return built_index
-    return STATIC_DIR / "index.html"
+
+    return legacy_index
+
+
+def _resolve_frontend_mode(request: Request | None = None) -> str:
+    query_mode = request.query_params.get("frontend") if request else None
+    if query_mode in {"legacy", "react"}:
+        return query_mode
+
+    env_mode = os.environ.get(FRONTEND_MODE_ENV, "auto").strip().lower()
+    if env_mode in {"legacy", "react"}:
+        return env_mode
+
+    return "auto"
 
 
 # ------------------------------------------------------------------

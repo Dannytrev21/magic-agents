@@ -1,4 +1,4 @@
-import { useEffect, useState, type RefObject } from 'react';
+import { Suspense, lazy, useEffect, useState, type RefObject } from 'react';
 import { Button } from '@/components/primitives/Button';
 import { Badge } from '@/components/primitives/Badge';
 import { Divider } from '@/components/primitives/Divider';
@@ -9,9 +9,8 @@ import { Text } from '@/components/primitives/Text';
 import { PhaseTranscript } from '@/features/workspace/PhaseTranscript';
 import {
   buildInitialVerificationState,
-  WorkspaceVerificationConsole,
   type VerificationWorkspaceState,
-} from '@/features/workspace/WorkspaceVerificationConsole';
+} from '@/features/workspace/workspaceVerificationModel';
 import {
   buildPhaseReview,
   buildTranscriptEntries,
@@ -24,6 +23,11 @@ import {
 } from '@/features/workspace/workspaceModel';
 import type { StartNegotiationResponse } from '@/lib/api/types';
 import styles from '@/features/workspace/workspace.module.css';
+
+const WorkspaceVerificationConsole = lazy(async () => {
+  const module = await import('@/features/workspace/WorkspaceVerificationConsole');
+  return { default: module.WorkspaceVerificationConsole };
+});
 
 export type PhaseActionState = {
   activeAction: 'approve' | 'revise' | null;
@@ -259,11 +263,13 @@ export function WorkspaceCenterPane({
         ) : null}
         {activeView === 'verification' ? (
           activeSession.done ? (
-            <WorkspaceVerificationConsole
-              activeSession={activeSession}
-              onStateChange={setVerificationState}
-              state={verificationState}
-            />
+            <Suspense fallback={<Text size="sm">Loading verification workspace</Text>}>
+              <WorkspaceVerificationConsole
+                activeSession={activeSession}
+                onStateChange={setVerificationState}
+                state={verificationState}
+              />
+            </Suspense>
           ) : (
             <EmptyState
               title="Verification unlocks after negotiation"

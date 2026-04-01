@@ -18,23 +18,8 @@ import {
   useVerificationActions,
   useVerificationQueries,
 } from '@/lib/query/sessionHooks';
+import { type VerificationWorkspaceState } from '@/features/workspace/workspaceVerificationModel';
 import styles from '@/features/workspace/workspace.module.css';
-
-export type VerificationWorkspaceState = {
-  approval: EarsApprovalResponse | null;
-  approvalError: string | null;
-  artifactView: 'spec' | 'tests';
-  compileError: string | null;
-  compileResult: CompileSpecResponse | null;
-  generateError: string | null;
-  generateResult: GenerateTestsResponse | null;
-  jiraUpdateError: string | null;
-  jiraUpdateResult: JiraUpdateResponse | null;
-  pipelineError: string | null;
-  pipelineEvents: PipelineEvent[];
-  pipelineRunning: boolean;
-  pipelineSummary: PipelineEvent | null;
-};
 
 type WorkspaceVerificationConsoleProps = {
   activeSession: StartNegotiationResponse;
@@ -42,25 +27,6 @@ type WorkspaceVerificationConsoleProps = {
   onStateChange: Dispatch<SetStateAction<VerificationWorkspaceState>>;
 };
 
-export function buildInitialVerificationState(
-  session: StartNegotiationResponse | null,
-): VerificationWorkspaceState {
-  return {
-    approval: resolveSessionApproval(session),
-    approvalError: null,
-    artifactView: 'spec',
-    compileError: null,
-    compileResult: null,
-    generateError: null,
-    generateResult: null,
-    jiraUpdateError: null,
-    jiraUpdateResult: null,
-    pipelineError: null,
-    pipelineEvents: [],
-    pipelineRunning: false,
-    pipelineSummary: null,
-  };
-}
 
 export function WorkspaceVerificationConsole({
   activeSession,

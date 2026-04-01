@@ -1,0 +1,32 @@
+{
+  "assets": [
+    {
+      "label": "Workspace shell entry JS",
+      "manifestKey": "index.html",
+      "source": "file",
+      "maxBytes": 410000,
+      "maxGzipBytes": 125000
+    },
+    {
+      "label": "Workspace shell CSS",
+      "manifestKey": "index.html",
+      "source": "css.0",
+      "maxBytes": 32000,
+      "maxGzipBytes": 7000
+    },
+    {
+      "label": "Verification workspace chunk",
+      "manifestKey": "src/features/workspace/WorkspaceVerificationConsole.tsx",
+      "source": "file",
+      "maxBytes": 30000,
+      "maxGzipBytes": 10000
+    },
+    {
+      "label": "Analyst tools chunk",
+      "manifestKey": "src/features/workspace/WorkspaceInspectorAnalysisView.tsx",
+      "source": "file",
+      "maxBytes": 10000,
+      "maxGzipBytes": 4000
+    }
+  ]
+}

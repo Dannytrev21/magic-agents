@@ -6,14 +6,16 @@ Every arrow below represents a handoff between components. Each handoff has a de
 
 ## React Workspace Status
 
-- The React + TypeScript operator workspace now covers epics U1 through U7 of the UI port.
+- The React + TypeScript operator workspace now covers epics U1 through U8 of the UI port.
 - The right inspector exposes evidence, scan output, per-AC traceability, planner/critique tools, spec diff, and a structured spec contract viewer beside raw YAML.
 - The center pane now includes a verification console with backend-confirmed EARS approval, inline spec/test artifact viewers, live SSE pipeline events, and post-run Jira feedback controls.
 - The shared UI design system now ships from a typed token source mirrored into CSS variables, keeping graphite/bone surfaces, mono artifact treatment, and restrained glass chrome aligned across the shell, rails, and verification surfaces.
 - Workspace navigation and execution surfaces now announce session, phase, and pipeline changes through live regions while focus follows the active workspace flow after session start, phase advancement, and pipeline completion.
+- The verification workspace is now lazy-loaded behind the center-pane boundary, the analyst tool surface remains lazy-loaded in the inspector, and production builds emit a manifest-backed bundle budget report.
+- Frontend rollout is now reversible from FastAPI through `MAGIC_AGENTS_FRONTEND_MODE=auto|react|legacy`, with `/?frontend=react` and `/?frontend=legacy` available as per-request overrides while the legacy HTML entrypoint remains on disk.
 - The inspector consumes the current FastAPI routes directly: `/api/scan`, `/api/scan/status`, `/api/plan`, `/api/evaluate-phase`, `/api/spec-diff`, and `/api/compile`.
 - The verification console consumes `/api/ears-approve`, `/api/compile`, `/api/generate-tests`, `/api/pipeline/stream`, and `/api/jira/update`, and the backend now enforces approval before execution endpoints run.
-- UI verification currently runs through `npm test` and `npm run build` in [`/Users/dannytrevino/development/magic-agents/ui`](/Users/dannytrevino/development/magic-agents/ui).
+- UI verification now runs through `npm run test:ci` for Vitest + build + bundle budgets, with browser coverage authored under `npm run test:e2e` after `npm run test:e2e:install` in [`/Users/dannytrevino/development/magic-agents/ui`](/Users/dannytrevino/development/magic-agents/ui).
 
 ```
 ┌──────────┐     jira_ticket.yaml      ┌───────────────┐

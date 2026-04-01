@@ -95,17 +95,18 @@ describe('Workspace verification console', () => {
       { wrapper: createWrapper() },
     );
 
-    expect(screen.getByText(/ears approval required/i)).toBeInTheDocument();
+    expect(await screen.findByText(/ears approval required/i)).toBeInTheDocument();
 
-    const compileButton = screen.getByRole('button', { name: /compile spec/i });
-    const generateButton = screen.getByRole('button', { name: /generate tests/i });
-    const pipelineButton = screen.getByRole('button', { name: /run full pipeline/i });
+    const approveButton = await screen.findByRole('button', { name: /approve ears/i });
+    const compileButton = await screen.findByRole('button', { name: /compile spec/i });
+    const generateButton = await screen.findByRole('button', { name: /generate tests/i });
+    const pipelineButton = await screen.findByRole('button', { name: /run full pipeline/i });
 
     expect(compileButton).toBeDisabled();
     expect(generateButton).toBeDisabled();
     expect(pipelineButton).toBeDisabled();
 
-    await user.click(screen.getByRole('button', { name: /approve ears/i }));
+    await user.click(approveButton);
 
     await waitFor(() => {
       expect(api.approveEars).toHaveBeenCalledWith({
@@ -164,13 +165,13 @@ describe('Workspace verification console', () => {
       { wrapper: createWrapper() },
     );
 
-    await user.click(screen.getByRole('button', { name: /approve ears/i }));
+    await user.click(await screen.findByRole('button', { name: /approve ears/i }));
     await user.click(await screen.findByRole('button', { name: /compile spec/i }));
 
     expect(await screen.findByText(/specs\/MAG-601.yaml/i)).toBeInTheDocument();
     expect(screen.getByText(/REQ-001/i)).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /generate tests/i }));
+    await user.click(await screen.findByRole('button', { name: /generate tests/i }));
 
     expect(await screen.findByText(/tests\/test_mag_601.py/i)).toBeInTheDocument();
     expect(screen.getByText(/test_req_001_success/i)).toBeInTheDocument();
@@ -239,7 +240,7 @@ describe('Workspace verification console', () => {
       { wrapper: createWrapper() },
     );
 
-    await user.click(screen.getByRole('button', { name: /approve ears/i }));
+    await user.click(await screen.findByRole('button', { name: /approve ears/i }));
     await user.click(await screen.findByRole('button', { name: /run full pipeline/i }));
 
     const pipelineLog = await screen.findByRole('log', { name: /pipeline console/i });
@@ -318,7 +319,7 @@ describe('Workspace verification console', () => {
       { wrapper: createWrapper() },
     );
 
-    await user.click(screen.getByRole('button', { name: /approve ears/i }));
+    await user.click(await screen.findByRole('button', { name: /approve ears/i }));
     await user.click(await screen.findByRole('button', { name: /compile spec/i }));
     await user.click(await screen.findByRole('button', { name: /generate tests/i }));
 

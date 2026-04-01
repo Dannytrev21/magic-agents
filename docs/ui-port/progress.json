@@ -2,18 +2,18 @@
   "meta": {
     "project": "Magic Agents Operator Workspace UI port",
     "created": "2026-03-31",
-    "last_updated": "2026-04-01T15:15:44Z",
+    "last_updated": "2026-04-01T16:26:02Z",
     "total_epics": 8,
     "total_stories": 36
   },
   "summary": {
-    "epics_complete": 7,
+    "epics_complete": 8,
     "epics_in_progress": 0,
-    "epics_not_started": 1,
-    "stories_complete": 33,
+    "epics_not_started": 0,
+    "stories_complete": 36,
     "stories_in_progress": 0,
-    "stories_not_started": 3,
-    "stories_tested": 33
+    "stories_not_started": 0,
+    "stories_tested": 35
   },
   "epics": [
     {
@@ -117,11 +117,11 @@
       "title": "Quality, Performance, and Rollout",
       "file": "U08-quality-performance-rollout.md",
       "priority": 8,
-      "status": "not_started",
+      "status": "complete",
       "stories": [
-        { "id": "U8.1", "title": "Add component, integration, and contract tests for the new UI", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U8.2", "title": "Cover the operator journey with browser-level end-to-end tests", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U8.3", "title": "Ship performance budgets and a safe rollout path", "status": "not_started", "tested": false, "notes": "" }
+        { "id": "U8.1", "title": "Add component, integration, and contract tests for the new UI", "status": "complete", "tested": true, "notes": "Added direct rail coverage in SessionBootstrap, page-level integration coverage in OperatorWorkspace.integration.test.tsx, and expanded typed client contract coverage in client.test.ts so UI regressions fail at component, integration, and adapter layers." },
+        { "id": "U8.2", "title": "Cover the operator journey with browser-level end-to-end tests", "status": "complete", "tested": false, "notes": "Added deterministic Playwright coverage for manual-entry negotiation-to-pipeline and a mocked pipeline failure path with retained traces/screenshots. Local execution is still blocked in this automation sandbox because Chromium launch is denied by the current macOS permission envelope." },
+        { "id": "U8.3", "title": "Ship performance budgets and a safe rollout path", "status": "complete", "tested": true, "notes": "Lazy-loaded the verification workspace, added manifest-backed bundle budgets enforced by npm run test:budgets, and introduced FastAPI rollout controls via MAGIC_AGENTS_FRONTEND_MODE plus the frontend query parameter while keeping the legacy HTML entrypoint available." }
       ]
     }
   ]

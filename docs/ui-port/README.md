@@ -65,11 +65,11 @@
 
 ## Current Status
 
-- U1 through U7 are now complete in the React workspace.
+- U1 through U8 are now complete in the React workspace, with U8.2 browser coverage authored but blocked from local execution in this sandbox because Playwright Chromium cannot launch under the current macOS permission envelope.
 - The shell, rails, workspace, and verification console now consume a typed graphite/bone/signal design system mirrored into CSS tokens.
 - Workspace announcements, pane focus handoff, busy states, and the pipeline log now support keyboard and screen-reader operation without pointer-only assumptions.
 - Reduced-motion fallbacks and shared timing tokens now govern pane transitions, live console behavior, and responsive shell refinements.
-- The next delivery slice is Epic U8: quality, performance, and rollout.
+- The frontend now ships explicit quality gates: `npm run test:ci` for Vitest + build + bundle budgets, `npm run test:e2e` for deterministic mock-mode browser journeys, and a FastAPI rollout switch that can force either React or legacy HTML at request or process scope.
 
 ## Success Criteria
 

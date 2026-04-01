@@ -9,6 +9,11 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:ci": "npm run test:ui && npm run build && npm run test:budgets",
+    "test:ui": "vitest run",
+    "test:e2e": "PLAYWRIGHT_BROWSERS_PATH=.playwright/browser-cache playwright test",
+    "test:e2e:install": "PLAYWRIGHT_BROWSERS_PATH=.playwright/browser-cache playwright install chromium",
+    "test:budgets": "node ./scripts/check-bundle-budgets.mjs",
     "test:watch": "vitest"
   },
   "dependencies": {
@@ -27,6 +32,7 @@
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-react": "^5.0.4",
+    "@playwright/test": "^1.56.1",
     "eslint": "^9.37.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.23",
