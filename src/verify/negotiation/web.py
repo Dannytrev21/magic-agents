@@ -49,6 +49,29 @@ PHASE_SKILLS = [
 
 
 # ------------------------------------------------------------------
+# Explore endpoint
+# ------------------------------------------------------------------
+
+
+@app.post("/api/explore")
+async def explore_endpoint(request: Request):
+    """Run codebase exploration on a given path."""
+    from verify.explorer.agent import explore
+
+    body = await request.json()
+    path = body.get("path")
+    if not path:
+        return JSONResponse({"error": "path is required"}, status_code=400)
+
+    from pathlib import Path as _Path
+    if not _Path(path).exists():
+        return JSONResponse({"error": f"path not found: {path}"}, status_code=400)
+
+    result = explore(path)
+    return JSONResponse(result.to_dict())
+
+
+# ------------------------------------------------------------------
 # Pages
 # ------------------------------------------------------------------
 
