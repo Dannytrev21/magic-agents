@@ -2,7 +2,7 @@
   "meta": {
     "project": "Magic Agents Operator Workspace UI port",
     "created": "2026-03-31",
-    "last_updated": "2026-04-01T16:26:02Z",
+    "last_updated": "2026-04-01T17:06:46Z",
     "total_epics": 8,
     "total_stories": 36
   },
@@ -120,7 +120,7 @@
       "status": "complete",
       "stories": [
         { "id": "U8.1", "title": "Add component, integration, and contract tests for the new UI", "status": "complete", "tested": true, "notes": "Added direct rail coverage in SessionBootstrap, page-level integration coverage in OperatorWorkspace.integration.test.tsx, and expanded typed client contract coverage in client.test.ts so UI regressions fail at component, integration, and adapter layers." },
-        { "id": "U8.2", "title": "Cover the operator journey with browser-level end-to-end tests", "status": "complete", "tested": false, "notes": "Added deterministic Playwright coverage for manual-entry negotiation-to-pipeline and a mocked pipeline failure path with retained traces/screenshots. Local execution is still blocked in this automation sandbox because Chromium launch is denied by the current macOS permission envelope." },
+        { "id": "U8.2", "title": "Cover the operator journey with browser-level end-to-end tests", "status": "complete", "tested": false, "notes": "Added deterministic Playwright coverage for manual-entry negotiation-to-pipeline and a mocked pipeline failure path with retained traces/screenshots. A 2026-04-01 clean-worktree re-run still fails before page load in this restricted macOS sandbox even after local browser install; Chromium aborts with a Mach bootstrap permission error (`bootstrap_check_in ... Permission denied (1100)`)." },
         { "id": "U8.3", "title": "Ship performance budgets and a safe rollout path", "status": "complete", "tested": true, "notes": "Lazy-loaded the verification workspace, added manifest-backed bundle budgets enforced by npm run test:budgets, and introduced FastAPI rollout controls via MAGIC_AGENTS_FRONTEND_MODE plus the frontend query parameter while keeping the legacy HTML entrypoint available." }
       ]
     }

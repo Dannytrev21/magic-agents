@@ -29,6 +29,6 @@ Add bundle budgets as part of the shipped contract by generating a Vite manifest
 
 ### Tradeoffs
 
-- The browser suite now depends on a local Playwright browser install and can still be blocked by platform sandbox restrictions even when the tests themselves are valid.
+- The browser suite now depends on a local Playwright browser install and can still be blocked by platform sandbox restrictions even when the tests themselves are valid. A 2026-04-01 clean-worktree re-run still hit a macOS Mach bootstrap permission failure before Chromium could open the first page.
 - The backend root handler now carries a small amount of rollout logic in addition to asset resolution.
 - Build output includes a Vite manifest and another verification script that contributors need to keep aligned with future code-splitting changes.
