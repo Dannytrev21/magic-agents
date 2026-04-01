@@ -7,13 +7,13 @@
     "total_stories": 36
   },
   "summary": {
-    "epics_complete": 3,
+    "epics_complete": 4,
     "epics_in_progress": 0,
-    "epics_not_started": 5,
-    "stories_complete": 16,
+    "epics_not_started": 4,
+    "stories_complete": 21,
     "stories_in_progress": 0,
-    "stories_not_started": 20,
-    "stories_tested": 16
+    "stories_not_started": 15,
+    "stories_tested": 21
   },
   "epics": [
     {
@@ -64,13 +64,13 @@
       "title": "Active Phase Workspace and Negotiation Loop",
       "file": "U04-active-phase-negotiation.md",
       "priority": 4,
-      "status": "not_started",
+      "status": "complete",
       "stories": [
-        { "id": "U4.1", "title": "Render each phase as a structured review surface", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U4.2", "title": "Add inline approve and revise actions", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U4.3", "title": "Surface clarifying questions and phase transitions cleanly", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U4.4", "title": "Render the conversation transcript for the active phase", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U4.5", "title": "Add a sticky phase mini-rail and breadcrumb context", "status": "not_started", "tested": false, "notes": "" }
+        { "id": "U4.1", "title": "Render each phase as a structured review surface", "status": "complete", "tested": true, "notes": "Added phase-aware review formatters and summary-first renderers for all seven negotiation phases with raw-payload fallback details instead of generic JSON dumping." },
+        { "id": "U4.2", "title": "Add inline approve and revise actions", "status": "complete", "tested": true, "notes": "Connected inline approve/revise controls to `/api/respond`, kept feedback in the center pane, and surfaced loading, success, and error state beside the action row." },
+        { "id": "U4.3", "title": "Surface clarifying questions and phase transitions cleanly", "status": "complete", "tested": true, "notes": "Rendered clarifying questions as a distinct review region and kept phase advancement in-place with transition-backed session updates and prior phase access through the mini-rail." },
+        { "id": "U4.4", "title": "Render the conversation transcript for the active phase", "status": "complete", "tested": true, "notes": "Added a role-aware transcript with system/operator/model distinction, bottom-pin auto-scroll, and pause-on-scroll-up behavior driven from session events and negotiation history." },
+        { "id": "U4.5", "title": "Add a sticky phase mini-rail and breadcrumb context", "status": "complete", "tested": true, "notes": "Upgraded the sticky center rail into a breadcrumbed mini-navigation spine with completed-phase reopening, numeric quick jumps, and input-focus suppression for shortcuts." }
       ]
     },
     {

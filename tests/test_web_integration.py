@@ -69,6 +69,32 @@ class TestStartNegotiation:
         assert data["phase_number"] == 1
         assert data["total_phases"] == 7
 
+    def test_start_returns_structured_phase_payload_for_workspace(self, client):
+        response = client.post("/api/start", json={
+            "jira_key": "SURFACE-001",
+            "jira_summary": "Workspace review surface",
+            "acceptance_criteria": [
+                {"index": 0, "text": "Operator can review typed phase output", "checked": False},
+            ],
+        })
+        data = response.json()
+
+        assert response.status_code == 200
+        assert data["classifications"] == data["results"]
+        assert isinstance(data["questions"], list)
+        assert data["postconditions"] == []
+        assert data["preconditions"] == []
+        assert data["failure_modes"] == []
+        assert data["invariants"] == []
+        assert data["verification_routing"] == {}
+        assert data["ears_statements"] == []
+        assert data["traceability_map"] == {}
+        assert len(data["negotiation_log"]) >= 1
+        assert data["negotiation_log"][-1]["role"] == "ai"
+        assert len(data["session_events"]) >= 1
+        assert data["session_events"][0]["title"] == "session_created"
+        assert "timestamp" in data["session_events"][0]
+
     def test_start_with_constitution(self, client):
         response = client.post("/api/start", json={
             "jira_key": "CONST-001",
@@ -118,6 +144,24 @@ class TestNegotiationFlow:
         assert response.status_code == 200
         assert data.get("revised") is True
         assert data["phase_number"] == 1  # Still on phase 1
+
+    def test_approve_keeps_transcript_and_phase_context_in_place(self, client):
+        client.post("/api/start", json={
+            "jira_key": "ADV-CTX-001",
+            "jira_summary": "Advance with transcript",
+            "acceptance_criteria": [
+                {"index": 0, "text": "Operator can approve the active phase", "checked": False},
+            ],
+        })
+
+        response = client.post("/api/respond", json={"input": "approve"})
+        data = response.json()
+
+        assert response.status_code == 200
+        assert data["phase_number"] == 2
+        assert len(data["postconditions"]) >= 1
+        assert any(entry["role"] == "human" for entry in data["negotiation_log"])
+        assert any(entry["role"] == "ai" for entry in data["negotiation_log"])
 
     def test_full_negotiation_produces_summary(self, negotiated_session):
         data = negotiated_session

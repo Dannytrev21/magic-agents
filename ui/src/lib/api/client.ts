@@ -72,6 +72,10 @@ export function resumeSession(jiraKey: string) {
   return requestJson<StartNegotiationResponse>(`/api/session/${jiraKey}/resume`, jsonRequest({}));
 }
 
+export function respondToSession(payload: { input: string; session_id: string }) {
+  return requestJson<StartNegotiationResponse>('/api/respond', jsonRequest(payload));
+}
+
 export function startNegotiation(payload: StartNegotiationRequest) {
   return requestJson<StartNegotiationResponse>('/api/start', jsonRequest(payload));
 }

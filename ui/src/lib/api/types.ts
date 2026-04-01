@@ -53,6 +53,90 @@ export type AcceptanceCriterionClassification = {
   [key: string]: unknown;
 };
 
+export type PostconditionResult = {
+  ac_index: number;
+  constraints?: string[];
+  content_type?: string;
+  forbidden_fields?: string[];
+  schema?: Record<string, unknown>;
+  status?: number;
+  [key: string]: unknown;
+};
+
+export type PreconditionResult = {
+  category?: string;
+  description?: string;
+  formal?: string;
+  id: string;
+  [key: string]: unknown;
+};
+
+export type FailureModeResult = {
+  body?: Record<string, unknown>;
+  description?: string;
+  id: string;
+  status?: number;
+  violates?: string;
+  [key: string]: unknown;
+};
+
+export type InvariantResult = {
+  id: string;
+  rule?: string;
+  source?: string;
+  type?: string;
+  [key: string]: unknown;
+};
+
+export type RoutingChecklistItem = {
+  category?: string;
+  detail?: string;
+  status?: string;
+  [key: string]: unknown;
+};
+
+export type RoutingResult = {
+  refs?: string[];
+  req_id?: string;
+  skill?: string;
+  [key: string]: unknown;
+};
+
+export type VerificationRoutingResult = {
+  checklist?: RoutingChecklistItem[];
+  questions?: string[];
+  routing?: RoutingResult[];
+  [key: string]: unknown;
+};
+
+export type EarsStatementResult = {
+  id: string;
+  pattern?: string;
+  statement?: string;
+  traces_to?: string;
+  [key: string]: unknown;
+};
+
+export type TraceabilityMap = {
+  [key: string]: unknown;
+  ac_mappings?: Array<Record<string, unknown>>;
+};
+
+export type NegotiationLogEntry = {
+  content: string;
+  phase?: string;
+  role: string;
+  timestamp?: string;
+  [key: string]: unknown;
+};
+
+export type SessionEvent = {
+  detail: string;
+  title: string;
+  timestamp?: string;
+  data?: Record<string, unknown>;
+};
+
 export type AcceptanceCriterionVerdict = {
   ac_checkbox?: number;
   ac_index?: number;
@@ -78,17 +162,29 @@ export type StartNegotiationResponse = {
   classifications?: AcceptanceCriterionClassification[];
   current_phase?: string;
   done: boolean;
+  ears_statements?: EarsStatementResult[];
+  failure_modes?: FailureModeResult[];
+  invariants?: InvariantResult[];
   jira_key: string;
   jira_summary?: string;
   log_entries?: number;
+  negotiation_log?: NegotiationLogEntry[];
   phase_number: number;
   phase_title: string;
+  postconditions?: PostconditionResult[];
+  preconditions?: PreconditionResult[];
+  questions?: string[];
+  results?: unknown;
   revised?: boolean;
   resumed?: boolean;
   session_id: string;
+  session_events?: SessionEvent[];
+  summary?: Record<string, unknown>;
   total_phases: number;
+  traceability_map?: TraceabilityMap;
   usage?: SessionUsageSummary | null;
   verdicts?: AcceptanceCriterionVerdict[];
+  verification_routing?: VerificationRoutingResult;
 };
 
 export type SessionCheckpointSummary = {

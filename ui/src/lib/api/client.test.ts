@@ -3,6 +3,7 @@ import {
   fetchJiraConfigured,
   fetchJiraStories,
   fetchJiraTicket,
+  respondToSession,
   fetchSessionInfo,
   startNegotiation,
 } from '@/lib/api/client';
@@ -104,6 +105,51 @@ describe('API client', () => {
       has_checkpoint: true,
       session: { jira_key: 'MAG-10' },
     });
+  });
+
+  it('posts approve and revise responses through a typed session helper', async () => {
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          done: false,
+          jira_key: 'MAG-10',
+          phase_number: 2,
+          phase_title: 'Happy Path Contract',
+          session_id: 'session-1',
+          total_phases: 7,
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      respondToSession({
+        input: 'approve',
+        session_id: 'session-1',
+      }),
+    ).resolves.toEqual({
+      done: false,
+      jira_key: 'MAG-10',
+      phase_number: 2,
+      phase_title: 'Happy Path Contract',
+      session_id: 'session-1',
+      total_phases: 7,
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/respond',
+      expect.objectContaining({
+        body: JSON.stringify({
+          input: 'approve',
+          session_id: 'session-1',
+        }),
+        headers: expect.objectContaining({ 'Content-Type': 'application/json' }),
+        method: 'POST',
+      }),
+    );
   });
 });
 

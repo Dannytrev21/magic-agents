@@ -364,7 +364,7 @@ def _run_current_phase(state: SessionState):
     state.harness.add_to_log(
         state.harness.current_phase,
         "ai",
-        f"{title}: produced {_result_count(results)} items",
+        _build_phase_log_message(title, results),
     )
 
     return JSONResponse(
@@ -388,7 +388,7 @@ def _rerun_current_phase(state: SessionState, feedback: str):
     state.harness.add_to_log(
         state.harness.current_phase,
         "ai",
-        f"{title} (revised): produced {_result_count(results)} items",
+        _build_phase_log_message(title, results, revised=True),
     )
 
     return JSONResponse(
@@ -457,15 +457,24 @@ def _build_session_payload(
         "classifications": ctx.classifications,
         "current_phase": ctx.current_phase,
         "done": done,
+        "ears_statements": ctx.ears_statements,
+        "failure_modes": ctx.failure_modes,
+        "invariants": ctx.invariants,
         "jira_key": ctx.jira_key,
         "jira_summary": ctx.jira_summary,
         "log_entries": len(ctx.negotiation_log),
+        "negotiation_log": ctx.negotiation_log,
         "phase_number": resolved_phase_number,
         "phase_title": phase_title or _phase_title_for_number(resolved_phase_number),
+        "postconditions": ctx.postconditions,
+        "preconditions": ctx.preconditions,
         "session_id": state.session_id,
+        "session_events": state.history,
         "total_phases": len(PHASE_SKILLS),
+        "traceability_map": ctx.traceability_map,
         "usage": ctx.usage or None,
         "verdicts": ctx.verdicts,
+        "verification_routing": ctx.verification_routing,
     }
     if questions is not None:
         payload["questions"] = questions
@@ -515,6 +524,25 @@ def _result_count(results: Any) -> int:
     if hasattr(results, "__len__"):
         return len(results)
     return 1
+
+
+def _build_phase_log_message(title: str, results: Any, revised: bool = False) -> str:
+    count = _result_count(results)
+    if isinstance(results, dict):
+        if "routing" in results:
+            message = f"{title}: routed {len(results.get('routing', []))} requirement groups"
+        elif "checklist" in results:
+            message = f"{title}: assessed {len(results.get('checklist', []))} completeness checks"
+        else:
+            message = f"{title}: updated the structured phase payload"
+    elif count == 1:
+        message = f"{title}: produced 1 structured item"
+    else:
+        message = f"{title}: produced {count} structured items"
+
+    if revised:
+        return f"{message} after operator feedback"
+    return message
 
 
 def _build_summary(ctx: VerificationContext) -> dict:
