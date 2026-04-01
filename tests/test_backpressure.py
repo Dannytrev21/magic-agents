@@ -418,8 +418,8 @@ class TestLLMClientIntegration:
         # Cleanup
         del os.environ["LLM_MOCK"]
 
-    def test_llm_client_mock_calls_dont_track(self):
-        """Mock calls should not record usage (since they don't use real tokens)."""
+    def test_mock_mode_tracks_calls_with_zero_tokens(self):
+        """Mock calls should still record via record_api_call(0, 0) per spec invariant."""
         controller = BackPressureController()
 
         os.environ["LLM_MOCK"] = "true"
@@ -431,11 +431,44 @@ class TestLLMClientIntegration:
             user_message="test",
         )
 
-        # Token count should still be 0 (mock doesn't record)
+        # api_calls should be incremented, tokens stay 0
+        assert controller.api_calls == 1
         assert controller.tokens_used == 0
-        assert controller.api_calls == 0
 
         # Cleanup
+        del os.environ["LLM_MOCK"]
+
+    def test_mock_mode_chat_multi_tracks_calls(self):
+        """Mock chat_multi calls should also record via record_api_call(0, 0)."""
+        controller = BackPressureController()
+
+        os.environ["LLM_MOCK"] = "true"
+        client = LLMClient(backpressure=controller)
+
+        result = client.chat_multi(
+            system_prompt="classify acceptance criteria",
+            messages=[{"role": "user", "content": "test"}],
+        )
+
+        assert controller.api_calls == 1
+        assert controller.tokens_used == 0
+
+        del os.environ["LLM_MOCK"]
+
+    def test_mock_mode_budget_exceeded_after_mock_calls(self):
+        """Mock calls should count toward budget limits."""
+        controller = BackPressureController(max_api_calls=2)
+
+        os.environ["LLM_MOCK"] = "true"
+        client = LLMClient(backpressure=controller)
+
+        client.chat(system_prompt="classify acceptance criteria", user_message="t1")
+        client.chat(system_prompt="classify acceptance criteria", user_message="t2")
+
+        # Third mock call should be blocked by backpressure
+        with pytest.raises(RuntimeError, match="Backpressure limits exceeded"):
+            client.chat(system_prompt="classify acceptance criteria", user_message="t3")
+
         del os.environ["LLM_MOCK"]
 
     def test_backpressure_raises_sensible_error(self):
