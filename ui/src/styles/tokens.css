@@ -1,0 +1,50 @@
+:root {
+  color-scheme: dark;
+
+  --color-canvas: #0b1020;
+  --color-surface: #10182d;
+  --color-surface-strong: #16213d;
+  --color-surface-muted: #0f1730;
+  --color-border: rgba(164, 180, 214, 0.22);
+  --color-border-strong: rgba(164, 180, 214, 0.38);
+  --color-text: #edf2ff;
+  --color-text-muted: #9fb0d5;
+  --color-text-subtle: #7b8eb4;
+  --color-signal: #79e7c4;
+  --color-signal-muted: rgba(121, 231, 196, 0.18);
+  --color-warning: #ffcf7b;
+  --color-danger: #ff8f8f;
+  --color-info: #8dc7ff;
+
+  --shadow-ambient: 0 20px 60px rgba(5, 8, 18, 0.32);
+  --shadow-focus: 0 0 0 3px rgba(121, 231, 196, 0.18);
+
+  --font-sans: "IBM Plex Sans", "Avenir Next", "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-md: 1rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 1.75rem;
+
+  --line-tight: 1.2;
+  --line-copy: 1.55;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+
+  --radius-sm: 0.625rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.5rem;
+  --radius-pill: 999px;
+
+  --motion-quick: 140ms;
+  --motion-standard: 220ms;
+  --motion-slow: 320ms;
+}

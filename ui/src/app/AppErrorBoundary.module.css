@@ -1,0 +1,26 @@
+.fallback {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: var(--space-6);
+}
+
+.panel {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 34rem;
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-size-xl);
+}
+
+.message {
+  margin: 0;
+  color: var(--color-text-muted);
+}

@@ -2,9 +2,10 @@
 
 import os
 from pathlib import Path
+from uuid import uuid4
 
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from verify.context import VerificationContext
@@ -24,6 +25,7 @@ from verify.pipeline import update_jira
 app = FastAPI(title="Negotiation UI")
 
 STATIC_DIR = Path(__file__).parent.parent.parent.parent / "static"
+UI_DIST_DIR = Path(__file__).parent.parent.parent.parent / "ui" / "dist"
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 # In-memory session (single-user localhost)
@@ -44,7 +46,16 @@ PHASE_SKILLS = [
 
 @app.get("/", response_class=HTMLResponse)
 async def index():
-    return (STATIC_DIR / "index.html").read_text()
+    return HTMLResponse(_frontend_index_path().read_text())
+
+
+@app.get("/assets/{asset_path:path}")
+async def frontend_asset(asset_path: str):
+    asset_file = UI_DIST_DIR / "assets" / asset_path
+    if not asset_file.exists():
+        raise HTTPException(status_code=404, detail="Frontend asset not found")
+
+    return FileResponse(asset_file)
 
 
 # ------------------------------------------------------------------
@@ -102,6 +113,7 @@ async def jira_ticket(jira_key: str):
 @app.post("/api/start")
 async def start_negotiation(request: Request):
     body = await request.json()
+    session_id = body.get("session_id") or f"session-{uuid4().hex[:8]}"
     ctx = VerificationContext(
         jira_key=body.get("jira_key", "DEMO-001"),
         jira_summary=body.get("jira_summary", "User Profile Endpoint"),
@@ -120,6 +132,7 @@ async def start_negotiation(request: Request):
     _session["llm"] = llm
     _session["harness"] = harness
     _session["phase_idx"] = 0
+    _session["session_id"] = session_id
 
     return _run_current_phase()
 
@@ -131,6 +144,8 @@ async def respond(request: Request):
 
     if "harness" not in _session:
         return JSONResponse({"error": "No active session"}, status_code=400)
+    if body.get("session_id") and body["session_id"] != _session.get("session_id"):
+        return JSONResponse({"error": "Unknown session"}, status_code=400)
 
     harness: NegotiationHarness = _session["harness"]
     ctx: VerificationContext = _session["ctx"]
@@ -151,6 +166,7 @@ async def respond(request: Request):
         run_synthesis(ctx)
         return JSONResponse({
             "done": True,
+            "session_id": _current_session_id(),
             "phase_number": len(PHASE_SKILLS),
             "total_phases": len(PHASE_SKILLS),
             "summary": _build_summary(ctx),
@@ -165,10 +181,13 @@ async def respond(request: Request):
 
 
 @app.post("/api/compile")
-async def compile_spec_endpoint():
+async def compile_spec_endpoint(request: Request):
     """Compile the negotiated context into a YAML spec file."""
     if "ctx" not in _session:
         return JSONResponse({"error": "No active session"}, status_code=400)
+    body = await _json_body(request)
+    if body.get("session_id") and body["session_id"] != _current_session_id():
+        return JSONResponse({"error": "Unknown session"}, status_code=400)
 
     ctx: VerificationContext = _session["ctx"]
     try:
@@ -176,6 +195,7 @@ async def compile_spec_endpoint():
         with open(spec_path) as f:
             spec_content = f.read()
         return JSONResponse({
+            "session_id": _current_session_id(),
             "spec_path": spec_path,
             "spec_content": spec_content,
         })
@@ -184,10 +204,13 @@ async def compile_spec_endpoint():
 
 
 @app.post("/api/generate-tests")
-async def generate_tests_endpoint():
+async def generate_tests_endpoint(request: Request):
     """Generate tests from the compiled spec, run them, and evaluate."""
     if "ctx" not in _session:
         return JSONResponse({"error": "No active session"}, status_code=400)
+    body = await _json_body(request)
+    if body.get("session_id") and body["session_id"] != _current_session_id():
+        return JSONResponse({"error": "Unknown session"}, status_code=400)
 
     ctx: VerificationContext = _session["ctx"]
     if not ctx.spec_path:
@@ -216,6 +239,7 @@ async def generate_tests_endpoint():
         _session["verdicts"] = verdicts
 
         return JSONResponse({
+            "session_id": _current_session_id(),
             "steps": steps,
             "test_path": test_path,
             "test_content": test_content,
@@ -233,10 +257,13 @@ async def generate_tests_endpoint():
 
 
 @app.post("/api/jira/update")
-async def jira_update():
+async def jira_update(request: Request):
     """Update Jira ticket with verdicts — tick checkboxes and post evidence."""
     if "ctx" not in _session:
         return JSONResponse({"error": "No active session"}, status_code=400)
+    body = await _json_body(request)
+    if body.get("session_id") and body["session_id"] != _current_session_id():
+        return JSONResponse({"error": "Unknown session"}, status_code=400)
 
     ctx: VerificationContext = _session["ctx"]
     verdicts = _session.get("verdicts")
@@ -251,6 +278,7 @@ async def jira_update():
         passed_count = sum(1 for v in verdicts if v["passed"])
         return JSONResponse({
             "status": "ok",
+            "session_id": _current_session_id(),
             "jira_key": ctx.jira_key,
             "checkboxes_ticked": passed_count,
             "evidence_posted": True,
@@ -282,6 +310,7 @@ def _run_current_phase():
 
     return JSONResponse({
         "done": False,
+        "session_id": _current_session_id(),
         "phase_title": title,
         "phase_number": phase_idx + 1,
         "total_phases": len(PHASE_SKILLS),
@@ -310,6 +339,7 @@ def _rerun_current_phase(feedback: str):
 
     return JSONResponse({
         "done": False,
+        "session_id": _current_session_id(),
         "phase_title": title + " (revised)",
         "phase_number": phase_idx + 1,
         "total_phases": len(PHASE_SKILLS),
@@ -375,3 +405,23 @@ def _build_summary(ctx: VerificationContext) -> dict:
             "ears": len(ctx.ears_statements),
         },
     }
+
+
+def _frontend_index_path() -> Path:
+    built_index = UI_DIST_DIR / "index.html"
+    if built_index.exists():
+        return built_index
+
+    return STATIC_DIR / "index.html"
+
+
+def _current_session_id() -> str | None:
+    return _session.get("session_id")
+
+
+async def _json_body(request: Request) -> dict:
+    raw_body = await request.body()
+    if not raw_body:
+        return {}
+
+    return await request.json()

@@ -1,0 +1,6 @@
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-info);
+  word-break: break-word;
+}

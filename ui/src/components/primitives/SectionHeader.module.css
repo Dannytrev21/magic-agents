@@ -1,0 +1,22 @@
+.header {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.eyebrow {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-subtle);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  line-height: var(--line-tight);
+}
+
+.description {
+  margin: 0;
+  color: var(--color-text-muted);
+}

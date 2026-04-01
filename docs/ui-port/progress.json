@@ -1,0 +1,128 @@
+{
+  "meta": {
+    "project": "Magic Agents Operator Workspace UI port",
+    "created": "2026-03-31",
+    "last_updated": "2026-04-01T04:32:56Z",
+    "total_epics": 8,
+    "total_stories": 36
+  },
+  "summary": {
+    "epics_complete": 0,
+    "epics_in_progress": 1,
+    "epics_not_started": 7,
+    "stories_complete": 0,
+    "stories_in_progress": 5,
+    "stories_not_started": 31,
+    "stories_tested": 0
+  },
+  "epics": [
+    {
+      "id": "U1",
+      "title": "Frontend Foundation and App Shell",
+      "file": "U01-frontend-foundation.md",
+      "priority": 1,
+      "status": "in_progress",
+      "stories": [
+        { "id": "U1.1", "title": "Scaffold the React + TypeScript + Vite frontend", "status": "in_progress", "tested": false, "notes": "Created a new ui/ React + TypeScript + Vite workspace with lint, prettier, Vitest config, Vite API proxy, and FastAPI support for serving ui/dist assets when built. Backend contract tests pass; npm install/build is blocked in this environment." },
+        { "id": "U1.2", "title": "Establish a typed API client and query layer", "status": "in_progress", "tested": false, "notes": "Added a typed workspace API contract, JSON request helper, SSE adapter, query keys, and TanStack Query hooks for Jira intake and session start flows." },
+        { "id": "U1.3", "title": "Build the application shell and provider stack", "status": "in_progress", "tested": false, "notes": "Added AppProviders, ThemeProvider, router wiring, AppErrorBoundary, NotFoundView, AppShell, and a placeholder three-pane workspace route." },
+        { "id": "U1.4", "title": "Establish the tokenized visual system and typography rules", "status": "in_progress", "tested": false, "notes": "Added centralized CSS tokens for color, spacing, typography, radius, and motion plus global base styles that reserve mono typography for refs and code-like content." },
+        { "id": "U1.5", "title": "Build accessible UI primitives for the workspace", "status": "in_progress", "tested": false, "notes": "Added reusable Button, Badge, Text, MonoText, Divider, SectionHeader, Skeleton, EmptyState, Rail, WorkspaceSection, and ArtifactPanel primitives for the new shell." }
+      ]
+    },
+    {
+      "id": "U2",
+      "title": "Operator Workspace Layout",
+      "file": "U02-operator-workspace-layout.md",
+      "priority": 2,
+      "status": "not_started",
+      "stories": [
+        { "id": "U2.1", "title": "Implement the three-pane workspace layout", "status": "not_started", "tested": false, "notes": "" },
+        { "id": "U2.2", "title": "Add the sticky phase rail and session status strip", "status": "not_started", "tested": false, "notes": "" },
+        { "id": "U2.3", "title": "Replace screen jumps with panel state transitions", "status": "not_started", "tested": false, "notes": "" },
+        { "id": "U2.4", "title": "Add a top bar with session context and workspace controls", "status": "not_started", "tested": false, "notes": "" },
+        { "id": "U2.5", "title": "Support panel collapse, persistence, and responsive fallbacks", "status": "not_started", "tested": false, "notes": "" }
+      ]
+    },
+    {
+      "id": "U3",
+      "title": "Story Intake and Session Lifecycle",
+      "file": "U03-story-intake-session-lifecycle.md",
+      "priority": 3,
+      "status": "not_started",
+      "stories": [
+        { "id": "U3.1", "title": "Unify Jira intake and manual entry in the left rail", "status": "not_started", "tested": false, "notes": "" },
+        { "id": "U3.2", "title": "Start, resume, and recover sessions from checkpoints", "status": "not_started", "tested": false, "notes": "" },
+        { "id": "U3.3", "title": "Model session state in React without UI drift", "status": "not_started", "tested": false, "notes": "" },
+        { "id": "U3.4", "title": "Render a phase-aware acceptance criteria checklist", "status": "not_started", "tested": false, "notes": "" },
+        { "id": "U3.5", "title": "Display a left-rail phase progress timeline", "status": "not_started", "tested": false, "notes": "" },
+        { "id": "U3.6", "title": "Surface session health and usage telemetry", "status": "not_started", "tested": false, "notes": "" }
+      ]
+    },
+    {
+      "id": "U4",
+      "title": "Active Phase Workspace and Negotiation Loop",
+      "file": "U04-active-phase-negotiation.md",
+      "priority": 4,
+      "status": "not_started",
+      "stories": [
+        { "id": "U4.1", "title": "Render each phase as a structured review surface", "status": "not_started", "tested": false, "notes": "" },
+        { "id": "U4.2", "title": "Add inline approve and revise actions", "status": "not_started", "tested": false, "notes": "" },
+        { "id": "U4.3", "title": "Surface clarifying questions and phase transitions cleanly", "status": "not_started", "tested": false, "notes": "" },
+        { "id": "U4.4", "title": "Render the conversation transcript for the active phase", "status": "not_started", "tested": false, "notes": "" },
+        { "id": "U4.5", "title": "Add a sticky phase mini-rail and breadcrumb context", "status": "not_started", "tested": false, "notes": "" }
+      ]
+    },
+    {
+      "id": "U5",
+      "title": "Inspector, Evidence, and Traceability",
+      "file": "U05-inspector-evidence-traceability.md",
+      "priority": 5,
+      "status": "not_started",
+      "stories": [
+        { "id": "U5.1", "title": "Build a tabbed inspector for evidence surfaces", "status": "not_started", "tested": false, "notes": "" },
+        { "id": "U5.2", "title": "Integrate codebase scan output into the inspector", "status": "not_started", "tested": false, "notes": "" },
+        { "id": "U5.3", "title": "Render per-AC traceability as linked evidence", "status": "not_started", "tested": false, "notes": "" },
+        { "id": "U5.4", "title": "Expose planner, critique, and spec diff as analyst tools", "status": "not_started", "tested": false, "notes": "" },
+        { "id": "U5.5", "title": "Add a spec contract viewer in the inspector", "status": "not_started", "tested": false, "notes": "" }
+      ]
+    },
+    {
+      "id": "U6",
+      "title": "Verification Console and Pipeline Execution",
+      "file": "U06-verification-console-pipeline.md",
+      "priority": 6,
+      "status": "not_started",
+      "stories": [
+        { "id": "U6.1", "title": "Integrate the EARS approval gate and execution controls", "status": "not_started", "tested": false, "notes": "" },
+        { "id": "U6.2", "title": "Add artifact viewers for specs and generated tests", "status": "not_started", "tested": false, "notes": "" },
+        { "id": "U6.3", "title": "Stream pipeline execution as a live console", "status": "not_started", "tested": false, "notes": "" },
+        { "id": "U6.4", "title": "Present verdicts and Jira feedback in one post-run surface", "status": "not_started", "tested": false, "notes": "" }
+      ]
+    },
+    {
+      "id": "U7",
+      "title": "Design System, Accessibility, and Motion",
+      "file": "U07-design-system-accessibility-motion.md",
+      "priority": 7,
+      "status": "not_started",
+      "stories": [
+        { "id": "U7.1", "title": "Establish the visual system and typography rules", "status": "not_started", "tested": false, "notes": "" },
+        { "id": "U7.2", "title": "Make the workspace accessible for keyboard and screen-reader users", "status": "not_started", "tested": false, "notes": "" },
+        { "id": "U7.3", "title": "Add restrained motion and responsive refinement", "status": "not_started", "tested": false, "notes": "" }
+      ]
+    },
+    {
+      "id": "U8",
+      "title": "Quality, Performance, and Rollout",
+      "file": "U08-quality-performance-rollout.md",
+      "priority": 8,
+      "status": "not_started",
+      "stories": [
+        { "id": "U8.1", "title": "Add component, integration, and contract tests for the new UI", "status": "not_started", "tested": false, "notes": "" },
+        { "id": "U8.2", "title": "Cover the operator journey with browser-level end-to-end tests", "status": "not_started", "tested": false, "notes": "" },
+        { "id": "U8.3", "title": "Ship performance budgets and a safe rollout path", "status": "not_started", "tested": false, "notes": "" }
+      ]
+    }
+  ]
+}

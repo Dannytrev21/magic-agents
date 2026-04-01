@@ -24,6 +24,9 @@ build/
 .pytest_cache/
 .coverage
 htmlcov/
+node_modules/
+ui/node_modules/
+ui/coverage/
 
 # Verification results (generated, not committed)
 .verify/generated/
