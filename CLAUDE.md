@@ -54,6 +54,8 @@ pytest --cov=src tests/                   # with coverage
 - **`permissions.py`** — Permission & access control: `ToolPermissionContext` (frozen dataclass with deny rules), `PermissionDenial` (denial event), skill filtering, and constitution-driven defaults. Ported from claw-code P05.
 - **`runtime.py`** — `NegotiationEvent` enum (closed set of SSE event types), `EVENT_SCHEMAS` (payload field contracts per type), `RuntimeEvent` (validates type against enum + legacy types, emits typed SSE with `event:` prefix). `SessionState` includes `event_buffer` for SSE streaming, `backpressure` (`BackPressureController`), and `phase_cost_reports` (`list[PhaseCostReport]`) for P7 cost accounting.
 - **`bootstrap.py`** — `BootstrapGraph` with `BootstrapStage`, topological sort, failure propagation, and `BootstrapReport`. `build_bootstrap_graph()` returns the default magic-agents startup graph. Ported from claw-code P08.
+- **`hooks.py`** — `HookRegistry` with `HookEvent`, lifecycle point validation, ordered multi-hook execution with isolated failure, and `from_constitution()` for shell-command hooks with env vars. Ported from claw-code P09.
+- **`mcp_server.py`** — `MCPServer` exposing 5 MCP tools and spec/session resources. Transport-agnostic core; can be wired to stdio or SSE. Ported from claw-code P10.
 - **`skills/framework.py`** — Skill agent framework with `SkillDescriptor`, `SkillDispatchError`, `find_skills()`, `find_skills_by_type()`, `validate_dispatch()`, and registry discovery.
 - **`dog-service/`** — Spring Boot demo target (Dog CRUD API at `/api/v1/dogs` with Bearer auth, Lombok, Cucumber tests).
 

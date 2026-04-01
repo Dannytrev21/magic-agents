@@ -43,6 +43,7 @@ class NegotiationHarness:
         backpressure: BackPressureController | None = None,
         transcript_compactor: TranscriptCompactor | None = None,
         event_emitter: Callable[..., None] | None = None,
+        hooks: Any | None = None,
     ) -> None:
         self.ctx = ctx
         self.backpressure = backpressure
@@ -50,6 +51,7 @@ class NegotiationHarness:
         self.cost_reports: list[PhaseCostReport] = []
         self.logger = HarnessLogger(ctx.jira_key)
         self.event_emitter = event_emitter
+        self.hooks = hooks  # Optional HookRegistry (P9)
 
     # ------------------------------------------------------------------
     # Event emission
@@ -63,6 +65,24 @@ class NegotiationHarness:
             self.event_emitter(event)
         except Exception:
             _harness_logger.warning("Event emitter callback raised; swallowing exception.")
+
+    def _fire_hook(self, lifecycle_point: str, phase_name: str = "", data: dict[str, Any] | None = None) -> None:
+        """Fire a lifecycle hook if a HookRegistry is attached."""
+        if self.hooks is None:
+            return
+        try:
+            from verify.hooks import HookEvent
+            self.hooks.fire(
+                lifecycle_point,
+                HookEvent(
+                    lifecycle_point=lifecycle_point,
+                    session_id=getattr(self.ctx, "session_id", "") or "",
+                    phase_name=phase_name,
+                    data=data or {},
+                ),
+            )
+        except Exception:
+            _harness_logger.warning("Hook fire raised; swallowing exception.")
 
     # ------------------------------------------------------------------
     # Properties
@@ -269,6 +289,10 @@ class NegotiationHarness:
             status="checkpointed",
             data={"phase": next_phase, "checkpoint_path": str(checkpoint_path)},
         ))
+
+        # P9: Fire lifecycle hooks
+        self._fire_hook("post_phase", next_phase, data={"phase_name": next_phase, "status": "advanced"})
+        self._fire_hook("checkpoint_saved", next_phase, data={"checkpoint_path": str(checkpoint_path)})
 
         return next_phase
 

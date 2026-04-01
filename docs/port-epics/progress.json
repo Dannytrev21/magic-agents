@@ -84,8 +84,26 @@
         { "id": "P8.3", "name": "Health Check Endpoint with Stage Status", "status": "done" }
       ]
     },
-    { "id": "P09", "name": "Hook & Event System", "file": "P09-hook-event-system.md", "stories": [], "status": "not_started" },
-    { "id": "P10", "name": "MCP Server Wrapper", "file": "P10-mcp-server-wrapper.md", "stories": [], "status": "not_started" },
+    {
+      "id": "P09",
+      "name": "Hook & Event System",
+      "file": "P09-hook-event-system.md",
+      "stories": [
+        { "id": "P9.1", "name": "Hook Registry with Lifecycle Points", "status": "done" },
+        { "id": "P9.2", "name": "Integrate Hooks into NegotiationHarness", "status": "done" },
+        { "id": "P9.3", "name": "Configurable Hooks via Constitution", "status": "done" }
+      ]
+    },
+    {
+      "id": "P10",
+      "name": "MCP Server Wrapper",
+      "file": "P10-mcp-server-wrapper.md",
+      "stories": [
+        { "id": "P10.1", "name": "Expose Core Pipeline as MCP Tools", "status": "done" },
+        { "id": "P10.2", "name": "Expose Specs and Sessions as MCP Resources", "status": "done" },
+        { "id": "P10.3", "name": "MCP Server Configuration and Launch", "status": "done" }
+      ]
+    },
     {
       "id": "P11",
       "name": "Codebase Discovery & Explore Agent",
