@@ -61,8 +61,16 @@ pytest --cov=src tests/                   # with coverage
 
 ### Web UI
 
-- **`src/verify/negotiation/web.py`** — FastAPI backend with endpoints for Jira integration (`/api/jira/*`), negotiation (`/api/start`, `/api/respond`), and session cost (`GET /api/session/{id}/cost`). In-memory single-user session.
-- **`static/index.html`** — Single-page app: story picker → AC overview → negotiation chat → traceability view.
+- **`src/verify/negotiation/web.py`** — FastAPI backend with endpoints for Jira integration (`/api/jira/*`), negotiation (`/api/start`, `/api/respond`), session cost (`GET /api/session/{id}/cost`), and SSE events (`GET /api/events/{session_id}`). In-memory single-user session.
+- **`static/index.html`** — Legacy single-page app (superseded by React UI).
+- **`ui/`** — React 19 + TypeScript + Vite frontend. Key modules:
+  - **`ui/src/lib/api/client.ts`** — API client for all FastAPI endpoints.
+  - **`ui/src/lib/api/useSSE.ts`** — SSE client hook with auto-reconnection (exponential backoff, max 30s). One connection per session.
+  - **`ui/src/lib/api/eventStore.ts`** — Client-side event store with typed selectors (`usePhaseEvents`, `useBudgetEvents`, `useValidationEvents`, `useLatestEvent`). FIFO overflow at 100 events.
+  - **`ui/src/components/layout/AppShell.tsx`** — Three-panel responsive layout (desktop/tablet/mobile).
+  - **`ui/src/components/primitives/`** — Design system primitives (Button, Badge, Text, Mono, Panel, Divider, Skeleton).
+  - **`ui/src/features/workspace/PhaseProgressBar.tsx`** — Live progress indicator driven by SSE phase events.
+  - **`ui/src/styles/tokens.css`** — CSS custom property design tokens (colors, spacing, typography, motion).
 
 ### Agent Skills (`.claude/skills/phase*-*/`)
 

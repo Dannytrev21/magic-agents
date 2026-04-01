@@ -10,6 +10,7 @@
 - Inspector actions must not reset the center-pane negotiation draft or route the operator away from the active workspace.
 - Shared acceptance-criterion selection should remain the source of truth for left-rail, center-pane, and inspector cross-highlighting.
 - Verification console state must remain session-scoped inside the center pane so approval, artifacts, live pipeline events, and Jira feedback survive tab changes without forcing a second route model.
+- Real-time event handling should use the `EventStoreProvider` + typed selector hooks (`usePhaseEvents`, `useBudgetEvents`, etc.) from `eventStore.ts` rather than ad-hoc component state. The SSE connection is managed by `useSSE` and should not be duplicated.
 - Any new pane swap, status strip, or execution control should preserve keyboard reachability, visible focus, and a screen-reader announcement path for major status changes.
 - Reduced-motion behavior is required for new UI motion; rely on the shared motion tokens and the global `prefers-reduced-motion` fallback instead of inventing per-component timing constants.
 

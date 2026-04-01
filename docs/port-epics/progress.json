@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-04-01T18:00:00Z",
+  "last_updated": "2026-04-01T22:30:00Z",
   "epics": [
     {
       "id": "P01",
@@ -125,10 +125,10 @@
       "file": "docs/ui-port-claude/U01-foundation-design-system.md",
       "priority": 1,
       "stories": [
-        { "id": "U01.1", "name": "Vite + React + TypeScript Project Scaffold", "status": "not_started" },
-        { "id": "U01.2", "name": "Design Token System (CSS Custom Properties)", "status": "not_started" },
-        { "id": "U01.3", "name": "Typography & Font Loading", "status": "not_started" },
-        { "id": "U01.4", "name": "Base Component Primitives", "status": "not_started" }
+        { "id": "U01.1", "name": "Vite + React + TypeScript Project Scaffold", "status": "done" },
+        { "id": "U01.2", "name": "Design Token System (CSS Custom Properties)", "status": "done" },
+        { "id": "U01.3", "name": "Typography & Font Loading", "status": "done" },
+        { "id": "U01.4", "name": "Base Component Primitives", "status": "done" }
       ]
     },
     {
@@ -137,10 +137,10 @@
       "file": "docs/ui-port-claude/U02-three-panel-layout.md",
       "priority": 2,
       "stories": [
-        { "id": "U02.1", "name": "AppShell with Three-Panel Grid", "status": "not_started" },
-        { "id": "U02.2", "name": "Panel Collapse & Expand", "status": "not_started" },
-        { "id": "U02.3", "name": "Responsive Breakpoint Behavior", "status": "not_started" },
-        { "id": "U02.4", "name": "Top Bar with Session Context", "status": "not_started" }
+        { "id": "U02.1", "name": "AppShell with Three-Panel Grid", "status": "done" },
+        { "id": "U02.2", "name": "Panel Collapse & Expand", "status": "done" },
+        { "id": "U02.3", "name": "Responsive Breakpoint Behavior", "status": "done" },
+        { "id": "U02.4", "name": "Top Bar with Session Context", "status": "done" }
       ]
     },
     {
@@ -149,10 +149,10 @@
       "file": "docs/ui-port-claude/U03-story-intake-session-rail.md",
       "priority": 3,
       "stories": [
-        { "id": "U03.1", "name": "Jira Story Picker", "status": "not_started" },
-        { "id": "U03.2", "name": "Acceptance Criteria Checklist", "status": "not_started" },
-        { "id": "U03.3", "name": "Phase Progress Timeline", "status": "not_started" },
-        { "id": "U03.4", "name": "Session Health Indicators", "status": "not_started" }
+        { "id": "U03.1", "name": "Jira Story Picker", "status": "done" },
+        { "id": "U03.2", "name": "Acceptance Criteria Checklist", "status": "done" },
+        { "id": "U03.3", "name": "Phase Progress Timeline", "status": "done" },
+        { "id": "U03.4", "name": "Session Health Indicators", "status": "done" }
       ]
     },
     {
@@ -161,10 +161,10 @@
       "file": "docs/ui-port-claude/U04-active-phase-workspace.md",
       "priority": 4,
       "stories": [
-        { "id": "U04.1", "name": "Phase Content Container with Transitions", "status": "not_started" },
-        { "id": "U04.2", "name": "Phase Output Display", "status": "not_started" },
-        { "id": "U04.3", "name": "Inline Approve & Revise Actions", "status": "not_started" },
-        { "id": "U04.4", "name": "Conversation Transcript View", "status": "not_started" }
+        { "id": "U04.1", "name": "Phase Content Container with Transitions", "status": "done" },
+        { "id": "U04.2", "name": "Phase Output Display", "status": "done" },
+        { "id": "U04.3", "name": "Inline Approve & Revise Actions", "status": "done" },
+        { "id": "U04.4", "name": "Conversation Transcript View", "status": "done" }
       ]
     },
     {
@@ -173,10 +173,10 @@
       "file": "docs/ui-port-claude/U05-evidence-inspector.md",
       "priority": 5,
       "stories": [
-        { "id": "U05.1", "name": "Inspector Tab System", "status": "not_started" },
-        { "id": "U05.2", "name": "Codebase Scan Results View", "status": "not_started" },
-        { "id": "U05.3", "name": "Spec Contract Viewer", "status": "not_started" },
-        { "id": "U05.4", "name": "Traceability Matrix", "status": "not_started" }
+        { "id": "U05.1", "name": "Inspector Tab System", "status": "done" },
+        { "id": "U05.2", "name": "Codebase Scan Results View", "status": "done" },
+        { "id": "U05.3", "name": "Spec Contract Viewer", "status": "done" },
+        { "id": "U05.4", "name": "Traceability Matrix", "status": "done" }
       ]
     },
     {
@@ -185,9 +185,9 @@
       "file": "docs/ui-port-claude/U06-phase-rail-navigation.md",
       "priority": 6,
       "stories": [
-        { "id": "U06.1", "name": "Sticky Phase Mini-Rail in Center Workspace", "status": "not_started" },
-        { "id": "U06.2", "name": "Breadcrumb Trail with Phase Context", "status": "not_started" },
-        { "id": "U06.3", "name": "Phase Quick-Jump Keyboard Shortcuts", "status": "not_started" }
+        { "id": "U06.1", "name": "Sticky Phase Mini-Rail in Center Workspace", "status": "done" },
+        { "id": "U06.2", "name": "Breadcrumb Trail with Phase Context", "status": "done" },
+        { "id": "U06.3", "name": "Phase Quick-Jump Keyboard Shortcuts", "status": "done" }
       ]
     },
     {
@@ -196,9 +196,9 @@
       "file": "docs/ui-port-claude/U07-realtime-updates-streaming.md",
       "priority": 7,
       "stories": [
-        { "id": "U07.1", "name": "SSE Client with Auto-Reconnection", "status": "not_started" },
-        { "id": "U07.2", "name": "Client-Side Event Store", "status": "not_started" },
-        { "id": "U07.3", "name": "Live Phase Progress Indicator", "status": "not_started" }
+        { "id": "U07.1", "name": "SSE Client with Auto-Reconnection", "status": "done" },
+        { "id": "U07.2", "name": "Client-Side Event Store", "status": "done" },
+        { "id": "U07.3", "name": "Live Phase Progress Indicator", "status": "done" }
       ]
     },
     {
@@ -207,10 +207,10 @@
       "file": "docs/ui-port-claude/U08-verification-results-dashboard.md",
       "priority": 8,
       "stories": [
-        { "id": "U08.1", "name": "Results Summary Header", "status": "not_started" },
-        { "id": "U08.2", "name": "Verdict Cards per AC", "status": "not_started" },
-        { "id": "U08.3", "name": "Cost Summary & Session Report", "status": "not_started" },
-        { "id": "U08.4", "name": "Empty & Error States", "status": "not_started" }
+        { "id": "U08.1", "name": "Results Summary Header", "status": "done" },
+        { "id": "U08.2", "name": "Verdict Cards per AC", "status": "done" },
+        { "id": "U08.3", "name": "Cost Summary & Session Report", "status": "done" },
+        { "id": "U08.4", "name": "Empty & Error States", "status": "done" }
       ]
     }
   ]
