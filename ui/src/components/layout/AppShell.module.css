@@ -172,6 +172,8 @@
   background: color-mix(in srgb, var(--color-bg-elevated) 74%, transparent);
 }
 
+.inspectorPane {}
+
 .paneSurface {
   height: calc(100vh - 4.5rem);
   overflow-y: auto;
