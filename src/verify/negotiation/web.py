@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 import yaml
 
 from verify.backpressure import BackPressureController, PhaseCostReport
+from verify.bootstrap import BootstrapReport, build_bootstrap_graph
 from verify.context import VerificationContext
 from verify.llm_client import LLMClient
 from verify.negotiation.checkpoint import get_session_info
@@ -33,6 +34,21 @@ SESSION_STORE = SessionStore()
 
 # Legacy alias kept for tests that clear the in-memory session dictionary directly.
 _session = SESSION_STORE.sessions
+
+# P8: Run bootstrap graph at module load to populate health report
+_BOOTSTRAP_REPORT: BootstrapReport | None = None
+
+
+def _run_bootstrap() -> BootstrapReport:
+    graph = build_bootstrap_graph()
+    return graph.execute({})
+
+
+try:
+    _BOOTSTRAP_REPORT = _run_bootstrap()
+except Exception:
+    _BOOTSTRAP_REPORT = BootstrapReport(ready=False, total_bootstrap_ms=0.0, stages={})
+
 
 SCAN_STATE: dict[str, Any] = {
     "project_root": "",
@@ -153,6 +169,22 @@ async def session_cost_endpoint(session_id: str):
             for r in reports
         ],
     })
+
+
+# ------------------------------------------------------------------
+# P8.3: Health Check Endpoint
+# ------------------------------------------------------------------
+
+
+@app.get("/api/health")
+async def health_endpoint():
+    """Return bootstrap readiness and per-stage status."""
+    if _BOOTSTRAP_REPORT is None:
+        return JSONResponse(
+            {"ready": False, "total_bootstrap_ms": 0, "stages": {}},
+            status_code=200,
+        )
+    return JSONResponse(_BOOTSTRAP_REPORT.to_dict())
 
 
 # ------------------------------------------------------------------
