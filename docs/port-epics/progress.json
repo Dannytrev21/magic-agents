@@ -54,7 +54,16 @@
         { "id": "P5.4", "name": "Constitution-Driven Permission Defaults", "status": "done" }
       ]
     },
-    { "id": "P06", "name": "Structured Streaming Events", "file": "P06-structured-streaming-events.md", "stories": [], "status": "not_started" },
+    {
+      "id": "P06",
+      "name": "Structured Streaming Events",
+      "file": "P06-structured-streaming-events.md",
+      "stories": [
+        { "id": "P6.1", "name": "Define Typed Event Schema", "status": "done" },
+        { "id": "P6.2", "name": "Emit Structured Events from NegotiationHarness", "status": "done" },
+        { "id": "P6.3", "name": "SSE Endpoint with Event Filtering", "status": "done" }
+      ]
+    },
     { "id": "P07", "name": "Session Cost Accounting", "file": "P07-session-cost-accounting.md", "stories": [], "status": "not_started" },
     { "id": "P08", "name": "Bootstrap & Initialization Graph", "file": "P08-bootstrap-initialization-graph.md", "stories": [], "status": "not_started" },
     { "id": "P09", "name": "Hook & Event System", "file": "P09-hook-event-system.md", "stories": [], "status": "not_started" },

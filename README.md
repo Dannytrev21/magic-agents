@@ -15,6 +15,7 @@ Every arrow below represents a handoff between components. Each handoff has a de
 - Frontend rollout is now reversible from FastAPI through `MAGIC_AGENTS_FRONTEND_MODE=auto|react|legacy`, with `/?frontend=react` and `/?frontend=legacy` available as per-request overrides while the legacy HTML entrypoint remains on disk.
 - The inspector consumes the current FastAPI routes directly: `/api/scan`, `/api/scan/status`, `/api/plan`, `/api/evaluate-phase`, `/api/spec-diff`, and `/api/compile`.
 - The verification console consumes `/api/ears-approve`, `/api/compile`, `/api/generate-tests`, `/api/pipeline/stream`, and `/api/jira/update`, and the backend now enforces approval before execution endpoints run.
+- Structured streaming events (P06) provide a closed set of typed SSE event types (`NegotiationEvent` enum) with documented payload schemas. The `NegotiationHarness` emits `phase_start`, `phase_complete`, `phase_error`, `validation_result`, `budget_exceeded`, and `session_checkpoint` events through an optional `event_emitter` callback. The `GET /api/events/{session_id}?types=` endpoint streams filtered SSE events per session.
 - UI verification now runs through `npm run test:ci` for Vitest + build + bundle budgets, with browser coverage authored under `npm run test:e2e` after `npm run test:e2e:install` in [`/Users/dannytrevino/development/magic-agents/ui`](/Users/dannytrevino/development/magic-agents/ui).
 
 ```

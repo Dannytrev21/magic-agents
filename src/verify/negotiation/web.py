@@ -74,6 +74,36 @@ async def explore_endpoint(request: Request):
 
 
 # ------------------------------------------------------------------
+# P6.3: SSE Event Streaming Endpoint
+# ------------------------------------------------------------------
+
+
+@app.get("/api/events/{session_id}")
+async def events_endpoint(session_id: str, request: Request):
+    """Stream typed SSE events for a session, with optional type filtering."""
+    state = SESSION_STORE.get(session_id)
+    if state is None:
+        return JSONResponse({"error": "Session not found"}, status_code=404)
+
+    types_param = request.query_params.get("types", "")
+    allowed_types: set[str] | None = None
+    if types_param:
+        allowed_types = {t.strip() for t in types_param.split(",") if t.strip()}
+
+    def stream():
+        for event in list(state.event_buffer):
+            if allowed_types and event.type not in allowed_types:
+                continue
+            yield event.as_sse()
+
+    return StreamingResponse(
+        stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+# ------------------------------------------------------------------
 # Pages
 # ------------------------------------------------------------------
 

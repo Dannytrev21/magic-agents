@@ -52,6 +52,7 @@ pytest --cov=src tests/                   # with coverage
 - **`evaluator.py`** — Maps test results back to AC verdicts via spec traceability.
 - **`jira_client.py`** — Jira Cloud REST API v3 (search, fetch, extract AC, update).
 - **`permissions.py`** — Permission & access control: `ToolPermissionContext` (frozen dataclass with deny rules), `PermissionDenial` (denial event), skill filtering, and constitution-driven defaults. Ported from claw-code P05.
+- **`runtime.py`** — `NegotiationEvent` enum (closed set of SSE event types), `EVENT_SCHEMAS` (payload field contracts per type), `RuntimeEvent` (validates type against enum + legacy types, emits typed SSE with `event:` prefix). `SessionState.event_buffer` stores events for SSE streaming.
 - **`skills/framework.py`** — Skill agent framework with `SkillDescriptor`, `SkillDispatchError`, `find_skills()`, `find_skills_by_type()`, `validate_dispatch()`, and registry discovery.
 - **`dog-service/`** — Spring Boot demo target (Dog CRUD API at `/api/v1/dogs` with Bearer auth, Lombok, Cucumber tests).
 

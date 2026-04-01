@@ -5,9 +5,10 @@ Implements Sherpa's state machine pattern with guard conditions on every transit
 
 from __future__ import annotations
 
+import logging
 import time
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Callable
 
 from verify.backpressure import PhaseCostReport
 from verify.context import VerificationContext
@@ -18,6 +19,8 @@ from verify.transcript import TranscriptCompactor
 if TYPE_CHECKING:
     from verify.backpressure import BackPressureController
     from verify.llm_client import LLMClient
+
+_harness_logger = logging.getLogger(__name__)
 
 PHASES = [
     "phase_0",  # Intake & classification
@@ -39,12 +42,27 @@ class NegotiationHarness:
         ctx: VerificationContext,
         backpressure: BackPressureController | None = None,
         transcript_compactor: TranscriptCompactor | None = None,
+        event_emitter: Callable[..., None] | None = None,
     ) -> None:
         self.ctx = ctx
         self.backpressure = backpressure
         self.transcript_compactor = transcript_compactor or TranscriptCompactor()
         self.cost_reports: list[PhaseCostReport] = []
         self.logger = HarnessLogger(ctx.jira_key)
+        self.event_emitter = event_emitter
+
+    # ------------------------------------------------------------------
+    # Event emission
+    # ------------------------------------------------------------------
+
+    def _emit(self, event: Any) -> None:
+        """Emit a RuntimeEvent through the callback. Exceptions are logged and swallowed."""
+        if self.event_emitter is None:
+            return
+        try:
+            self.event_emitter(event)
+        except Exception:
+            _harness_logger.warning("Event emitter callback raised; swallowing exception.")
 
     # ------------------------------------------------------------------
     # Properties
@@ -86,23 +104,44 @@ class NegotiationHarness:
         Returns a dict with at least a 'status' key. If the budget is exceeded
         before the phase runs, returns {"status": "budget_exceeded", "usage_summary": ...}.
         """
+        from verify.runtime import RuntimeEvent
+
         phase = self.ctx.current_phase
+        phase_index = PHASES.index(phase) if phase in PHASES else -1
+        session_id = getattr(self.ctx, "session_id", "") or ""
 
         # Budget gate: check before invoking the LLM
         if self.backpressure and not self.backpressure.can_proceed():
             save_checkpoint(self.ctx, phase)
+            usage = self.backpressure.get_usage_summary()
+            self._emit(RuntimeEvent(
+                type="budget_exceeded",
+                session_id=session_id,
+                step=phase,
+                status="budget_exceeded",
+                data={"phase": phase, "usage_summary": usage},
+            ))
             return {
                 "status": "budget_exceeded",
                 "phase": phase,
-                "usage_summary": self.backpressure.get_usage_summary(),
+                "usage_summary": usage,
             }
+
+        # Emit phase_start
+        self._emit(RuntimeEvent(
+            type="phase_start",
+            session_id=session_id,
+            step=phase,
+            status="running",
+            data={"phase": phase, "phase_index": phase_index},
+        ))
 
         # Snapshot counters for per-phase cost reporting
         bp = self.backpressure
         calls_before = bp.api_calls if bp else 0
         tokens_before = bp.tokens_used if bp else 0
         retries_before = bp.retries_by_phase.get(phase, 0) if bp else 0
-        phase_start = time.time()
+        phase_start_time = time.time()
 
         # Dispatch to the appropriate phase function
         from verify.negotiation.phase1 import run_phase1
@@ -121,10 +160,29 @@ class NegotiationHarness:
         if runner is None:
             return {"status": "no_runner", "phase": phase}
 
-        result = runner(self.ctx, llm, feedback=feedback)
+        try:
+            result = runner(self.ctx, llm, feedback=feedback)
+        except Exception as exc:
+            self._emit(RuntimeEvent(
+                type="phase_error",
+                session_id=session_id,
+                step=phase,
+                status="error",
+                data={"phase": phase, "error": str(exc), "phase_index": phase_index},
+            ))
+            raise
+
+        # Emit validation_result
+        self._emit(RuntimeEvent(
+            type="validation_result",
+            session_id=session_id,
+            step=phase,
+            status="validated",
+            data={"phase": phase, "valid": True, "errors": []},
+        ))
 
         # Record per-phase cost report
-        phase_elapsed = time.time() - phase_start
+        phase_elapsed = time.time() - phase_start_time
         if bp:
             calls_delta = bp.api_calls - calls_before
             tokens_in_delta = (bp.tokens_used - tokens_before) // 2
@@ -147,6 +205,25 @@ class NegotiationHarness:
         )
         self.cost_reports.append(report)
 
+        # Compute result count for phase_complete event
+        result_count = 0
+        if isinstance(result, dict):
+            for key in ("classifications", "postconditions", "preconditions", "failure_modes"):
+                val = result.get(key)
+                if isinstance(val, list):
+                    result_count = len(val)
+                    break
+        elif isinstance(result, list):
+            result_count = len(result)
+
+        self._emit(RuntimeEvent(
+            type="phase_complete",
+            session_id=session_id,
+            step=phase,
+            status="completed",
+            data={"phase": phase, "result_count": result_count, "phase_index": phase_index},
+        ))
+
         return {"status": "completed", "phase": phase, "result": result}
 
     # ------------------------------------------------------------------
@@ -161,6 +238,8 @@ class NegotiationHarness:
 
         Saves a checkpoint after advancing to the new phase.
         """
+        from verify.runtime import RuntimeEvent
+
         current = self.ctx.current_phase
         if not self._exit_conditions_met(current):
             return current
@@ -180,6 +259,16 @@ class NegotiationHarness:
 
         # Log checkpoint_saved
         self.logger.log_checkpoint_saved(next_phase, str(checkpoint_path))
+
+        # Emit session_checkpoint event
+        session_id = getattr(self.ctx, "session_id", "") or ""
+        self._emit(RuntimeEvent(
+            type="session_checkpoint",
+            session_id=session_id,
+            step=next_phase,
+            status="checkpointed",
+            data={"phase": next_phase, "checkpoint_path": str(checkpoint_path)},
+        ))
 
         return next_phase
 
