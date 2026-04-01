@@ -50,6 +50,9 @@ export function OperatorWorkspacePage({
 }: OperatorWorkspacePageProps) {
   const [activeSession, setActiveSession] = useState<StartNegotiationResponse | null>(initialSession);
   const [activeStory, setActiveStory] = useState<SessionIntakeStory | null>(null);
+  const [announcement, setAnnouncement] = useState<string | null>(
+    initialSession ? `Session loaded for ${initialSession.jira_key}.` : null,
+  );
   const [storySummary, setStorySummary] = useState<string | null>(initialStorySummary);
   const [sessionDrafts, setSessionDrafts] = useState<Record<string, string>>({});
   const [selectedAcceptanceCriterionIndex, setSelectedAcceptanceCriterionIndex] = useState<number | null>(null);
@@ -67,6 +70,8 @@ export function OperatorWorkspacePage({
   const inspectorFocusRef = useRef<HTMLElement | null>(null);
   const hasRenderedCenterView = useRef(false);
   const hasRenderedInspectorView = useRef(false);
+  const announcedSessionIdRef = useRef<string | null>(initialSession?.session_id ?? null);
+  const announcedPhaseMessageRef = useRef<string | null>(null);
 
   const centerView = parseCenterWorkspaceView(searchParams.get('view'));
   const inspectorView = parseInspectorWorkspaceView(searchParams.get('inspector'));
@@ -101,8 +106,9 @@ export function OperatorWorkspacePage({
       return;
     }
 
+    setAnnouncement(`Workspace view changed to ${workspaceLabel}.`);
     centerFocusRef.current?.focus();
-  }, [centerView]);
+  }, [centerView, workspaceLabel]);
 
   useEffect(() => {
     if (!hasRenderedInspectorView.current) {
@@ -110,8 +116,48 @@ export function OperatorWorkspacePage({
       return;
     }
 
+    const nextInspectorLabel =
+      inspectorView === 'analysis'
+        ? 'Planning and critique'
+        : inspectorView === 'traceability'
+          ? 'Traceability'
+          : inspectorView === 'scan'
+            ? 'Scan output'
+            : 'Evidence';
+
+    setAnnouncement(`Inspector view changed to ${nextInspectorLabel}.`);
     inspectorFocusRef.current?.focus();
   }, [inspectorView]);
+
+  useEffect(() => {
+    if (!activeSession?.session_id || announcedSessionIdRef.current === activeSession.session_id) {
+      return;
+    }
+
+    announcedSessionIdRef.current = activeSession.session_id;
+    setAnnouncement(`Session loaded for ${activeSession.jira_key}. Focus moved to the active workspace.`);
+
+    window.requestAnimationFrame(() => {
+      centerFocusRef.current?.focus();
+    });
+  }, [activeSession?.jira_key, activeSession?.session_id]);
+
+  useEffect(() => {
+    if (phaseActionState.status !== 'success' || !phaseActionState.message) {
+      return;
+    }
+
+    if (announcedPhaseMessageRef.current === phaseActionState.message) {
+      return;
+    }
+
+    announcedPhaseMessageRef.current = phaseActionState.message;
+    setAnnouncement(phaseActionState.message);
+
+    window.requestAnimationFrame(() => {
+      centerFocusRef.current?.focus();
+    });
+  }, [phaseActionState.message, phaseActionState.status]);
 
   function updatePanelPreferences(next: PanelPreferences) {
     setPanelPreferences(next);
@@ -296,6 +342,7 @@ export function OperatorWorkspacePage({
 
   return (
     <AppShell
+      announcement={announcement}
       centerPane={
         <WorkspaceCenterPane
           activeSession={activeSession}

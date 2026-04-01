@@ -1,0 +1,199 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`AppShell > matches the shell snapshot for visual regression coverage 1`] = `
+<div
+  class="_shell_14c88e"
+>
+  <div
+    aria-atomic="true"
+    aria-label="Workspace announcements"
+    aria-live="polite"
+    class="srOnly"
+    role="status"
+  >
+    Session loaded for MAG-22
+  </div>
+  <a
+    class="_skipLink_14c88e"
+    href="#workspace-main"
+  >
+    Skip to active workspace
+  </a>
+  <header
+    class="_topBar_14c88e"
+    data-sticky="true"
+  >
+    <div
+      class="_brandBlock_14c88e"
+    >
+      <p
+        class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422 _kicker_14c88e"
+      >
+        Acceptance criteria to proof
+      </p>
+      <div
+        class="_brandName_14c88e"
+      >
+        <h1
+          class="_text_a19422 _textLg_a19422 _weightSemibold_a19422"
+        >
+          Magic Agents
+        </h1>
+        <p
+          class="_text_a19422 _textSm_a19422 _textMuted_a19422 _weightRegular_a19422"
+        >
+          Operator workspace
+        </p>
+      </div>
+    </div>
+    <div
+      class="_contextBlock_14c88e"
+    >
+      <div
+        class="_metaColumn_14c88e"
+      >
+        <p
+          class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+        >
+          Current story
+        </p>
+        <div
+          class="_storyContext_14c88e"
+        >
+          <code
+            class="_mono_a19422"
+          >
+            MAG-22
+          </code>
+          <p
+            class="_text_a19422 _textSm_a19422 _textMuted_a19422 _weightRegular_a19422 _storySummary_14c88e"
+          >
+            Port the operator workspace layout
+          </p>
+        </div>
+      </div>
+      <div
+        class="_metaColumn_14c88e"
+      >
+        <p
+          class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+        >
+          Workspace context
+        </p>
+        <p
+          class="_text_a19422 _textSm_a19422 _weightMedium_a19422 _contextLabel_14c88e"
+        >
+          Negotiation surface
+        </p>
+        <p
+          class="_text_a19422 _textSm_a19422 _textMuted_a19422 _weightRegular_a19422 _phaseLabel_14c88e"
+        >
+          Phase 2: Happy Path Contract
+        </p>
+      </div>
+    </div>
+    <div
+      class="_headerMeta_14c88e"
+    >
+      <div
+        aria-atomic="true"
+        aria-label="Workspace status"
+        aria-live="polite"
+        class="_statusPill_14c88e"
+        role="status"
+      >
+        <span
+          aria-hidden="true"
+          class="_statusDot_14c88e _statusActive_14c88e"
+        />
+        <span
+          class="_text_a19422 _textSm_a19422 _weightMedium_a19422"
+        >
+          Awaiting operator input
+        </span>
+      </div>
+      <div
+        class="_controlGroup_14c88e"
+      >
+        <button
+          aria-expanded="true"
+          class="_button_a19422 _buttonGhost_a19422 _controlButton_14c88e"
+          type="button"
+        >
+          <span>
+            Toggle story intake panel
+          </span>
+        </button>
+        <button
+          aria-expanded="true"
+          class="_button_a19422 _buttonGhost_a19422 _controlButton_14c88e"
+          type="button"
+        >
+          <span>
+            Toggle evidence panel
+          </span>
+        </button>
+      </div>
+    </div>
+  </header>
+  <div
+    class="_workspaceFrame_14c88e"
+  >
+    <div
+      class="_workspaceGrid_14c88e"
+      data-layout-mode="desktop"
+      data-testid="workspace-grid"
+      style="--workspace-left-width: 18rem; --workspace-right-width: 20rem;"
+    >
+      <aside
+        aria-hidden="false"
+        aria-label="Story intake"
+        class="_pane_14c88e"
+        data-pane-state="expanded"
+        data-scroll-region="independent"
+        role="complementary"
+      >
+        <div
+          class="_paneSurface_14c88e"
+        >
+          <div>
+            Story intake
+          </div>
+        </div>
+      </aside>
+      <main
+        aria-hidden="false"
+        class="_pane_14c88e _mainPane_14c88e"
+        data-pane-priority="primary"
+        data-scroll-region="independent"
+        id="workspace-main"
+        tabindex="-1"
+      >
+        <div
+          class="_paneSurface_14c88e"
+        >
+          <div>
+            Center workspace
+          </div>
+        </div>
+      </main>
+      <aside
+        aria-hidden="false"
+        aria-label="Evidence inspector"
+        class="_pane_14c88e _inspectorPane_14c88e"
+        data-pane-state="expanded"
+        data-scroll-region="independent"
+        role="complementary"
+      >
+        <div
+          class="_paneSurface_14c88e"
+        >
+          <div>
+            Evidence inspector
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+`;

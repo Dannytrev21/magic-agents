@@ -1,4 +1,4 @@
-import { Suspense, lazy, useDeferredValue, useEffect, useState, type RefObject } from 'react';
+import { Suspense, lazy, useDeferredValue, useEffect, useId, useState, type RefObject } from 'react';
 import { Button } from '@/components/primitives/Button';
 import { Badge } from '@/components/primitives/Badge';
 import { Divider } from '@/components/primitives/Divider';
@@ -48,12 +48,15 @@ export function WorkspaceInspector({
   onViewChange,
   selectedAcceptanceCriterionIndex,
 }: WorkspaceInspectorProps) {
+  const inspectorViewId = useId();
   const { isLoading, scanStatus, skills } = useInspectorQueries();
   const { compileMutation, critiqueMutation, planningMutation, scanMutation, specDiffMutation } =
     useInspectorActions();
   const [specView, setSpecView] = useState<'raw' | 'structured'>('structured');
   const [traceabilityMode, setTraceabilityMode] = useState<'browser' | 'matrix'>('browser');
   const contractState = activeSession ? 'Session-bound' : 'Waiting for session';
+  const activeInspectorPanelId = `${inspectorViewId}-${activeView}-panel`;
+  const activeInspectorTabId = `${inspectorViewId}-${activeView}-tab`;
 
   useEffect(() => {
     compileMutation.reset();
@@ -72,8 +75,10 @@ export function WorkspaceInspector({
       <div aria-label="Inspector views" className={styles.viewTabs} role="tablist">
         {inspectorViews.map((view) => (
           <button
+            aria-controls={`${inspectorViewId}-${view.value}-panel`}
             aria-selected={activeView === view.value}
             className={styles.viewTab}
+            id={`${inspectorViewId}-${view.value}-tab`}
             key={view.value}
             onClick={() => onViewChange(view.value)}
             role="tab"
@@ -84,10 +89,11 @@ export function WorkspaceInspector({
         ))}
       </div>
       <section
-        aria-label="Inspector detail region"
+        aria-labelledby={activeInspectorTabId}
         className={styles.focusRegion}
+        id={activeInspectorPanelId}
         ref={focusRef}
-        role="region"
+        role="tabpanel"
         tabIndex={-1}
       >
         <div className={styles.sectionStack}>

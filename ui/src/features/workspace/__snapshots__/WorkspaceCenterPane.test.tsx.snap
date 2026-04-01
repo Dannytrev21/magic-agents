@@ -1,0 +1,653 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`WorkspaceCenterPane > matches the negotiation workspace snapshot for visual regression coverage 1`] = `
+<div
+  class="_stack_b1495c"
+>
+  <section
+    class="_stickyRail_b1495c"
+    data-sticky="true"
+  >
+    <div
+      class="_breadcrumbs_b1495c"
+    >
+      <code
+        class="_mono_a19422"
+      >
+        MAG-201
+      </code>
+      <p
+        class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+      >
+        /
+      </p>
+      <p
+        class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+      >
+        Negotiation
+      </p>
+      <p
+        class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+      >
+        /
+      </p>
+      <p
+        class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+      >
+        Failure Mode Enumeration
+      </p>
+    </div>
+    <div
+      class="_statusStrip_b1495c"
+    >
+      <div
+        class="_statusMeta_b1495c"
+      >
+        <p
+          class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+        >
+          Session status
+        </p>
+        <p
+          class="_text_a19422 _textSm_a19422 _weightMedium_a19422"
+        >
+          Awaiting operator input
+        </p>
+      </div>
+      <div
+        class="_statusMeta_b1495c"
+      >
+        <p
+          class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+        >
+          Session ref
+        </p>
+        <code
+          class="_mono_a19422"
+        >
+          session-u4
+        </code>
+      </div>
+      <span
+        class="_badge_a19422 _badgeSuccess_a19422"
+      >
+        In-place workspace
+      </span>
+    </div>
+    <ol
+      aria-label="Negotiation phases"
+      class="_phaseRail_b1495c"
+    >
+      <li>
+        <button
+          aria-label="Phase 1 Interface & Actor Discovery"
+          class="_phaseRailButton_b1495c"
+          data-selected="false"
+          data-state="complete"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="_phaseRailMarker_b1495c"
+          >
+            1
+          </span>
+          <div>
+            <p
+              class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+            >
+              Phase 
+              1
+            </p>
+            <p
+              class="_text_a19422 _textSm_a19422 _weightMedium_a19422"
+            >
+              Interface & Actor Discovery
+            </p>
+          </div>
+        </button>
+      </li>
+      <li>
+        <button
+          aria-label="Phase 2 Happy Path Contract"
+          class="_phaseRailButton_b1495c"
+          data-selected="false"
+          data-state="complete"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="_phaseRailMarker_b1495c"
+          >
+            2
+          </span>
+          <div>
+            <p
+              class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+            >
+              Phase 
+              2
+            </p>
+            <p
+              class="_text_a19422 _textSm_a19422 _weightMedium_a19422"
+            >
+              Happy Path Contract
+            </p>
+          </div>
+        </button>
+      </li>
+      <li>
+        <button
+          aria-label="Phase 3 Precondition Formalization"
+          class="_phaseRailButton_b1495c"
+          data-selected="false"
+          data-state="complete"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="_phaseRailMarker_b1495c"
+          >
+            3
+          </span>
+          <div>
+            <p
+              class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+            >
+              Phase 
+              3
+            </p>
+            <p
+              class="_text_a19422 _textSm_a19422 _weightMedium_a19422"
+            >
+              Precondition Formalization
+            </p>
+          </div>
+        </button>
+      </li>
+      <li>
+        <button
+          aria-label="Phase 4 Failure Mode Enumeration"
+          class="_phaseRailButton_b1495c"
+          data-selected="true"
+          data-state="active"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="_phaseRailMarker_b1495c"
+          >
+            4
+          </span>
+          <div>
+            <p
+              class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+            >
+              Phase 
+              4
+            </p>
+            <p
+              class="_text_a19422 _textSm_a19422 _weightMedium_a19422"
+            >
+              Failure Mode Enumeration
+            </p>
+          </div>
+        </button>
+      </li>
+      <li>
+        <button
+          aria-label="Phase 5 Invariant Extraction"
+          class="_phaseRailButton_b1495c"
+          data-selected="false"
+          data-state="pending"
+          disabled=""
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="_phaseRailMarker_b1495c"
+          >
+            5
+          </span>
+          <div>
+            <p
+              class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+            >
+              Phase 
+              5
+            </p>
+            <p
+              class="_text_a19422 _textSm_a19422 _weightMedium_a19422"
+            >
+              Invariant Extraction
+            </p>
+          </div>
+        </button>
+      </li>
+      <li>
+        <button
+          aria-label="Phase 6 Routing & Completeness Sweep"
+          class="_phaseRailButton_b1495c"
+          data-selected="false"
+          data-state="pending"
+          disabled=""
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="_phaseRailMarker_b1495c"
+          >
+            6
+          </span>
+          <div>
+            <p
+              class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+            >
+              Phase 
+              6
+            </p>
+            <p
+              class="_text_a19422 _textSm_a19422 _weightMedium_a19422"
+            >
+              Routing & Completeness Sweep
+            </p>
+          </div>
+        </button>
+      </li>
+      <li>
+        <button
+          aria-label="Phase 7 EARS Formalization"
+          class="_phaseRailButton_b1495c"
+          data-selected="false"
+          data-state="pending"
+          disabled=""
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="_phaseRailMarker_b1495c"
+          >
+            7
+          </span>
+          <div>
+            <p
+              class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+            >
+              Phase 
+              7
+            </p>
+            <p
+              class="_text_a19422 _textSm_a19422 _weightMedium_a19422"
+            >
+              EARS Formalization
+            </p>
+          </div>
+        </button>
+      </li>
+    </ol>
+    <div
+      aria-label="Workspace views"
+      class="_viewTabs_b1495c"
+      role="tablist"
+    >
+      <button
+        aria-controls="_r_6_-overview-panel"
+        aria-selected="false"
+        class="_viewTab_b1495c"
+        id="_r_6_-overview-tab"
+        role="tab"
+        type="button"
+      >
+        Overview
+      </button>
+      <button
+        aria-controls="_r_6_-negotiation-panel"
+        aria-selected="true"
+        class="_viewTab_b1495c"
+        id="_r_6_-negotiation-tab"
+        role="tab"
+        type="button"
+      >
+        Negotiation
+      </button>
+      <button
+        aria-controls="_r_6_-verification-panel"
+        aria-selected="false"
+        class="_viewTab_b1495c"
+        id="_r_6_-verification-tab"
+        role="tab"
+        type="button"
+      >
+        Verification
+      </button>
+      <button
+        aria-controls="_r_6_-traceability-panel"
+        aria-selected="false"
+        class="_viewTab_b1495c"
+        id="_r_6_-traceability-tab"
+        role="tab"
+        type="button"
+      >
+        Traceability
+      </button>
+    </div>
+  </section>
+  <section
+    aria-busy="false"
+    aria-labelledby="_r_6_-negotiation-tab"
+    class="_focusRegion_b1495c"
+    id="_r_6_-negotiation-panel"
+    role="tabpanel"
+    tabindex="-1"
+  >
+    <div
+      class="_sectionStack_b1495c"
+    >
+      <section
+        class="_phaseSummary_b1495c"
+        data-phase-summary="true"
+      >
+        <div
+          class="_phaseSummaryHeader_b1495c"
+        >
+          <div>
+            <p
+              class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+            >
+              Primary decision
+            </p>
+            <h2
+              class="_text_a19422 _textLg_a19422 _weightMedium_a19422"
+            >
+              Failure responses are mapped to explicit broken-path decisions across 1 scenario.
+            </h2>
+          </div>
+          <div
+            class="_inlineCluster_b1495c"
+          >
+            <span
+              class="_badge_a19422 _badgeWarning_a19422"
+            >
+              Failure Mode Enumeration
+            </span>
+            <span
+              class="_badge_a19422 _badgeNeutral_a19422"
+            >
+              Story-wide
+            </span>
+          </div>
+        </div>
+        <p
+          class="_text_a19422 _textSm_a19422 _textMuted_a19422 _weightRegular_a19422"
+        >
+          Failure paths lead with the operator-visible response before raw bodies and supporting fields.
+        </p>
+      </section>
+      <section
+        class="_questionRegion_b1495c"
+      >
+        <div
+          class="_sectionHeader_a19422"
+        >
+          <div
+            class="_sectionHeaderRow_a19422"
+          >
+            <h2
+              class="_text_a19422 _textSm_a19422 _weightSemibold_a19422"
+            >
+              Clarifying questions
+            </h2>
+          </div>
+          <p
+            class="_text_a19422 _textSm_a19422 _weightRegular_a19422 _sectionHeaderDescription_a19422"
+          >
+            Human follow-ups stay distinct from backend-confirmed phase output.
+          </p>
+        </div>
+        <ul
+          class="_questionList_b1495c"
+        >
+          <li>
+            <p
+              class="_text_a19422 _textSm_a19422 _weightRegular_a19422"
+            >
+              Should soft-deleted users return 404 or 410?
+            </p>
+          </li>
+        </ul>
+      </section>
+      <section
+        class="_reviewGroup_b1495c"
+      >
+        <div
+          class="_sectionHeader_a19422"
+        >
+          <div
+            class="_sectionHeaderRow_a19422"
+          >
+            <h2
+              class="_text_a19422 _textSm_a19422 _weightSemibold_a19422"
+            >
+              Failure responses
+            </h2>
+          </div>
+        </div>
+        <div
+          class="_reviewList_b1495c"
+        >
+          <article
+            class="_reviewItem_b1495c"
+          >
+            <div
+              class="_reviewItemHeader_b1495c"
+            >
+              <code
+                class="_mono_a19422"
+              >
+                FAIL-001
+              </code>
+              <span
+                class="_badge_a19422 _badgeNeutral_a19422"
+              >
+                HTTP 401
+              </span>
+            </div>
+            <p
+              class="_text_a19422 _textSm_a19422 _weightRegular_a19422"
+            >
+              No failure description provided.
+            </p>
+            <p
+              class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+            >
+              Violates PRE-001
+            </p>
+          </article>
+        </div>
+      </section>
+      <details
+        class="_rawPayloadDisclosure_b1495c"
+      >
+        <summary
+          class="_rawPayloadSummary_b1495c"
+        >
+          Raw payload
+        </summary>
+        <pre
+          class="_rawPayloadPre_b1495c"
+        >
+          [
+  {
+    "body": {
+      "error": "unauthorized",
+      "message": "Bearer token required"
+    },
+    "id": "FAIL-001",
+    "status": 401,
+    "violates": "PRE-001"
+  }
+]
+        </pre>
+      </details>
+      <section
+        class="_actionSurface_b1495c"
+      >
+        <div
+          class="_sectionHeader_a19422"
+        >
+          <div
+            class="_sectionHeaderRow_a19422"
+          >
+            <h2
+              class="_text_a19422 _textSm_a19422 _weightSemibold_a19422"
+            >
+              Phase actions
+            </h2>
+          </div>
+          <p
+            class="_text_a19422 _textSm_a19422 _weightRegular_a19422 _sectionHeaderDescription_a19422"
+          >
+            Approve or revise the active phase without leaving the center workspace.
+          </p>
+        </div>
+        <div
+          class="_field_b1495c"
+        >
+          <label
+            class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+            for="phase-feedback"
+          >
+            Revision feedback
+          </label>
+          <textarea
+            class="_feedbackTextarea_b1495c"
+            id="phase-feedback"
+          >
+            Need clearer deleted-user guidance
+          </textarea>
+        </div>
+        <div
+          class="_actionRow_b1495c"
+        >
+          <button
+            class="_button_a19422 _buttonPrimary_a19422"
+            type="button"
+          >
+            <span>
+              Approve phase
+            </span>
+          </button>
+          <button
+            class="_button_a19422 _buttonSecondary_a19422"
+            type="button"
+          >
+            <span>
+              Request revision
+            </span>
+          </button>
+        </div>
+      </section>
+      <section
+        class="_sectionStack_b1495c"
+      >
+        <div
+          class="_sectionHeader_a19422"
+        >
+          <div
+            class="_sectionHeaderRow_a19422"
+          >
+            <h2
+              class="_text_a19422 _textSm_a19422 _weightSemibold_a19422"
+            >
+              Transcript
+            </h2>
+          </div>
+          <p
+            class="_text_a19422 _textSm_a19422 _weightRegular_a19422 _sectionHeaderDescription_a19422"
+          >
+            System activity, operator feedback, and model output stay readable in chronological order.
+          </p>
+        </div>
+        <div
+          aria-label="Phase transcript"
+          class="_transcript_b1495c"
+          role="log"
+        >
+          <article
+            class="_transcriptEntry_b1495c"
+            data-role="system"
+          >
+            <div
+              class="_transcriptMeta_b1495c"
+            >
+              <span
+                class="_badge_a19422 _badgeNeutral_a19422"
+              >
+                System
+              </span>
+              <p
+                class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+              >
+                2026-04-01T09:59:00Z
+              </p>
+            </div>
+            <p
+              class="_text_a19422 _textSm_a19422 _weightRegular_a19422"
+            >
+              MAG-201
+            </p>
+          </article>
+          <article
+            class="_transcriptEntry_b1495c"
+            data-role="model"
+          >
+            <div
+              class="_transcriptMeta_b1495c"
+            >
+              <span
+                class="_badge_a19422 _badgeInfo_a19422"
+              >
+                Model
+              </span>
+              <p
+                class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+              >
+                2026-04-01T10:00:00Z
+              </p>
+            </div>
+            <p
+              class="_text_a19422 _textSm_a19422 _weightRegular_a19422"
+            >
+              Failure mode enumeration produced 1 response path.
+            </p>
+          </article>
+          <article
+            class="_transcriptEntry_b1495c"
+            data-role="operator"
+          >
+            <div
+              class="_transcriptMeta_b1495c"
+            >
+              <span
+                class="_badge_a19422 _badgeWarning_a19422"
+              >
+                Operator
+              </span>
+              <p
+                class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+              >
+                2026-04-01T10:01:00Z
+              </p>
+            </div>
+            <p
+              class="_text_a19422 _textSm_a19422 _weightRegular_a19422"
+            >
+              Please tighten the deleted-user response.
+            </p>
+          </article>
+        </div>
+      </section>
+    </div>
+  </section>
+</div>
+`;

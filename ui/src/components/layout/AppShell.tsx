@@ -10,6 +10,7 @@ import type {
 } from '@/features/workspace/workspaceModel';
 
 type AppShellProps = {
+  announcement?: string | null;
   leftRail: ReactNode;
   centerPane: ReactNode;
   rightRail: ReactNode;
@@ -29,6 +30,7 @@ type AppShellProps = {
 };
 
 export function AppShell({
+  announcement = null,
   leftRail,
   centerPane,
   rightRail,
@@ -68,6 +70,15 @@ export function AppShell({
 
   return (
     <div className={styles.shell}>
+      <div
+        aria-atomic="true"
+        aria-label="Workspace announcements"
+        aria-live="polite"
+        className="srOnly"
+        role="status"
+      >
+        {announcement ?? ''}
+      </div>
       <a className={styles.skipLink} href="#workspace-main">
         Skip to active workspace
       </a>
@@ -112,7 +123,13 @@ export function AppShell({
           </div>
         </div>
         <div className={styles.headerMeta}>
-          <div className={styles.statusPill} role="status">
+          <div
+            aria-atomic="true"
+            aria-label="Workspace status"
+            aria-live="polite"
+            className={styles.statusPill}
+            role="status"
+          >
             <span
               aria-hidden="true"
               className={`${styles.statusDot} ${sessionStateClassName(sessionState, styles)}`}
@@ -172,6 +189,7 @@ export function AppShell({
             data-scroll-region="independent"
             hidden={centerPaneHidden}
             id="workspace-main"
+            tabIndex={-1}
           >
             <div className={styles.paneSurface}>{centerPane}</div>
           </main>

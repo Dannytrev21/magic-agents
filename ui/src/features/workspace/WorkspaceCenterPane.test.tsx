@@ -2,6 +2,7 @@ import { createRef } from 'react';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { axe } from 'vitest-axe';
 import { WorkspaceCenterPane } from '@/features/workspace/WorkspaceCenterPane';
 import type { StartNegotiationResponse } from '@/lib/api/types';
 
@@ -133,6 +134,34 @@ describe('WorkspaceCenterPane', () => {
     expect(phaseButtons[4]).toHaveAttribute('data-state', 'pending');
   });
 
+  it('wires workspace tabs to a named tabpanel for assistive technology', () => {
+    render(
+      <WorkspaceCenterPane
+        activeSession={activeSession}
+        activeView="negotiation"
+        draftFeedback="Need clearer deleted-user guidance"
+        focusRef={createRef<HTMLElement>()}
+        isTransitionPending={false}
+        onApprovePhase={vi.fn()}
+        onDraftFeedbackChange={vi.fn()}
+        onPhaseSelect={vi.fn()}
+        onRevisePhase={vi.fn()}
+        onViewChange={vi.fn()}
+        phaseActionState={{ activeAction: null, isPending: false, message: null, status: 'idle' }}
+        selectedAcceptanceCriterionIndex={null}
+        selectedPhaseNumber={4}
+        statusLabel="Awaiting operator input"
+        storySummary="Port the active phase workspace"
+      />,
+    );
+
+    const negotiationTab = screen.getByRole('tab', { name: /negotiation/i });
+    const activePanel = screen.getByRole('tabpanel', { name: /negotiation/i });
+
+    expect(negotiationTab).toHaveAttribute('aria-controls', activePanel.getAttribute('id'));
+    expect(activePanel).toHaveAttribute('tabindex', '-1');
+  });
+
   it('renders a structured review surface with a summary-first hierarchy, clarifying questions, and raw payload fallback', () => {
     render(
       <WorkspaceCenterPane
@@ -260,5 +289,54 @@ describe('WorkspaceCenterPane', () => {
     await waitFor(() => {
       expect(onPhaseSelect).toHaveBeenCalledTimes(2);
     });
+  });
+
+  it('stays free of obvious accessibility violations in the negotiation workspace', async () => {
+    const { container } = render(
+      <WorkspaceCenterPane
+        activeSession={activeSession}
+        activeView="negotiation"
+        draftFeedback="Need clearer deleted-user guidance"
+        focusRef={createRef<HTMLElement>()}
+        isTransitionPending={false}
+        onApprovePhase={vi.fn()}
+        onDraftFeedbackChange={vi.fn()}
+        onPhaseSelect={vi.fn()}
+        onRevisePhase={vi.fn()}
+        onViewChange={vi.fn()}
+        phaseActionState={{ activeAction: null, isPending: false, message: null, status: 'idle' }}
+        selectedAcceptanceCriterionIndex={null}
+        selectedPhaseNumber={4}
+        statusLabel="Awaiting operator input"
+        storySummary="Port the active phase workspace"
+      />,
+    );
+
+    const results = await axe(container);
+    expect(results.violations).toHaveLength(0);
+  });
+
+  it('matches the negotiation workspace snapshot for visual regression coverage', () => {
+    const { container } = render(
+      <WorkspaceCenterPane
+        activeSession={activeSession}
+        activeView="negotiation"
+        draftFeedback="Need clearer deleted-user guidance"
+        focusRef={createRef<HTMLElement>()}
+        isTransitionPending={false}
+        onApprovePhase={vi.fn()}
+        onDraftFeedbackChange={vi.fn()}
+        onPhaseSelect={vi.fn()}
+        onRevisePhase={vi.fn()}
+        onViewChange={vi.fn()}
+        phaseActionState={{ activeAction: null, isPending: false, message: null, status: 'idle' }}
+        selectedAcceptanceCriterionIndex={null}
+        selectedPhaseNumber={4}
+        statusLabel="Awaiting operator input"
+        storySummary="Port the active phase workspace"
+      />,
+    );
+
+    expect(container.firstChild).toMatchSnapshot();
   });
 });

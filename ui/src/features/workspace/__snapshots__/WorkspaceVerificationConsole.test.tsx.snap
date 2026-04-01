@@ -1,0 +1,638 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Workspace verification console > matches the verification surface snapshot for visual regression coverage 1`] = `
+<div
+  class="_stack_b1495c"
+>
+  <section
+    class="_stickyRail_b1495c"
+    data-sticky="true"
+  >
+    <div
+      class="_breadcrumbs_b1495c"
+    >
+      <code
+        class="_mono_a19422"
+      >
+        MAG-601
+      </code>
+      <p
+        class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+      >
+        /
+      </p>
+      <p
+        class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+      >
+        Verification
+      </p>
+      <p
+        class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+      >
+        /
+      </p>
+      <p
+        class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+      >
+        EARS Formalization
+      </p>
+    </div>
+    <div
+      class="_statusStrip_b1495c"
+    >
+      <div
+        class="_statusMeta_b1495c"
+      >
+        <p
+          class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+        >
+          Session status
+        </p>
+        <p
+          class="_text_a19422 _textSm_a19422 _weightMedium_a19422"
+        >
+          Verification-ready session
+        </p>
+      </div>
+      <div
+        class="_statusMeta_b1495c"
+      >
+        <p
+          class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+        >
+          Session ref
+        </p>
+        <code
+          class="_mono_a19422"
+        >
+          session-u6
+        </code>
+      </div>
+      <span
+        class="_badge_a19422 _badgeSuccess_a19422"
+      >
+        In-place workspace
+      </span>
+    </div>
+    <ol
+      aria-label="Negotiation phases"
+      class="_phaseRail_b1495c"
+    >
+      <li>
+        <button
+          aria-label="Phase 1 Interface & Actor Discovery"
+          class="_phaseRailButton_b1495c"
+          data-selected="false"
+          data-state="complete"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="_phaseRailMarker_b1495c"
+          >
+            1
+          </span>
+          <div>
+            <p
+              class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+            >
+              Phase 
+              1
+            </p>
+            <p
+              class="_text_a19422 _textSm_a19422 _weightMedium_a19422"
+            >
+              Interface & Actor Discovery
+            </p>
+          </div>
+        </button>
+      </li>
+      <li>
+        <button
+          aria-label="Phase 2 Happy Path Contract"
+          class="_phaseRailButton_b1495c"
+          data-selected="false"
+          data-state="complete"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="_phaseRailMarker_b1495c"
+          >
+            2
+          </span>
+          <div>
+            <p
+              class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+            >
+              Phase 
+              2
+            </p>
+            <p
+              class="_text_a19422 _textSm_a19422 _weightMedium_a19422"
+            >
+              Happy Path Contract
+            </p>
+          </div>
+        </button>
+      </li>
+      <li>
+        <button
+          aria-label="Phase 3 Precondition Formalization"
+          class="_phaseRailButton_b1495c"
+          data-selected="false"
+          data-state="complete"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="_phaseRailMarker_b1495c"
+          >
+            3
+          </span>
+          <div>
+            <p
+              class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+            >
+              Phase 
+              3
+            </p>
+            <p
+              class="_text_a19422 _textSm_a19422 _weightMedium_a19422"
+            >
+              Precondition Formalization
+            </p>
+          </div>
+        </button>
+      </li>
+      <li>
+        <button
+          aria-label="Phase 4 Failure Mode Enumeration"
+          class="_phaseRailButton_b1495c"
+          data-selected="false"
+          data-state="complete"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="_phaseRailMarker_b1495c"
+          >
+            4
+          </span>
+          <div>
+            <p
+              class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+            >
+              Phase 
+              4
+            </p>
+            <p
+              class="_text_a19422 _textSm_a19422 _weightMedium_a19422"
+            >
+              Failure Mode Enumeration
+            </p>
+          </div>
+        </button>
+      </li>
+      <li>
+        <button
+          aria-label="Phase 5 Invariant Extraction"
+          class="_phaseRailButton_b1495c"
+          data-selected="false"
+          data-state="complete"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="_phaseRailMarker_b1495c"
+          >
+            5
+          </span>
+          <div>
+            <p
+              class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+            >
+              Phase 
+              5
+            </p>
+            <p
+              class="_text_a19422 _textSm_a19422 _weightMedium_a19422"
+            >
+              Invariant Extraction
+            </p>
+          </div>
+        </button>
+      </li>
+      <li>
+        <button
+          aria-label="Phase 6 Routing & Completeness Sweep"
+          class="_phaseRailButton_b1495c"
+          data-selected="false"
+          data-state="complete"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="_phaseRailMarker_b1495c"
+          >
+            6
+          </span>
+          <div>
+            <p
+              class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+            >
+              Phase 
+              6
+            </p>
+            <p
+              class="_text_a19422 _textSm_a19422 _weightMedium_a19422"
+            >
+              Routing & Completeness Sweep
+            </p>
+          </div>
+        </button>
+      </li>
+      <li>
+        <button
+          aria-label="Phase 7 EARS Formalization"
+          class="_phaseRailButton_b1495c"
+          data-selected="true"
+          data-state="active"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="_phaseRailMarker_b1495c"
+          >
+            7
+          </span>
+          <div>
+            <p
+              class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+            >
+              Phase 
+              7
+            </p>
+            <p
+              class="_text_a19422 _textSm_a19422 _weightMedium_a19422"
+            >
+              EARS Formalization
+            </p>
+          </div>
+        </button>
+      </li>
+    </ol>
+    <div
+      aria-label="Workspace views"
+      class="_viewTabs_b1495c"
+      role="tablist"
+    >
+      <button
+        aria-controls="_r_i_-overview-panel"
+        aria-selected="false"
+        class="_viewTab_b1495c"
+        id="_r_i_-overview-tab"
+        role="tab"
+        type="button"
+      >
+        Overview
+      </button>
+      <button
+        aria-controls="_r_i_-negotiation-panel"
+        aria-selected="false"
+        class="_viewTab_b1495c"
+        id="_r_i_-negotiation-tab"
+        role="tab"
+        type="button"
+      >
+        Negotiation
+      </button>
+      <button
+        aria-controls="_r_i_-verification-panel"
+        aria-selected="true"
+        class="_viewTab_b1495c"
+        id="_r_i_-verification-tab"
+        role="tab"
+        type="button"
+      >
+        Verification
+      </button>
+      <button
+        aria-controls="_r_i_-traceability-panel"
+        aria-selected="false"
+        class="_viewTab_b1495c"
+        id="_r_i_-traceability-tab"
+        role="tab"
+        type="button"
+      >
+        Traceability
+      </button>
+    </div>
+  </section>
+  <section
+    aria-busy="false"
+    aria-labelledby="_r_i_-verification-tab"
+    class="_focusRegion_b1495c"
+    id="_r_i_-verification-panel"
+    role="tabpanel"
+    tabindex="-1"
+  >
+    <div
+      class="_sectionStack_b1495c"
+    >
+      <section
+        class="_phaseSummary_b1495c"
+        data-phase-summary="true"
+      >
+        <div
+          class="_phaseSummaryHeader_b1495c"
+        >
+          <div>
+            <p
+              class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+            >
+              Verification console
+            </p>
+            <h2
+              class="_text_a19422 _textLg_a19422 _weightMedium_a19422"
+            >
+              Proof artifacts, execution, and Jira feedback stay in one surface.
+            </h2>
+          </div>
+          <div
+            class="_inlineCluster_b1495c"
+          >
+            <span
+              class="_badge_a19422 _badgeWarning_a19422"
+            >
+              Awaiting approval
+            </span>
+            <span
+              class="_badge_a19422 _badgeNeutral_a19422"
+            >
+              1
+               EARS
+            </span>
+          </div>
+        </div>
+        <p
+          class="_text_a19422 _textSm_a19422 _textMuted_a19422 _weightRegular_a19422"
+        >
+          Approval gates the compiled contract, generated proof artifacts, live execution stream, and the Jira update path.
+        </p>
+      </section>
+      <section
+        class="_actionSurface_b1495c"
+      >
+        <div
+          class="_sectionHeader_a19422"
+        >
+          <div
+            class="_sectionHeaderRow_a19422"
+          >
+            <h2
+              class="_text_a19422 _textSm_a19422 _weightSemibold_a19422"
+            >
+              EARS approval gate
+            </h2>
+            <span
+              class="_badge_a19422 _badgeWarning_a19422"
+            >
+              EARS approval required
+            </span>
+          </div>
+          <p
+            class="_text_a19422 _textSm_a19422 _weightRegular_a19422 _sectionHeaderDescription_a19422"
+          >
+            The backend-confirmed approval state unlocks the verification controls and stays visible inside the workspace.
+          </p>
+        </div>
+        <div
+          class="_detailList_b1495c"
+        >
+          <div
+            class="_detailRow_b1495c"
+          >
+            <p
+              class="_text_a19422 _textXs_a19422 _textMuted_a19422 _weightRegular_a19422"
+            >
+              Approval status
+            </p>
+            <p
+              class="_text_a19422 _textSm_a19422 _weightRegular_a19422"
+            >
+              Explicit approval is still required before verification can run.
+            </p>
+          </div>
+        </div>
+        <div
+          class="_actionRow_b1495c"
+        >
+          <button
+            class="_button_a19422 _buttonPrimary_a19422"
+            type="button"
+          >
+            <span>
+              Approve EARS
+            </span>
+          </button>
+        </div>
+      </section>
+      <section
+        class="_actionSurface_b1495c"
+      >
+        <div
+          class="_sectionHeader_a19422"
+        >
+          <div
+            class="_sectionHeaderRow_a19422"
+          >
+            <h2
+              class="_text_a19422 _textSm_a19422 _weightSemibold_a19422"
+            >
+              Execution controls
+            </h2>
+          </div>
+          <p
+            class="_text_a19422 _textSm_a19422 _weightRegular_a19422 _sectionHeaderDescription_a19422"
+          >
+            Compile, test generation, and the full pipeline stay in-place so the operator never leaves the active story.
+          </p>
+        </div>
+        <div
+          class="_actionRow_b1495c"
+        >
+          <button
+            class="_button_a19422 _buttonPrimary_a19422"
+            disabled=""
+            type="button"
+          >
+            <span>
+              Compile spec
+            </span>
+          </button>
+          <button
+            class="_button_a19422 _buttonSecondary_a19422"
+            disabled=""
+            type="button"
+          >
+            <span>
+              Generate tests
+            </span>
+          </button>
+          <button
+            class="_button_a19422 _buttonGhost_a19422"
+            disabled=""
+            type="button"
+          >
+            <span>
+              Run full pipeline
+            </span>
+          </button>
+        </div>
+      </section>
+      <section
+        class="_sectionStack_b1495c"
+      >
+        <div
+          class="_sectionHeader_a19422"
+        >
+          <div
+            class="_sectionHeaderRow_a19422"
+          >
+            <h2
+              class="_text_a19422 _textSm_a19422 _weightSemibold_a19422"
+            >
+              Artifacts
+            </h2>
+          </div>
+          <p
+            class="_text_a19422 _textSm_a19422 _weightRegular_a19422 _sectionHeaderDescription_a19422"
+          >
+            Compiled YAML and generated tests remain readable and can be revisited after other workspace actions.
+          </p>
+        </div>
+        <div
+          class="_emptyState_a19422"
+        >
+          <div
+            class="_emptyStateBody_a19422"
+          >
+            <h2
+              class="_text_a19422 _textLg_a19422 _weightSemibold_a19422"
+            >
+              No artifacts yet
+            </h2>
+            <p
+              class="_text_a19422 _textSm_a19422 _textMuted_a19422 _weightRegular_a19422"
+            >
+              Compile the spec or generate tests to inspect the read-only verification artifacts inline.
+            </p>
+          </div>
+        </div>
+      </section>
+      <section
+        aria-labelledby="_r_k_"
+        class="_sectionStack_b1495c"
+        role="region"
+        tabindex="-1"
+      >
+        <div
+          aria-atomic="true"
+          aria-label="Pipeline status"
+          aria-live="polite"
+          class="srOnly"
+          role="status"
+        >
+          Pipeline console is idle.
+        </div>
+        <div
+          class="_sectionHeader_a19422"
+        >
+          <div
+            class="_sectionHeaderRow_a19422"
+          >
+            <h2
+              class="_text_a19422 _textSm_a19422 _weightSemibold_a19422"
+            >
+              <span
+                id="_r_k_"
+              >
+                Pipeline console
+              </span>
+            </h2>
+            <span
+              class="_badge_a19422 _badgeWarning_a19422"
+            >
+              Idle
+            </span>
+          </div>
+          <p
+            class="_text_a19422 _textSm_a19422 _weightRegular_a19422 _sectionHeaderDescription_a19422"
+          >
+            Step-level progress appends in order so operators can monitor the run without polling or leaving the page.
+          </p>
+        </div>
+        <div
+          class="_emptyState_a19422"
+        >
+          <div
+            class="_emptyStateBody_a19422"
+          >
+            <h2
+              class="_text_a19422 _textLg_a19422 _weightSemibold_a19422"
+            >
+              Console is idle
+            </h2>
+            <p
+              class="_text_a19422 _textSm_a19422 _textMuted_a19422 _weightRegular_a19422"
+            >
+              Run the full pipeline to stream compile, generation, and evaluation progress into the workspace.
+            </p>
+          </div>
+        </div>
+      </section>
+      <section
+        class="_sectionStack_b1495c"
+      >
+        <div
+          class="_sectionHeader_a19422"
+        >
+          <div
+            class="_sectionHeaderRow_a19422"
+          >
+            <h2
+              class="_text_a19422 _textSm_a19422 _weightSemibold_a19422"
+            >
+              Post-run results
+            </h2>
+          </div>
+          <p
+            class="_text_a19422 _textSm_a19422 _weightRegular_a19422 _sectionHeaderDescription_a19422"
+          >
+            Overall outcome stays ahead of the per-AC verdicts, evidence details, and Jira feedback controls.
+          </p>
+        </div>
+        <div
+          class="_emptyState_a19422"
+        >
+          <div
+            class="_emptyStateBody_a19422"
+          >
+            <h2
+              class="_text_a19422 _textLg_a19422 _weightSemibold_a19422"
+            >
+              No results yet
+            </h2>
+            <p
+              class="_text_a19422 _textSm_a19422 _textMuted_a19422 _weightRegular_a19422"
+            >
+              Generate tests or run the full pipeline to populate verdicts and downstream Jira feedback.
+            </p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </section>
+</div>
+`;

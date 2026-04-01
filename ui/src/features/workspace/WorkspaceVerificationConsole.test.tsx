@@ -3,6 +3,7 @@ import { createRef, type ReactNode } from 'react';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { axe } from 'vitest-axe';
 import { WorkspaceCenterPane } from '@/features/workspace/WorkspaceCenterPane';
 import * as api from '@/lib/api/client';
 import type { StartNegotiationResponse } from '@/lib/api/types';
@@ -244,9 +245,65 @@ describe('Workspace verification console', () => {
 
     expect(await screen.findByText(/compiling spec/i)).toBeInTheDocument();
     expect(screen.getByText(/reused generated tests/i)).toBeInTheDocument();
-    expect(screen.getByText(/pipeline complete/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/pipeline complete/i)).toHaveLength(2);
     expect(screen.getByRole('heading', { name: /pipeline console/i })).toBeInTheDocument();
     expect(screen.getByText(/^complete$/i)).toBeInTheDocument();
+  });
+
+  it('announces pipeline completion and moves focus to the console summary surface', async () => {
+    const user = userEvent.setup();
+
+    vi.spyOn(api, 'approveEars').mockResolvedValue({
+      approved: true,
+      approved_at: '2026-04-01T13:04:00Z',
+      approved_by: 'web_operator',
+    });
+    vi.spyOn(api, 'streamPipelineEvents').mockImplementation(async (_sessionId, onEvent) => {
+      onEvent({
+        type: 'step',
+        step: 'compile',
+        status: 'running',
+        message: 'Compiling spec...',
+      });
+      onEvent({
+        type: 'done',
+        all_passed: true,
+        message: 'Pipeline complete',
+        success: true,
+        verdicts: [{ ac_checkbox: 0, ac_text: completedSession.acceptance_criteria?.[0].text, passed: true }],
+      });
+    });
+
+    render(
+      <WorkspaceCenterPane
+        activeSession={completedSession}
+        activeView="verification"
+        draftFeedback=""
+        focusRef={createRef<HTMLElement>()}
+        isTransitionPending={false}
+        onApprovePhase={vi.fn()}
+        onDraftFeedbackChange={vi.fn()}
+        onPhaseSelect={vi.fn()}
+        onRevisePhase={vi.fn()}
+        onViewChange={vi.fn()}
+        phaseActionState={{ activeAction: null, isPending: false, message: null, status: 'idle' }}
+        selectedAcceptanceCriterionIndex={0}
+        selectedPhaseNumber={7}
+        statusLabel="Verification-ready session"
+        storySummary="Verification console approval gate"
+      />,
+      { wrapper: createWrapper() },
+    );
+
+    await user.click(screen.getByRole('button', { name: /approve ears/i }));
+    await user.click(await screen.findByRole('button', { name: /run full pipeline/i }));
+
+    expect(await screen.findByRole('status', { name: /pipeline status/i })).toHaveTextContent(
+      /pipeline complete/i,
+    );
+    await waitFor(() => {
+      expect(screen.getByRole('region', { name: /pipeline console/i })).toHaveFocus();
+    });
   });
 
   it('renders verdicts with evidence detail and posts Jira feedback from the post-run surface', async () => {
@@ -324,5 +381,56 @@ describe('Workspace verification console', () => {
     await user.click(screen.getByRole('button', { name: /send jira feedback/i }));
 
     expect(await screen.findByText(/1 checkbox updated\. evidence posted\./i)).toBeInTheDocument();
+  });
+
+  it('stays free of obvious accessibility violations in the verification surface', async () => {
+    const { container } = render(
+      <WorkspaceCenterPane
+        activeSession={completedSession}
+        activeView="verification"
+        draftFeedback=""
+        focusRef={createRef<HTMLElement>()}
+        isTransitionPending={false}
+        onApprovePhase={vi.fn()}
+        onDraftFeedbackChange={vi.fn()}
+        onPhaseSelect={vi.fn()}
+        onRevisePhase={vi.fn()}
+        onViewChange={vi.fn()}
+        phaseActionState={{ activeAction: null, isPending: false, message: null, status: 'idle' }}
+        selectedAcceptanceCriterionIndex={0}
+        selectedPhaseNumber={7}
+        statusLabel="Verification-ready session"
+        storySummary="Verification console approval gate"
+      />,
+      { wrapper: createWrapper() },
+    );
+
+    const results = await axe(container);
+    expect(results.violations).toHaveLength(0);
+  });
+
+  it('matches the verification surface snapshot for visual regression coverage', () => {
+    const { container } = render(
+      <WorkspaceCenterPane
+        activeSession={completedSession}
+        activeView="verification"
+        draftFeedback=""
+        focusRef={createRef<HTMLElement>()}
+        isTransitionPending={false}
+        onApprovePhase={vi.fn()}
+        onDraftFeedbackChange={vi.fn()}
+        onPhaseSelect={vi.fn()}
+        onRevisePhase={vi.fn()}
+        onViewChange={vi.fn()}
+        phaseActionState={{ activeAction: null, isPending: false, message: null, status: 'idle' }}
+        selectedAcceptanceCriterionIndex={0}
+        selectedPhaseNumber={7}
+        statusLabel="Verification-ready session"
+        storySummary="Verification console approval gate"
+      />,
+      { wrapper: createWrapper() },
+    );
+
+    expect(container.firstChild).toMatchSnapshot();
   });
 });

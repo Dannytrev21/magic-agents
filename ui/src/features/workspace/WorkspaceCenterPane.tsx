@@ -1,4 +1,4 @@
-import { useEffect, useState, type RefObject } from 'react';
+import { useEffect, useId, useState, type RefObject } from 'react';
 import { Button } from '@/components/primitives/Button';
 import { Badge } from '@/components/primitives/Badge';
 import { Divider } from '@/components/primitives/Divider';
@@ -74,6 +74,7 @@ export function WorkspaceCenterPane({
   statusLabel,
   storySummary = null,
 }: WorkspaceCenterPaneProps) {
+  const workspaceViewId = useId();
   const [verificationState, setVerificationState] = useState<VerificationWorkspaceState>(() =>
     buildInitialVerificationState(activeSession),
   );
@@ -135,6 +136,8 @@ export function WorkspaceCenterPane({
     centerWorkspaceViews.find((view) => view.value === activeView)?.label ?? 'Overview';
   const selectedCriterionLabel =
     selectedAcceptanceCriterionIndex !== null ? `AC ${selectedAcceptanceCriterionIndex + 1}` : 'Story-wide';
+  const activeViewPanelId = `${workspaceViewId}-${activeView}-panel`;
+  const activeViewTabId = `${workspaceViewId}-${activeView}-tab`;
 
   return (
     <div className={styles.stack}>
@@ -209,8 +212,10 @@ export function WorkspaceCenterPane({
         <div aria-label="Workspace views" className={styles.viewTabs} role="tablist">
           {centerWorkspaceViews.map((view) => (
             <button
+              aria-controls={`${workspaceViewId}-${view.value}-panel`}
               aria-selected={activeView === view.value}
               className={styles.viewTab}
+              id={`${workspaceViewId}-${view.value}-tab`}
               key={view.value}
               onClick={() => onViewChange(view.value)}
               role="tab"
@@ -223,10 +228,12 @@ export function WorkspaceCenterPane({
       </section>
 
       <section
-        aria-label="Active workspace region"
+        aria-labelledby={activeViewTabId}
+        aria-busy={isTransitionPending}
         className={styles.focusRegion}
+        id={activeViewPanelId}
         ref={focusRef}
-        role="region"
+        role="tabpanel"
         tabIndex={-1}
       >
         {activeView === 'overview' ? (

@@ -6,12 +6,13 @@ Every arrow below represents a handoff between components. Each handoff has a de
 
 ## React Workspace Status
 
-- The React + TypeScript operator workspace now covers epics U1 through U6 of the UI port.
+- The React + TypeScript operator workspace now covers epics U1 through U7 of the UI port.
 - The right inspector exposes evidence, scan output, per-AC traceability, planner/critique tools, spec diff, and a structured spec contract viewer beside raw YAML.
 - The center pane now includes a verification console with backend-confirmed EARS approval, inline spec/test artifact viewers, live SSE pipeline events, and post-run Jira feedback controls.
+- The shared workspace shell now ships the graphite/bone visual system, named screen-reader announcements, semantic tabpanels for the active workspace and inspector, and reduced-motion-safe transitions for pane and section changes.
 - The inspector consumes the current FastAPI routes directly: `/api/scan`, `/api/scan/status`, `/api/plan`, `/api/evaluate-phase`, `/api/spec-diff`, and `/api/compile`.
 - The verification console consumes `/api/ears-approve`, `/api/compile`, `/api/generate-tests`, `/api/pipeline/stream`, and `/api/jira/update`, and the backend now enforces approval before execution endpoints run.
-- UI verification currently runs through `npm test` and `npm run build` in [`/Users/dannytrevino/development/magic-agents/ui`](/Users/dannytrevino/development/magic-agents/ui).
+- UI verification currently runs through `npm test` and `npm run build` in [`/Users/dannytrevino/development/magic-agents/ui`](/Users/dannytrevino/development/magic-agents/ui), with Vitest snapshots and axe-backed accessibility assertions covering the shell, negotiation workspace, and verification console.
 
 ```
 ┌──────────┐     jira_ticket.yaml      ┌───────────────┐

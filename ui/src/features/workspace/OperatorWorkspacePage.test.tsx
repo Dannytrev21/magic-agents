@@ -345,7 +345,9 @@ describe('Operator workspace layout', () => {
   it('renders top-bar session context and the wired workspace shell for active sessions', () => {
     renderWorkspace();
 
-    expect(screen.getAllByRole('status')[0]).toHaveTextContent(/awaiting operator input/i);
+    expect(screen.getByRole('status', { name: /workspace status/i })).toHaveTextContent(
+      /awaiting operator input/i,
+    );
     expect(screen.getByText(/bootstrap session: session-123/i)).toBeInTheDocument();
     expect(screen.getByText(/phase 3: precondition formalization/i)).toBeInTheDocument();
     expect(screen.getByText('Center view: overview')).toBeInTheDocument();
@@ -431,6 +433,7 @@ describe('Operator workspace layout', () => {
     });
 
     await user.click(screen.getByRole('button', { name: /start mock session/i }));
+    await screen.findByText(/bootstrap session: session-started/i);
     await user.type(screen.getByLabelText(/draft feedback/i), 'Need clearer preconditions');
 
     expect(screen.getByText(/center draft: need clearer preconditions/i)).toBeInTheDocument();

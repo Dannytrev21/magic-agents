@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { axe } from 'vitest-axe';
 import { AppShell } from '@/components/layout/AppShell';
 
 function renderShell() {
@@ -8,8 +9,9 @@ function renderShell() {
   const onToggleLeftPane = vi.fn();
   const onToggleRightPane = vi.fn();
 
-  render(
+  const view = render(
     <AppShell
+      announcement="Session loaded for MAG-22"
       centerPane={<div>Center workspace</div>}
       layoutMode="desktop"
       leftPaneCollapsed={false}
@@ -30,6 +32,7 @@ function renderShell() {
   );
 
   return {
+    ...view,
     onMobilePaneChange,
     onToggleLeftPane,
     onToggleRightPane,
@@ -74,7 +77,18 @@ describe('AppShell', () => {
     expect(screen.getByText(/negotiation surface/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /toggle story intake panel/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /toggle evidence panel/i })).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent(/awaiting operator input/i);
+    expect(screen.getByRole('status', { name: /workspace status/i })).toHaveTextContent(
+      /awaiting operator input/i,
+    );
+  });
+
+  it('announces major workspace transitions and keeps the active workspace focusable', () => {
+    renderShell();
+
+    expect(screen.getByRole('status', { name: /workspace announcements/i })).toHaveTextContent(
+      /session loaded for mag-22/i,
+    );
+    expect(screen.getByRole('main')).toHaveAttribute('tabindex', '-1');
   });
 
   it('supports collapsed panel state and mobile panel switching controls', async () => {
@@ -114,5 +128,16 @@ describe('AppShell', () => {
 
     await user.click(screen.getByRole('button', { name: /toggle evidence panel/i }));
     expect(onToggleRightPane).toHaveBeenCalled();
+  });
+
+  it('stays free of obvious accessibility violations in the shell layout', async () => {
+    const { container } = renderShell();
+    const results = await axe(container);
+    expect(results.violations).toHaveLength(0);
+  });
+
+  it('matches the shell snapshot for visual regression coverage', () => {
+    const { container } = renderShell();
+    expect(container.firstChild).toMatchSnapshot();
   });
 });

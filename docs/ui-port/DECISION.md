@@ -99,3 +99,9 @@ The final plan in `docs/ui-port` is a hybrid:
 - Use on-demand inspector actions for planner, critique, spec diff, compile, and scan work so the center pane never resets during evidence inspection.
 - Return parsed requirement and traceability data from `/api/compile` so the contract viewer stays structured without adding client-side YAML parsing complexity.
 - Share acceptance-criterion selection between the left rail, center pane, and inspector so traceability and structured spec requirements can cross-highlight the same proof chain.
+
+## Implemented U7 Decisions
+
+- Move the workspace to a light graphite/bone visual language with one amber signal accent so the operator surface reads as a serious tool instead of a dark prototype.
+- Keep accessibility state in the same shell model as layout state: named announcements, named status regions, focus handoff, and tabpanel wiring are part of the workspace contract, not bolt-on decoration.
+- Prefer CSS-driven motion tokens plus a global reduced-motion escape hatch over a heavier client animation layer, since the port already has the layout transitions it needs.

@@ -26,7 +26,8 @@
 
 .button:focus-visible {
   outline: 2px solid var(--color-signal);
-  outline-offset: 2px;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px var(--color-focus-ring);
 }
 
 .button:disabled {
@@ -37,11 +38,12 @@
 
 .buttonPrimary {
   background: var(--color-signal);
-  color: var(--color-ink);
+  color: var(--color-bg-elevated);
+  box-shadow: var(--shadow-float);
 }
 
 .buttonSecondary {
-  background: var(--color-surface);
+  background: var(--color-surface-raised);
   border-color: var(--color-border);
   color: var(--color-text);
 }
@@ -52,7 +54,7 @@
 }
 
 .buttonDanger {
-  background: color-mix(in srgb, var(--color-error) 16%, var(--color-surface));
+  background: color-mix(in srgb, var(--color-error) 12%, var(--color-surface-raised));
   border-color: color-mix(in srgb, var(--color-error) 45%, var(--color-border));
   color: var(--color-text);
 }
@@ -104,20 +106,21 @@
 }
 
 .badgeNeutral {
-  background: color-mix(in srgb, var(--color-surface-strong) 60%, transparent);
+  background: color-mix(in srgb, var(--color-surface-strong) 42%, white);
   border-color: var(--color-border);
   color: var(--color-text-muted);
 }
 
 .panel {
-  background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+  background: color-mix(in srgb, var(--color-surface-raised) 94%, white);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   padding: var(--space-5);
+  box-shadow: var(--shadow-panel);
 }
 
 .panelSubtle {
-  background: color-mix(in srgb, var(--color-surface-strong) 86%, transparent);
+  background: color-mix(in srgb, var(--color-bone) 92%, white);
 }
 
 .sectionHeader {
@@ -205,9 +208,9 @@
   border-radius: var(--radius-lg);
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--color-surface-strong) 90%, transparent) 0%,
-    color-mix(in srgb, var(--color-signal) 8%, var(--color-surface-strong)) 50%,
-    color-mix(in srgb, var(--color-surface-strong) 90%, transparent) 100%
+    color-mix(in srgb, var(--color-surface-raised) 84%, white) 0%,
+    color-mix(in srgb, var(--color-signal) 10%, var(--color-surface-raised)) 50%,
+    color-mix(in srgb, var(--color-surface-raised) 84%, white) 100%
   );
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite linear;

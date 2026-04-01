@@ -1,8 +1,6 @@
 .shell {
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--color-signal) 12%, transparent), transparent 28%),
-    linear-gradient(180deg, var(--color-bg-elevated) 0%, var(--color-bg) 38%);
+  background: transparent;
   color: var(--color-text);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
@@ -33,7 +31,8 @@
   padding: var(--space-4) var(--space-6);
   border-bottom: 1px solid var(--color-border);
   backdrop-filter: blur(18px);
-  background: color-mix(in srgb, var(--color-bg) 88%, transparent);
+  background: color-mix(in srgb, var(--color-bg-elevated) 84%, white);
+  box-shadow: var(--shadow-float);
 }
 
 .brandBlock {
@@ -93,7 +92,8 @@
   padding: 0.55rem 0.8rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-round);
-  background: color-mix(in srgb, var(--color-surface) 82%, transparent);
+  background: color-mix(in srgb, var(--color-surface-raised) 88%, white);
+  box-shadow: var(--shadow-line);
 }
 
 .statusDot {
@@ -129,7 +129,7 @@
   padding-inline: var(--space-3);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-round);
-  background: color-mix(in srgb, var(--color-surface) 64%, transparent);
+  background: color-mix(in srgb, var(--color-surface-raised) 82%, white);
 }
 
 .workspaceFrame {
@@ -161,7 +161,7 @@
   min-width: 0;
   min-height: 0;
   border-right: 1px solid var(--color-border);
-  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
+  background: color-mix(in srgb, var(--color-surface) 66%, white);
 }
 
 .pane:last-child {
@@ -169,7 +169,7 @@
 }
 
 .mainPane {
-  background: color-mix(in srgb, var(--color-bg-elevated) 74%, transparent);
+  background: color-mix(in srgb, var(--color-bg-elevated) 92%, white);
 }
 
 .inspectorPane {}
@@ -178,6 +178,9 @@
   height: calc(100vh - 4.5rem);
   overflow-y: auto;
   padding: var(--space-5);
+  display: grid;
+  align-content: start;
+  gap: var(--space-4);
 }
 
 .overlayFrame {
@@ -187,8 +190,8 @@
   bottom: 0;
   width: min(24rem, calc(100vw - 3rem));
   border-left: 1px solid var(--color-border);
-  background: color-mix(in srgb, var(--color-bg) 92%, transparent);
-  box-shadow: -18px 0 32px color-mix(in srgb, var(--color-ink) 28%, transparent);
+  background: color-mix(in srgb, var(--color-bg-elevated) 94%, white);
+  box-shadow: -18px 0 32px color-mix(in srgb, var(--color-graphite) 18%, transparent);
 }
 
 .overlayPane {
@@ -207,8 +210,9 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   border-top: 1px solid var(--color-border);
-  background: color-mix(in srgb, var(--color-bg) 92%, transparent);
+  background: color-mix(in srgb, var(--color-bg-elevated) 90%, white);
   backdrop-filter: blur(18px);
+  box-shadow: 0 -8px 24px color-mix(in srgb, var(--color-graphite) 10%, transparent);
 }
 
 .mobileTab {
@@ -227,7 +231,41 @@
 .mobileTab[aria-selected='true'] {
   border-top-color: var(--color-signal);
   color: var(--color-text);
-  background: color-mix(in srgb, var(--color-surface) 80%, transparent);
+  background: color-mix(in srgb, var(--color-surface-raised) 84%, white);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .paneSurface {
+    animation: paneEnter var(--motion-normal) var(--easing-standard);
+  }
+
+  .overlayFrame {
+    animation: inspectorReveal var(--motion-normal) var(--easing-standard);
+  }
+}
+
+@keyframes paneEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes inspectorReveal {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 @media (max-width: 1180px) {

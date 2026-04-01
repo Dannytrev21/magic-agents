@@ -7,13 +7,16 @@
 html {
   font-family: var(--font-sans);
   background: var(--color-bg);
+  scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: var(--color-bg);
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--color-signal) 12%, transparent), transparent 28%),
+    linear-gradient(180deg, var(--color-bg-elevated) 0%, var(--color-bg) 62%);
   color: var(--color-text);
   font-family: var(--font-sans);
   font-size: var(--text-base);
@@ -31,6 +34,42 @@ a {
   color: inherit;
 }
 
+a:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 3px;
+}
+
 #root {
   min-height: 100vh;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-signal) 24%, white);
+  color: var(--color-graphite);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

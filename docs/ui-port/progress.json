@@ -2,18 +2,18 @@
   "meta": {
     "project": "Magic Agents Operator Workspace UI port",
     "created": "2026-03-31",
-    "last_updated": "2026-04-01T13:32:13Z",
+    "last_updated": "2026-04-01T14:27:33Z",
     "total_epics": 8,
     "total_stories": 36
   },
   "summary": {
-    "epics_complete": 6,
+    "epics_complete": 7,
     "epics_in_progress": 0,
-    "epics_not_started": 2,
-    "stories_complete": 30,
+    "epics_not_started": 1,
+    "stories_complete": 33,
     "stories_in_progress": 0,
-    "stories_not_started": 6,
-    "stories_tested": 30
+    "stories_not_started": 3,
+    "stories_tested": 33
   },
   "epics": [
     {
@@ -105,11 +105,11 @@
       "title": "Design System, Accessibility, and Motion",
       "file": "U07-design-system-accessibility-motion.md",
       "priority": 7,
-      "status": "not_started",
+      "status": "complete",
       "stories": [
-        { "id": "U7.1", "title": "Establish the visual system and typography rules", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U7.2", "title": "Make the workspace accessible for keyboard and screen-reader users", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U7.3", "title": "Add restrained motion and responsive refinement", "status": "not_started", "tested": false, "notes": "" }
+        { "id": "U7.1", "title": "Establish the visual system and typography rules", "status": "complete", "tested": true, "notes": "Refreshed the operator workspace to a graphite/bone visual system, tightened panel and divider treatment, and added Vitest snapshot coverage for shell, negotiation, and verification surfaces." },
+        { "id": "U7.2", "title": "Make the workspace accessible for keyboard and screen-reader users", "status": "complete", "tested": true, "notes": "Added named live regions, workspace/inspector tabpanel wiring, focus handoff after session and pipeline transitions, and axe-backed accessibility checks for the shell, negotiation pane, and verification console." },
+        { "id": "U7.3", "title": "Add restrained motion and responsive refinement", "status": "complete", "tested": true, "notes": "Standardized pane and section transitions around shared motion tokens, added global reduced-motion fallbacks, and refined responsive shell surfaces without changing the established tablet/mobile task flow." }
       ]
     },
     {

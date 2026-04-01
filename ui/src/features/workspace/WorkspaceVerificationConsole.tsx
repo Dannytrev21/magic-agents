@@ -1,4 +1,4 @@
-import type { Dispatch, SetStateAction } from 'react';
+import { useEffect, useId, useRef, type Dispatch, type SetStateAction } from 'react';
 import { Button } from '@/components/primitives/Button';
 import { Badge } from '@/components/primitives/Badge';
 import { EmptyState } from '@/components/primitives/EmptyState';
@@ -67,6 +67,10 @@ export function WorkspaceVerificationConsole({
   state,
   onStateChange,
 }: WorkspaceVerificationConsoleProps) {
+  const artifactViewId = useId();
+  const pipelineTitleId = useId();
+  const pipelineRegionRef = useRef<HTMLElement | null>(null);
+  const lastPipelineOutcomeRef = useRef<string | null>(null);
   const { jiraConfigured } = useVerificationQueries();
   const { approveMutation, compileMutation, generateMutation, jiraUpdateMutation } =
     useVerificationActions(activeSession.session_id);
@@ -86,6 +90,14 @@ export function WorkspaceVerificationConsole({
   const failedCount = verdicts.length - passedCount;
   const jiraCount = countCheckboxes(state.jiraUpdateResult);
   const artifactTabs: Array<{ label: string; value: 'spec' | 'tests' }> = [];
+  const activeArtifactPanelId = `${artifactViewId}-${state.artifactView}-panel`;
+  const activeArtifactTabId = `${artifactViewId}-${state.artifactView}-tab`;
+  const pipelineAnnouncement = buildPipelineAnnouncement(
+    state.pipelineRunning,
+    state.pipelineError,
+    state.pipelineSummary,
+    state.pipelineEvents,
+  );
 
   if (compiledSpec) {
     artifactTabs.push({ label: 'Spec YAML', value: 'spec' });
@@ -94,6 +106,25 @@ export function WorkspaceVerificationConsole({
   if (generatedTests?.test_content) {
     artifactTabs.push({ label: 'Generated tests', value: 'tests' });
   }
+
+  useEffect(() => {
+    const nextOutcome =
+      state.pipelineError
+        ? `error:${state.pipelineError}`
+        : state.pipelineSummary?.message
+          ? `done:${state.pipelineSummary.message}`
+          : null;
+
+    if (!nextOutcome || lastPipelineOutcomeRef.current === nextOutcome) {
+      return;
+    }
+
+    lastPipelineOutcomeRef.current = nextOutcome;
+
+    window.requestAnimationFrame(() => {
+      pipelineRegionRef.current?.focus();
+    });
+  }, [state.pipelineError, state.pipelineSummary?.message]);
 
   async function handleApprove() {
     onStateChange((current) => ({
@@ -344,8 +375,10 @@ export function WorkspaceVerificationConsole({
             <div aria-label="Artifact views" className={styles.viewTabs} role="tablist">
               {artifactTabs.map((tab) => (
                 <button
+                  aria-controls={`${artifactViewId}-${tab.value}-panel`}
                   aria-selected={state.artifactView === tab.value}
                   className={styles.viewTab}
+                  id={`${artifactViewId}-${tab.value}-tab`}
                   key={tab.value}
                   onClick={() =>
                     onStateChange((current) => ({
@@ -361,12 +394,22 @@ export function WorkspaceVerificationConsole({
               ))}
             </div>
             {state.artifactView === 'tests' && generatedTests?.test_content ? (
-              <div className={styles.sectionStack}>
+              <div
+                aria-labelledby={activeArtifactTabId}
+                className={styles.sectionStack}
+                id={activeArtifactPanelId}
+                role="tabpanel"
+              >
                 {generatedTests.test_path ? <Mono>{generatedTests.test_path}</Mono> : null}
                 <pre className={styles.rawPayloadPre}>{generatedTests.test_content}</pre>
               </div>
             ) : compiledSpec ? (
-              <div className={styles.sectionStack}>
+              <div
+                aria-labelledby={activeArtifactTabId}
+                className={styles.sectionStack}
+                id={activeArtifactPanelId}
+                role="tabpanel"
+              >
                 <Mono>{compiledSpec.spec_path}</Mono>
                 <pre className={styles.rawPayloadPre}>{compiledSpec.spec_content}</pre>
               </div>
@@ -375,9 +418,24 @@ export function WorkspaceVerificationConsole({
         )}
       </section>
 
-      <section className={styles.sectionStack}>
+      <section
+        aria-labelledby={pipelineTitleId}
+        className={styles.sectionStack}
+        ref={pipelineRegionRef}
+        role="region"
+        tabIndex={-1}
+      >
+        <div
+          aria-atomic="true"
+          aria-label="Pipeline status"
+          aria-live="polite"
+          className="srOnly"
+          role="status"
+        >
+          {pipelineAnnouncement}
+        </div>
         <SectionHeader
-          title="Pipeline console"
+          title={<span id={pipelineTitleId}>Pipeline console</span>}
           description="Step-level progress appends in order so operators can monitor the run without polling or leaving the page."
           action={
             <Badge tone={resolvePipelineTone(state.pipelineRunning, state.pipelineError, state.pipelineSummary)}>
@@ -633,6 +691,28 @@ function resolvePipelineLabel(
   }
 
   return 'Idle';
+}
+
+function buildPipelineAnnouncement(
+  isRunning: boolean,
+  pipelineError: string | null,
+  pipelineSummary: PipelineEvent | null,
+  pipelineEvents: PipelineEvent[],
+) {
+  if (pipelineError) {
+    return pipelineError;
+  }
+
+  if (pipelineSummary?.message) {
+    return pipelineSummary.message;
+  }
+
+  if (isRunning) {
+    const latestEvent = pipelineEvents[pipelineEvents.length - 1];
+    return latestEvent?.message ?? 'Verification pipeline running.';
+  }
+
+  return 'Pipeline console is idle.';
 }
 
 function resolvePipelineTone(

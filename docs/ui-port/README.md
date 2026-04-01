@@ -21,8 +21,8 @@
 - React 19 + TypeScript
 - Vite
 - TanStack Query for server state
-- Radix primitives for accessibility-sensitive controls
-- Motion for restrained transitions
+- Accessible custom primitives plus semantic HTML for interaction surfaces
+- CSS motion tokens with restrained transitions and reduced-motion fallbacks
 - CSS variables + CSS Modules for the visual system
 
 ## Architecture Guardrails
@@ -65,11 +65,12 @@
 
 ## Current Status
 
-- U1 through U6 are now complete in the React workspace.
+- U1 through U7 are now complete in the React workspace.
 - The right inspector now owns the evidence, scan, traceability, planning/critique, and structured spec-contract surfaces.
 - The center pane now carries a session-scoped verification console with backend-confirmed EARS approval, inline artifact viewers, live pipeline streaming, verdict summaries, and Jira feedback.
+- The shell now uses the graphite/bone visual system, screen-reader live announcements, tabpanel wiring for active workspace surfaces, and reduced-motion-safe transitions.
 - Inspector actions and verification actions stay session-scoped and keep the center-pane workflow stable while scan, critique, planning, compile, and pipeline requests run.
-- The next delivery slice is Epic U7: design system, accessibility, and motion.
+- The next delivery slice is Epic U8: quality, performance, and rollout.
 
 ## Success Criteria
 

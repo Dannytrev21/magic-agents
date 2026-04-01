@@ -34,16 +34,22 @@ The new workspace should look and feel premium, but polish only matters after th
 
 ### Acceptance Criteria
 
-- [ ] CSS variables or tokens define color, spacing, radius, and type scales.
-- [ ] Sans-serif is the default product copy face.
-- [ ] Mono is limited to IDs, refs, paths, and artifact text.
-- [ ] Visual treatment favors dividers and whitespace over boxed cards.
+- [x] CSS variables or tokens define color, spacing, radius, and type scales.
+- [x] Sans-serif is the default product copy face.
+- [x] Mono is limited to IDs, refs, paths, and artifact text.
+- [x] Visual treatment favors dividers and whitespace over boxed cards.
 
 ### How to Test
 
 - Add visual regression coverage for the shell, rails, and artifact surfaces.
 - Verify token usage through component stories or design-system snapshots.
 - Manually inspect representative screens for typography misuse or accent overuse.
+
+### Implementation Notes
+
+- Rebased the operator workspace onto a light graphite/bone visual system in `ui/src/styles/tokens.css`, `ui/src/styles/global.css`, and the shared primitive/layout CSS modules.
+- Tightened shell, rail, and verification-console composition to rely on dividers, surface layering, and spacing before boxed treatment, while preserving mono typography only for refs, file paths, and session IDs.
+- Added Vitest snapshot coverage for the app shell, negotiation workspace, and verification surface so future visual regressions in the shared layout can be reviewed intentionally.
 
 ---
 
@@ -71,16 +77,22 @@ The new workspace should look and feel premium, but polish only matters after th
 
 ### Acceptance Criteria
 
-- [ ] Keyboard users can move through the rails, workspace, and inspector predictably.
-- [ ] Focus is managed after major transitions such as story selection, phase approval, and pipeline completion.
-- [ ] Live regions announce important status changes such as running, failed, and complete.
-- [ ] Contrast and visible focus styling meet accessible operator-use standards.
+- [x] Keyboard users can move through the rails, workspace, and inspector predictably.
+- [x] Focus is managed after major transitions such as story selection, phase approval, and pipeline completion.
+- [x] Live regions announce important status changes such as running, failed, and complete.
+- [x] Contrast and visible focus styling meet accessible operator-use standards.
 
 ### How to Test
 
 - Add accessibility tests with axe or equivalent tooling.
 - Run keyboard-only manual checks for the main negotiation and execution flows.
 - Verify screen-reader-friendly labels on tabs, buttons, and execution output.
+
+### Implementation Notes
+
+- Added named `role="status"` regions for persistent workspace state and transient announcements in the app shell plus a dedicated pipeline-status live region in the verification console.
+- Promoted center-pane and inspector surfaces to named tabpanels with explicit `aria-controls`/`aria-labelledby` wiring so the active workspace and inspector views are screen-reader addressable.
+- Added focus handoff on session start, successful phase actions, and pipeline completion; axe-backed tests now cover shell, negotiation, and verification surfaces.
 
 ---
 
@@ -108,13 +120,19 @@ The new workspace should look and feel premium, but polish only matters after th
 
 ### Acceptance Criteria
 
-- [ ] Pane and section transitions use a shared motion vocabulary.
-- [ ] Reduced-motion users receive a no-frills equivalent.
-- [ ] Tablet and mobile layouts collapse gracefully without losing key actions.
-- [ ] Motion does not introduce jank during data-heavy updates.
+- [x] Pane and section transitions use a shared motion vocabulary.
+- [x] Reduced-motion users receive a no-frills equivalent.
+- [x] Tablet and mobile layouts collapse gracefully without losing key actions.
+- [x] Motion does not introduce jank during data-heavy updates.
 
 ### How to Test
 
 - Add visual interaction tests for key transitions.
 - Verify reduced-motion handling in browser devtools or OS settings.
 - Run manual responsive checks across desktop, tablet, and mobile widths.
+
+### Implementation Notes
+
+- Standardized pane, overlay, and section entrance timing around the shared motion tokens and limited motion to orientation cues instead of ornamental movement.
+- Added a global `prefers-reduced-motion` escape hatch that disables animations and smooth scrolling for motion-sensitive operators.
+- Kept existing tablet overlay and mobile pane switching behavior, then refined the shell and pane surfaces so the responsive fallbacks stay readable without sacrificing primary actions.

@@ -17,7 +17,9 @@
   gap: var(--space-3);
   padding-bottom: var(--space-4);
   border-bottom: 1px solid var(--color-border);
-  background: color-mix(in srgb, var(--color-bg-elevated) 92%, transparent);
+  background: color-mix(in srgb, var(--color-surface-raised) 88%, white);
+  box-shadow: var(--shadow-line);
+  backdrop-filter: blur(16px);
 }
 
 .breadcrumbs {
@@ -56,7 +58,7 @@
   padding: var(--space-3);
   border: 0;
   border-top: 1px solid var(--color-border);
-  background: transparent;
+  background: color-mix(in srgb, var(--color-surface-raised) 70%, white);
   text-align: left;
   cursor: pointer;
 }
@@ -75,7 +77,7 @@
 }
 
 .phaseRailButton[data-selected='true'] {
-  background: color-mix(in srgb, var(--color-bg-elevated) 82%, transparent);
+  background: color-mix(in srgb, var(--color-signal) 10%, white);
 }
 
 .phaseRailMarker {
@@ -113,7 +115,7 @@
   padding: 0 var(--space-3);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-round);
-  background: transparent;
+  background: color-mix(in srgb, var(--color-surface-raised) 72%, white);
   color: var(--color-text-muted);
   cursor: pointer;
   transition:
@@ -124,7 +126,7 @@
 
 .viewTab[aria-selected='true'] {
   border-color: var(--color-signal);
-  background: color-mix(in srgb, var(--color-signal) 16%, transparent);
+  background: color-mix(in srgb, var(--color-signal) 12%, white);
   color: var(--color-text);
 }
 
@@ -248,7 +250,7 @@
   padding: var(--space-3);
   overflow: auto;
   border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
-  background: color-mix(in srgb, var(--color-bg-elevated) 90%, transparent);
+  background: color-mix(in srgb, var(--color-surface-raised) 90%, white);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   line-height: 1.6;
@@ -278,7 +280,7 @@
   padding: var(--space-3);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: transparent;
+  background: color-mix(in srgb, var(--color-surface-raised) 90%, white);
   color: var(--color-text);
   resize: vertical;
 }
@@ -346,7 +348,8 @@
   gap: var(--space-2);
   padding: var(--space-3);
   border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
-  background: color-mix(in srgb, var(--color-bg-elevated) 88%, transparent);
+  background: color-mix(in srgb, var(--color-surface-raised) 92%, white);
+  box-shadow: var(--shadow-line);
 }
 
 .consoleEntry[data-status='running'] {
@@ -386,7 +389,7 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-3);
   padding: var(--space-3);
-  background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+  background: color-mix(in srgb, var(--color-surface-raised) 88%, white);
 }
 
 .matrixRowButton {
@@ -395,7 +398,7 @@
   gap: var(--space-3);
   padding: var(--space-3);
   border: 0;
-  background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+  background: color-mix(in srgb, var(--color-surface-raised) 88%, white);
   text-align: left;
   cursor: pointer;
 }
@@ -410,8 +413,29 @@
   padding: 0 var(--space-3);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: transparent;
+  background: color-mix(in srgb, var(--color-surface-raised) 92%, white);
   color: var(--color-text);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .focusRegion,
+  .actionSurface,
+  .phaseSummary,
+  .consoleEntry {
+    animation: surfaceFadeIn var(--motion-normal) var(--easing-standard);
+  }
+}
+
+@keyframes surfaceFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .inspectorInput:focus-visible {
