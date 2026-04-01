@@ -261,4 +261,31 @@ describe('WorkspaceCenterPane', () => {
       expect(onPhaseSelect).toHaveBeenCalledTimes(2);
     });
   });
+
+  it('marks the active workspace region busy during in-place transitions', () => {
+    render(
+      <WorkspaceCenterPane
+        activeSession={activeSession}
+        activeView="negotiation"
+        draftFeedback=""
+        focusRef={createRef<HTMLElement>()}
+        isTransitionPending
+        onApprovePhase={vi.fn()}
+        onDraftFeedbackChange={vi.fn()}
+        onPhaseSelect={vi.fn()}
+        onRevisePhase={vi.fn()}
+        onViewChange={vi.fn()}
+        phaseActionState={{ activeAction: null, isPending: false, message: null, status: 'idle' }}
+        selectedAcceptanceCriterionIndex={null}
+        selectedPhaseNumber={4}
+        statusLabel="Awaiting operator input"
+        storySummary="Port the active phase workspace"
+      />,
+    );
+
+    expect(screen.getByRole('region', { name: /active workspace region/i })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+  });
 });

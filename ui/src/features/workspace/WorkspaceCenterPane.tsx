@@ -224,6 +224,7 @@ export function WorkspaceCenterPane({
 
       <section
         aria-label="Active workspace region"
+        aria-busy={isTransitionPending}
         className={styles.focusRegion}
         ref={focusRef}
         role="region"

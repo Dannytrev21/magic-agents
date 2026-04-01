@@ -1,4 +1,4 @@
-import type { Dispatch, SetStateAction } from 'react';
+import { useEffect, useRef, type Dispatch, type SetStateAction } from 'react';
 import { Button } from '@/components/primitives/Button';
 import { Badge } from '@/components/primitives/Badge';
 import { EmptyState } from '@/components/primitives/EmptyState';
@@ -67,6 +67,7 @@ export function WorkspaceVerificationConsole({
   state,
   onStateChange,
 }: WorkspaceVerificationConsoleProps) {
+  const pipelineLogRef = useRef<HTMLDivElement | null>(null);
   const { jiraConfigured } = useVerificationQueries();
   const { approveMutation, compileMutation, generateMutation, jiraUpdateMutation } =
     useVerificationActions(activeSession.session_id);
@@ -94,6 +95,23 @@ export function WorkspaceVerificationConsole({
   if (generatedTests?.test_content) {
     artifactTabs.push({ label: 'Generated tests', value: 'tests' });
   }
+
+  useEffect(() => {
+    if (!state.pipelineEvents.length || state.pipelineRunning) {
+      return;
+    }
+
+    if (!state.pipelineSummary && !state.pipelineError) {
+      return;
+    }
+
+    pipelineLogRef.current?.focus();
+  }, [
+    state.pipelineError,
+    state.pipelineEvents.length,
+    state.pipelineRunning,
+    state.pipelineSummary,
+  ]);
 
   async function handleApprove() {
     onStateChange((current) => ({
@@ -396,7 +414,14 @@ export function WorkspaceVerificationConsole({
             description="Run the full pipeline to stream compile, generation, and evaluation progress into the workspace."
           />
         ) : (
-          <div className={styles.console}>
+          <div
+            aria-label="Pipeline console"
+            aria-live="polite"
+            className={styles.console}
+            ref={pipelineLogRef}
+            role="log"
+            tabIndex={-1}
+          >
             {state.pipelineEvents.map((event, index) => (
               <article
                 className={styles.consoleEntry}

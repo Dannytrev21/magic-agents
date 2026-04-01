@@ -345,7 +345,9 @@ describe('Operator workspace layout', () => {
   it('renders top-bar session context and the wired workspace shell for active sessions', () => {
     renderWorkspace();
 
-    expect(screen.getAllByRole('status')[0]).toHaveTextContent(/awaiting operator input/i);
+    expect(screen.getByRole('status', { name: /session status/i })).toHaveTextContent(
+      /awaiting operator input/i,
+    );
     expect(screen.getByText(/bootstrap session: session-123/i)).toBeInTheDocument();
     expect(screen.getByText(/phase 3: precondition formalization/i)).toBeInTheDocument();
     expect(screen.getByText('Center view: overview')).toBeInTheDocument();
@@ -417,6 +419,42 @@ describe('Operator workspace layout', () => {
     expect(await screen.findByText('MAG-222')).toBeInTheDocument();
     expect(screen.getAllByText(/recovered story summary/i)).toHaveLength(2);
     expect(screen.getByText('Center view: negotiation')).toBeInTheDocument();
+  });
+
+  it('announces session and phase transitions while keeping focus on the active workspace flow', async () => {
+    const user = userEvent.setup();
+
+    mockRespondMutation.mockResolvedValue({
+      ...initialSession,
+      phase_number: 4,
+      phase_title: 'Failure Mode Enumeration',
+      session_id: 'session-started',
+    });
+
+    setViewport(1440);
+    installStorage();
+    renderPage({
+      initialEntry: '/',
+      initialSessionValue: null,
+      initialStorySummary: null,
+    });
+
+    await user.click(screen.getByRole('button', { name: /start mock session/i }));
+
+    const announcement = screen.getByRole('status', { name: /workspace announcements/i });
+
+    await waitFor(() => {
+      expect(announcement).toHaveTextContent(/session started for mag-222/i);
+      expect(screen.getByText('Center view: negotiation').closest('section')).toHaveFocus();
+    });
+
+    await user.click(screen.getByRole('button', { name: /approve phase/i }));
+
+    await waitFor(() => {
+      expect(announcement).toHaveTextContent(/phase approved/i);
+      expect(announcement).toHaveTextContent(/failure mode enumeration/i);
+      expect(screen.getByText('Center view: negotiation').closest('section')).toHaveFocus();
+    });
   });
 
   it('preserves draft feedback across view switches and confirmed session refreshes', async () => {

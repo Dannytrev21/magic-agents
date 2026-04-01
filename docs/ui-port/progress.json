@@ -2,18 +2,18 @@
   "meta": {
     "project": "Magic Agents Operator Workspace UI port",
     "created": "2026-03-31",
-    "last_updated": "2026-04-01T13:32:13Z",
+    "last_updated": "2026-04-01T15:15:44Z",
     "total_epics": 8,
     "total_stories": 36
   },
   "summary": {
-    "epics_complete": 6,
+    "epics_complete": 7,
     "epics_in_progress": 0,
-    "epics_not_started": 2,
-    "stories_complete": 30,
+    "epics_not_started": 1,
+    "stories_complete": 33,
     "stories_in_progress": 0,
-    "stories_not_started": 6,
-    "stories_tested": 30
+    "stories_not_started": 3,
+    "stories_tested": 33
   },
   "epics": [
     {
@@ -105,11 +105,11 @@
       "title": "Design System, Accessibility, and Motion",
       "file": "U07-design-system-accessibility-motion.md",
       "priority": 7,
-      "status": "not_started",
+      "status": "complete",
       "stories": [
-        { "id": "U7.1", "title": "Establish the visual system and typography rules", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U7.2", "title": "Make the workspace accessible for keyboard and screen-reader users", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U7.3", "title": "Add restrained motion and responsive refinement", "status": "not_started", "tested": false, "notes": "" }
+        { "id": "U7.1", "title": "Establish the visual system and typography rules", "status": "complete", "tested": true, "notes": "Added a typed graphite/bone/signal design-system source mirrored into CSS variables, tightened shell and rail surfaces, and preserved mono typography for refs and artifacts only." },
+        { "id": "U7.2", "title": "Make the workspace accessible for keyboard and screen-reader users", "status": "complete", "tested": true, "notes": "Added shell announcements, busy/log semantics, focus handoff after session/phase/pipeline transitions, and stronger visible focus treatment across primary controls." },
+        { "id": "U7.3", "title": "Add restrained motion and responsive refinement", "status": "complete", "tested": true, "notes": "Introduced shared motion tokens, reduced-motion fallbacks, calmer pane transitions, and responsive chrome refinements without disturbing the existing mobile/tablet pane model." }
       ]
     },
     {

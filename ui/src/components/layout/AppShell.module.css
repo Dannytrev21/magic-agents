@@ -1,11 +1,22 @@
 .shell {
   min-height: 100vh;
   background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--color-signal) 12%, transparent), transparent 28%),
-    linear-gradient(180deg, var(--color-bg-elevated) 0%, var(--color-bg) 38%);
+    radial-gradient(circle at top right, color-mix(in srgb, var(--color-signal) 10%, transparent), transparent 32%),
+    linear-gradient(180deg, color-mix(in srgb, var(--color-bg-elevated) 82%, var(--color-bg)) 0%, var(--color-bg) 42%);
   color: var(--color-text);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .skipLink {
@@ -13,7 +24,7 @@
   left: var(--space-4);
   top: var(--space-4);
   transform: translateY(-200%);
-  transition: transform var(--motion-fast) var(--easing-standard);
+  transition: transform var(--motion-normal) var(--easing-standard);
   z-index: 20;
 }
 
@@ -31,9 +42,10 @@
   gap: var(--space-4);
   min-height: 4.5rem;
   padding: var(--space-4) var(--space-6);
-  border-bottom: 1px solid var(--color-border);
-  backdrop-filter: blur(18px);
-  background: color-mix(in srgb, var(--color-bg) 88%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+  backdrop-filter: blur(var(--surface-blur-medium));
+  background: color-mix(in srgb, var(--color-bg) 74%, transparent);
+  box-shadow: var(--shadow-soft);
 }
 
 .brandBlock {
@@ -93,7 +105,8 @@
   padding: 0.55rem 0.8rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-round);
-  background: color-mix(in srgb, var(--color-surface) 82%, transparent);
+  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 8%, transparent);
 }
 
 .statusDot {
@@ -129,7 +142,17 @@
   padding-inline: var(--space-3);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-round);
-  background: color-mix(in srgb, var(--color-surface) 64%, transparent);
+  background: color-mix(in srgb, var(--color-surface) 56%, transparent);
+  backdrop-filter: blur(var(--surface-blur-medium));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 8%, transparent);
+}
+
+.controlButton:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 2px;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 8%, transparent),
+    0 0 0 4px var(--focus-ring);
 }
 
 .workspaceFrame {
@@ -161,7 +184,8 @@
   min-width: 0;
   min-height: 0;
   border-right: 1px solid var(--color-border);
-  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
+  background: color-mix(in srgb, var(--color-surface) 64%, transparent);
+  box-shadow: inset -1px 0 0 color-mix(in srgb, white 3%, transparent);
 }
 
 .pane:last-child {
@@ -169,7 +193,7 @@
 }
 
 .mainPane {
-  background: color-mix(in srgb, var(--color-bg-elevated) 74%, transparent);
+  background: color-mix(in srgb, var(--color-bg-elevated) 78%, transparent);
 }
 
 .inspectorPane {}
@@ -177,7 +201,7 @@
 .paneSurface {
   height: calc(100vh - 4.5rem);
   overflow-y: auto;
-  padding: var(--space-5);
+  padding: clamp(var(--space-4), 1.8vw, var(--space-6));
 }
 
 .overlayFrame {
@@ -187,8 +211,9 @@
   bottom: 0;
   width: min(24rem, calc(100vw - 3rem));
   border-left: 1px solid var(--color-border);
-  background: color-mix(in srgb, var(--color-bg) 92%, transparent);
-  box-shadow: -18px 0 32px color-mix(in srgb, var(--color-ink) 28%, transparent);
+  background: color-mix(in srgb, var(--color-bg) 78%, transparent);
+  backdrop-filter: blur(var(--surface-blur-strong));
+  box-shadow: var(--shadow-floating);
 }
 
 .overlayPane {
@@ -207,8 +232,9 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   border-top: 1px solid var(--color-border);
-  background: color-mix(in srgb, var(--color-bg) 92%, transparent);
-  backdrop-filter: blur(18px);
+  background: color-mix(in srgb, var(--color-bg) 78%, transparent);
+  backdrop-filter: blur(var(--surface-blur-medium));
+  box-shadow: 0 -12px 24px color-mix(in srgb, var(--color-ink) 28%, transparent);
 }
 
 .mobileTab {
@@ -228,6 +254,11 @@
   border-top-color: var(--color-signal);
   color: var(--color-text);
   background: color-mix(in srgb, var(--color-surface) 80%, transparent);
+}
+
+.mobileTab:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: -2px;
 }
 
 @media (max-width: 1180px) {

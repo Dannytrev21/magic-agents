@@ -242,11 +242,16 @@ describe('Workspace verification console', () => {
     await user.click(screen.getByRole('button', { name: /approve ears/i }));
     await user.click(await screen.findByRole('button', { name: /run full pipeline/i }));
 
-    expect(await screen.findByText(/compiling spec/i)).toBeInTheDocument();
+    const pipelineLog = await screen.findByRole('log', { name: /pipeline console/i });
+
+    expect(pipelineLog).toHaveTextContent(/compiling spec/i);
     expect(screen.getByText(/reused generated tests/i)).toBeInTheDocument();
     expect(screen.getByText(/pipeline complete/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /pipeline console/i })).toBeInTheDocument();
     expect(screen.getByText(/^complete$/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(pipelineLog).toHaveFocus();
+    });
   });
 
   it('renders verdicts with evidence detail and posts Jira feedback from the post-run surface', async () => {
