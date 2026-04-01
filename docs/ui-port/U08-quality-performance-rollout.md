@@ -11,7 +11,7 @@ The new UI should not become a second prototype. Once the workflow is ported, th
 ## Implementation Status
 
 - `U8.1` is implemented with new left-rail component coverage, page-level integration coverage, and expanded typed API contract tests. `npm run test:ui` and `npm run test:ci` both pass.
-- `U8.2` is implemented with Playwright specs for the deterministic manual-entry happy path and a mocked pipeline failure path, plus retained traces/screenshots on failure. The suite is present under [`/Users/dannytrevino/development/magic-agents/ui/tests/e2e/operator-workspace.spec.ts`](/Users/dannytrevino/development/magic-agents/ui/tests/e2e/operator-workspace.spec.ts), but a 2026-04-01 re-run in the clean automation worktree showed the current restricted macOS sandbox still aborts Playwright browser launch before page load even after `npm run test:e2e:install`.
+- `U8.2` is implemented with Playwright specs for the deterministic manual-entry happy path and a mocked pipeline failure path, plus retained traces/screenshots on failure. The suite is present under [`/Users/dannytrevino/development/magic-agents/ui/tests/e2e/operator-workspace.spec.ts`](/Users/dannytrevino/development/magic-agents/ui/tests/e2e/operator-workspace.spec.ts), and a 2026-04-01 rerun passed once Playwright browsers were installed into the active local worktree with `npm run test:e2e:install`.
 - `U8.3` is implemented with a lazy-loaded verification console chunk, manifest-backed bundle budgets, and a reversible FastAPI frontend switch via `MAGIC_AGENTS_FRONTEND_MODE` or the `frontend` query parameter. The targeted backend rollout tests pass.
 
 ---
@@ -87,7 +87,7 @@ The new UI should not become a second prototype. Once the workflow is ported, th
 - Run the browser suite locally against mock mode.
 - Intentionally inject one failing API response and confirm the failure path is asserted.
 - Review captured traces or screenshots from a failed test run.
-- If Playwright fails to boot in a restricted macOS sandbox, treat that as an environment issue rather than a spec failure and rerun on a machine where browser launch is permitted. The current sandbox reproduces a Chromium Mach bootstrap failure (`bootstrap_check_in ... Permission denied (1100)`) before the first page loads.
+- If Playwright fails to boot in a restricted macOS sandbox, treat that as an environment issue rather than a spec failure and rerun from an unrestricted local worktree after reinstalling browsers with `npm run test:e2e:install`.
 
 ---
 

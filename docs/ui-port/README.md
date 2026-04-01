@@ -66,7 +66,7 @@
 ## Current Status
 
 - U1 through U8 are now complete in the React workspace, with the non-browser gate (`npm run test:ci`) re-validated on 2026-04-01 and still green in a clean automation worktree.
-- U8.2 browser coverage remains authored but blocked from local execution in this sandbox because Playwright browser processes abort under the current macOS permission envelope even after local browser installation.
+- U8.2 browser coverage now passes in a local unrestricted worktree after running `npm run test:e2e:install` and `npm run test:e2e` from the same `ui` directory.
 - The shell, rails, workspace, and verification console now consume a typed graphite/bone/signal design system mirrored into CSS tokens.
 - Workspace announcements, pane focus handoff, busy states, and the pipeline log now support keyboard and screen-reader operation without pointer-only assumptions.
 - Reduced-motion fallbacks and shared timing tokens now govern pane transitions, live console behavior, and responsive shell refinements.
