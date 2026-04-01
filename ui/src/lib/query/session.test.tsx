@@ -1,7 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SessionBootstrap } from '@/features/session/SessionBootstrap';
 import * as api from '@/lib/api/client';
 
@@ -17,6 +18,11 @@ function createWrapper() {
     return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
   };
 }
+
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 describe('Session bootstrap query layer', () => {
   it('renders loading state while bootstrap queries resolve', () => {
@@ -49,6 +55,38 @@ describe('Session bootstrap query layer', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/workspace bootstrap failed/i)).toBeInTheDocument();
+    });
+  });
+
+  it('returns the active story summary when a manual session starts', async () => {
+    const user = userEvent.setup();
+    const onSessionStarted = vi.fn();
+
+    vi.spyOn(api, 'fetchJiraConfigured').mockResolvedValue({ configured: false });
+    vi.spyOn(api, 'fetchJiraStories').mockResolvedValue({ stories: [] });
+    vi.spyOn(api, 'startNegotiation').mockResolvedValue({
+      done: false,
+      jira_key: 'DEMO-UI',
+      phase_number: 1,
+      phase_title: 'Interface & Actor Discovery',
+      session_id: 'session-001',
+      total_phases: 7,
+    });
+
+    render(<SessionBootstrap onSessionStarted={onSessionStarted} />, {
+      wrapper: createWrapper(),
+    });
+
+    await user.click(screen.getByRole('button', { name: /start negotiation session/i }));
+
+    await waitFor(() => {
+      expect(onSessionStarted).toHaveBeenCalledWith(
+        expect.objectContaining({
+          jira_key: 'DEMO-UI',
+          session_id: 'session-001',
+        }),
+        'Operator workspace foundation',
+      );
     });
   });
 });

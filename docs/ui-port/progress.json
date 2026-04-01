@@ -2,18 +2,18 @@
   "meta": {
     "project": "Magic Agents Operator Workspace UI port",
     "created": "2026-03-31",
-    "last_updated": "2026-04-01T06:20:04Z",
+    "last_updated": "2026-04-01T08:09:02Z",
     "total_epics": 8,
     "total_stories": 36
   },
   "summary": {
-    "epics_complete": 1,
+    "epics_complete": 2,
     "epics_in_progress": 0,
-    "epics_not_started": 7,
-    "stories_complete": 5,
+    "epics_not_started": 6,
+    "stories_complete": 10,
     "stories_in_progress": 0,
-    "stories_not_started": 31,
-    "stories_tested": 5
+    "stories_not_started": 26,
+    "stories_tested": 10
   },
   "epics": [
     {
@@ -35,13 +35,13 @@
       "title": "Operator Workspace Layout",
       "file": "U02-operator-workspace-layout.md",
       "priority": 2,
-      "status": "not_started",
+      "status": "complete",
       "stories": [
-        { "id": "U2.1", "title": "Implement the three-pane workspace layout", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U2.2", "title": "Add the sticky phase rail and session status strip", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U2.3", "title": "Replace screen jumps with panel state transitions", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U2.4", "title": "Add a top bar with session context and workspace controls", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U2.5", "title": "Support panel collapse, persistence, and responsive fallbacks", "status": "not_started", "tested": false, "notes": "" }
+        { "id": "U2.1", "title": "Implement the three-pane workspace layout", "status": "complete", "tested": true, "notes": "Shipped a divider-led three-pane shell with a dominant center workspace and independent scroll regions for intake, work, and evidence." },
+        { "id": "U2.2", "title": "Add the sticky phase rail and session status strip", "status": "complete", "tested": true, "notes": "Added a sticky session strip and full seven-phase rail tied to live session phase metadata without fake completion state." },
+        { "id": "U2.3", "title": "Replace screen jumps with panel state transitions", "status": "complete", "tested": true, "notes": "Moved center and inspector changes into in-place search-param transitions with focus handoff instead of route thrash." },
+        { "id": "U2.4", "title": "Add a top bar with session context and workspace controls", "status": "complete", "tested": true, "notes": "Introduced a stable top bar showing product identity, story context, workspace phase context, and panel controls." },
+        { "id": "U2.5", "title": "Support panel collapse, persistence, and responsive fallbacks", "status": "complete", "tested": true, "notes": "Added desktop collapse persistence, tablet inspector overlays, mobile pane switching, and defensive storage fallbacks for constrained runtimes." }
       ]
     },
     {

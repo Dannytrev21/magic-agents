@@ -12,7 +12,7 @@ import type { JiraStory, StartNegotiationRequest, StartNegotiationResponse } fro
 import { useSessionBootstrapQueries, useStartNegotiationMutation } from '@/lib/query/sessionHooks';
 
 type SessionBootstrapProps = {
-  onSessionStarted?: (session: StartNegotiationResponse) => void;
+  onSessionStarted?: (session: StartNegotiationResponse, summary?: string) => void;
 };
 
 type IntakeDraft = {
@@ -86,7 +86,7 @@ export function SessionBootstrap({ onSessionStarted }: SessionBootstrapProps) {
     event.preventDefault();
     startMutation.mutate(buildStartPayload(draft), {
       onSuccess: (session) => {
-        onSessionStarted?.(session);
+        onSessionStarted?.(session, draft.jiraSummary);
       },
     });
   }
