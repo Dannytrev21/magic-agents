@@ -11,7 +11,7 @@ The new UI should not become a second prototype. Once the workflow is ported, th
 ## Implementation Status
 
 - `U8.1` is implemented with new left-rail component coverage, page-level integration coverage, and expanded typed API contract tests. `npm run test:ui` and `npm run test:ci` both pass.
-- `U8.2` is implemented with Playwright specs for the deterministic manual-entry happy path and a mocked pipeline failure path, plus retained traces/screenshots on failure. The suite is present under [`/Users/dannytrevino/development/magic-agents/ui/tests/e2e/operator-workspace.spec.ts`](/Users/dannytrevino/development/magic-agents/ui/tests/e2e/operator-workspace.spec.ts), but this automation sandbox cannot launch Chromium because macOS denies the required browser bootstrap.
+- `U8.2` is implemented with Playwright specs for the deterministic manual-entry happy path and a mocked pipeline failure path, plus retained traces/screenshots on failure. The harness is now environment-selectable so Chromium, Firefox, and WebKit can be tried from one config, but browser validation remains blocked in the current Codex macOS 26 sandbox because every tested engine aborts before any page code runs.
 - `U8.3` is implemented with a lazy-loaded verification console chunk, manifest-backed bundle budgets, and a reversible FastAPI frontend switch via `MAGIC_AGENTS_FRONTEND_MODE` or the `frontend` query parameter. The targeted backend rollout tests pass.
 
 ---
@@ -87,7 +87,7 @@ The new UI should not become a second prototype. Once the workflow is ported, th
 - Run the browser suite locally against mock mode.
 - Intentionally inject one failing API response and confirm the failure path is asserted.
 - Review captured traces or screenshots from a failed test run.
-- If Playwright fails to boot Chromium in a restricted macOS sandbox, treat that as an environment issue rather than a spec failure and rerun on a machine where browser launch is permitted.
+- Use `npm run test:e2e` for the default Chromium path in this repo, or `npm run test:e2e:chromium`, `npm run test:e2e:firefox`, and `npm run test:e2e:webkit` when isolating host-specific browser failures.
 
 ---
 
