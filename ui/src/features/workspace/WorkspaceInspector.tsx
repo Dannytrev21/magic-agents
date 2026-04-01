@@ -51,7 +51,13 @@ export function WorkspaceInspector({
           </button>
         ))}
       </div>
-      <section className={styles.focusRegion} ref={focusRef} tabIndex={-1}>
+      <section
+        aria-label="Inspector detail region"
+        className={styles.focusRegion}
+        ref={focusRef}
+        role="region"
+        tabIndex={-1}
+      >
         <div className={styles.sectionStack}>
           <div className={styles.detailList}>
             <div className={styles.detailRow}>

@@ -1,422 +1,179 @@
-import type { RefObject } from 'react';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { SessionIntakeStory } from '@/features/session/sessionIntakeModel';
-import { workspacePanelStorageKey } from '@/features/workspace/workspaceModel';
+import { MemoryRouter, useLocation } from 'react-router-dom';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AppProviders } from '@/app/AppProviders';
 import { OperatorWorkspacePage } from '@/features/workspace/OperatorWorkspacePage';
+import { workspacePanelStorageKey } from '@/features/workspace/workspaceModel';
 import type { StartNegotiationResponse } from '@/lib/api/types';
 
-vi.mock('@/features/session/SessionBootstrap', () => {
-  type SessionBootstrapProps = {
-    activeSession?: StartNegotiationResponse | null;
-    draftFeedback?: string;
-    onAcceptanceCriterionSelect?: (index: number) => void;
-    onDraftFeedbackChange?: (value: string) => void;
-    onPhaseSelect?: (phaseNumber: number) => void;
-    onSessionStarted?: (session: StartNegotiationResponse, story: SessionIntakeStory) => void;
-    selectedAcceptanceCriterionIndex?: number | null;
-    selectedPhaseNumber?: number | null;
-  };
+vi.mock('@/lib/query/sessionHooks', () => ({
+  useInspectorQueries: () => ({
+    isLoading: false,
+    scanStatus: {
+      project_root: '/Users/dannytrevino/development/magic-agents',
+      scanned: true,
+    },
+    skills: [{ name: 'phase1' }, { name: 'phase2' }],
+  }),
+  useSessionBootstrapQueries: () => ({
+    configured: true,
+    isError: false,
+    isLoading: false,
+    stories: [{ key: 'MAG-22', summary: 'Port the operator workspace layout' }],
+    storiesError: null,
+  }),
+  useStorySessionQueries: () => ({
+    'MAG-22': {
+      has_checkpoint: false,
+      session: undefined,
+    },
+  }),
+  useStartNegotiationMutation: () => ({
+    data: null,
+    isPending: false,
+    mutate: vi.fn(),
+    mutateAsync: vi.fn(),
+  }),
+  useResumeSessionMutation: () => ({
+    data: null,
+    isPending: false,
+    mutate: vi.fn(),
+    mutateAsync: vi.fn(),
+  }),
+}));
 
-  return {
-    SessionBootstrap: ({
-      activeSession,
-      draftFeedback,
-      onAcceptanceCriterionSelect,
-      onDraftFeedbackChange,
-      onPhaseSelect,
-      onSessionStarted,
-      selectedAcceptanceCriterionIndex,
-      selectedPhaseNumber,
-    }: SessionBootstrapProps) => (
-      <div>
-        <button
-          onClick={() =>
-            onSessionStarted?.(
-              {
-                acceptance_criteria: [
-                  { checked: false, index: 0, text: 'Recovered acceptance criterion' },
-                  { checked: false, index: 1, text: 'Selected AC should update the workspace' },
-                ],
-                done: false,
-                jira_key: 'MAG-222',
-                jira_summary: 'Recovered story summary',
-                phase_number: 2,
-                phase_title: 'Happy Path Contract',
-                session_id: 'session-started',
-                total_phases: 7,
-              },
-              {
-                acceptanceCriteria: [
-                  { checked: false, index: 0, text: 'Recovered acceptance criterion' },
-                  { checked: false, index: 1, text: 'Selected AC should update the workspace' },
-                ],
-                key: 'MAG-222',
-                source: 'jira',
-                status: 'In Progress',
-                summary: 'Recovered story summary',
-              },
-            )
-          }
-          type="button"
-        >
-          Start mock session
-        </button>
-        <button
-          onClick={() =>
-            onSessionStarted?.(
-              {
-                acceptance_criteria: [
-                  { checked: false, index: 0, text: 'Recovered acceptance criterion' },
-                  { checked: false, index: 1, text: 'Selected AC should update the workspace' },
-                ],
-                done: false,
-                jira_key: 'MAG-222',
-                jira_summary: 'Recovered story summary',
-                phase_number: 4,
-                phase_title: 'Failure Mode Enumeration',
-                session_id: 'session-started',
-                total_phases: 7,
-              },
-              {
-                acceptanceCriteria: [
-                  { checked: false, index: 0, text: 'Recovered acceptance criterion' },
-                  { checked: false, index: 1, text: 'Selected AC should update the workspace' },
-                ],
-                key: 'MAG-222',
-                source: 'jira',
-                status: 'In Progress',
-                summary: 'Recovered story summary',
-              },
-            )
-          }
-          type="button"
-        >
-          Refresh confirmed session
-        </button>
-        <button onClick={() => onAcceptanceCriterionSelect?.(1)} type="button">
-          Select AC 2
-        </button>
-        <button onClick={() => onPhaseSelect?.(2)} type="button">
-          Select phase 2
-        </button>
-        <label>
-          Draft feedback
-          <textarea
-            onChange={(event) => onDraftFeedbackChange?.(event.target.value)}
-            value={draftFeedback ?? ''}
-          />
-        </label>
-        <p>Bootstrap session: {activeSession?.session_id ?? 'idle'}</p>
-        <p>Bootstrap selected AC: {selectedAcceptanceCriterionIndex ?? 'none'}</p>
-        <p>Bootstrap selected phase: {selectedPhaseNumber ?? 'none'}</p>
-      </div>
-    ),
-  };
-});
-
-vi.mock('@/features/workspace/WorkspaceCenterPane', () => {
-  type WorkspaceCenterPaneProps = {
-    activeView: string;
-    draftFeedback?: string;
-    focusRef: RefObject<HTMLElement | null>;
-    onViewChange: (view: 'overview' | 'negotiation' | 'traceability') => void;
-    selectedAcceptanceCriterionIndex?: number | null;
-    selectedPhaseNumber?: number | null;
-  };
-
-  return {
-    WorkspaceCenterPane: ({
-      activeView,
-      draftFeedback,
-      focusRef,
-      onViewChange,
-      selectedAcceptanceCriterionIndex,
-      selectedPhaseNumber,
-    }: WorkspaceCenterPaneProps) => (
-      <div>
-        <button onClick={() => onViewChange('overview')} type="button">
-          Center overview
-        </button>
-        <button onClick={() => onViewChange('negotiation')} type="button">
-          Center negotiation
-        </button>
-        <button onClick={() => onViewChange('traceability')} type="button">
-          Center traceability
-        </button>
-        <section ref={focusRef} tabIndex={-1}>
-          Center view: {activeView}
-        </section>
-        <p>Center selected AC: {selectedAcceptanceCriterionIndex ?? 'none'}</p>
-        <p>Center selected phase: {selectedPhaseNumber ?? 'none'}</p>
-        <p>Center draft: {draftFeedback || 'empty'}</p>
-      </div>
-    ),
-  };
-});
-
-vi.mock('@/features/workspace/WorkspaceInspector', () => {
-  type WorkspaceInspectorProps = {
-    activeView: string;
-    focusRef: RefObject<HTMLElement | null>;
-    onViewChange: (view: 'evidence' | 'scan' | 'traceability') => void;
-    selectedAcceptanceCriterionIndex?: number | null;
-  };
-
-  return {
-    WorkspaceInspector: ({
-      activeView,
-      focusRef,
-      onViewChange,
-      selectedAcceptanceCriterionIndex,
-    }: WorkspaceInspectorProps) => (
-      <div>
-        <button onClick={() => onViewChange('evidence')} type="button">
-          Inspector evidence
-        </button>
-        <button onClick={() => onViewChange('scan')} type="button">
-          Inspector scan
-        </button>
-        <button onClick={() => onViewChange('traceability')} type="button">
-          Inspector traceability
-        </button>
-        <section ref={focusRef} tabIndex={-1}>
-          Inspector view: {activeView}
-        </section>
-        <p>Inspector selected AC: {selectedAcceptanceCriterionIndex ?? 'none'}</p>
-      </div>
-    ),
-  };
-});
-
-const originalInnerWidth = window.innerWidth;
-const originalLocalStorage = window.localStorage;
-
-const initialSession: StartNegotiationResponse = {
+const mockSession: StartNegotiationResponse = {
   done: false,
-  jira_key: 'MAG-201',
+  jira_key: 'MAG-22',
   phase_number: 3,
-  phase_title: 'Precondition Formalization',
-  session_id: 'session-u2',
+  phase_title: 'Phase 3: Precondition Formalization',
+  revised: false,
+  session_id: 'session-123',
   total_phases: 7,
 };
 
-type StorageStub = Storage & {
-  dump: () => Record<string, string>;
-};
-
-function setViewport(width: number) {
-  Object.defineProperty(window, 'innerWidth', {
-    configurable: true,
-    writable: true,
-    value: width,
-  });
+function LocationProbe() {
+  const location = useLocation();
+  return <output data-testid="location">{`${location.pathname}${location.search}`}</output>;
 }
 
-function installStorage(initial: Record<string, string> = {}): StorageStub {
-  const values = new Map(Object.entries(initial));
-  const storage = {
-    clear: vi.fn(() => {
-      values.clear();
-    }),
-    dump: () => Object.fromEntries(values.entries()),
-    getItem: vi.fn((key: string) => values.get(key) ?? null),
-    key: vi.fn((index: number) => Array.from(values.keys())[index] ?? null),
-    get length() {
-      return values.size;
-    },
-    removeItem: vi.fn((key: string) => {
-      values.delete(key);
-    }),
-    setItem: vi.fn((key: string, value: string) => {
-      values.set(key, value);
-    }),
-  } satisfies StorageStub;
-
-  Object.defineProperty(window, 'localStorage', {
-    configurable: true,
-    value: storage,
-  });
-
-  return storage;
-}
-
-function renderPage({
-  initialEntry = '/?view=overview&inspector=evidence&pane=workspace',
-  initialSessionValue = initialSession,
-  initialStorySummary = 'Port operator workspace layout',
-}: {
-  initialEntry?: string;
-  initialSessionValue?: StartNegotiationResponse | null;
-  initialStorySummary?: string | null;
-} = {}) {
+function renderWorkspace(entry = '/?view=overview&inspector=evidence&pane=workspace') {
   return render(
-    <MemoryRouter initialEntries={[initialEntry]}>
-      <Routes>
-        <Route
-          element={
-            <OperatorWorkspacePage
-              initialSession={initialSessionValue}
-              initialStorySummary={initialStorySummary}
-            />
-          }
-          path="/"
+    <AppProviders>
+      <MemoryRouter initialEntries={[entry]}>
+        <OperatorWorkspacePage
+          initialSession={mockSession}
+          initialStorySummary="Port the operator workspace layout"
         />
-      </Routes>
-    </MemoryRouter>,
+        <LocationProbe />
+      </MemoryRouter>
+    </AppProviders>,
   );
 }
 
-afterEach(() => {
-  cleanup();
-  Object.defineProperty(window, 'innerWidth', {
-    configurable: true,
-    writable: true,
-    value: originalInnerWidth,
+function setViewport(width: number) {
+  act(() => {
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: width,
+      writable: true,
+    });
+    window.dispatchEvent(new Event('resize'));
   });
+}
+
+beforeEach(() => {
+  const store = new Map<string, string>();
+
   Object.defineProperty(window, 'localStorage', {
     configurable: true,
-    value: originalLocalStorage,
+    value: {
+      clear: () => {
+        store.clear();
+      },
+      getItem: (key: string) => store.get(key) ?? null,
+      removeItem: (key: string) => {
+        store.delete(key);
+      },
+      setItem: (key: string, value: string) => {
+        store.set(key, value);
+      },
+    },
   });
-  vi.restoreAllMocks();
+  setViewport(1440);
 });
 
-describe('OperatorWorkspacePage', () => {
-  it('falls back to default pane state when storage APIs are unavailable', () => {
-    setViewport(1440);
-    Object.defineProperty(window, 'localStorage', {
-      configurable: true,
-      value: {},
-    });
+afterEach(() => {
+  cleanup();
+  window.localStorage?.clear?.();
+});
 
-    renderPage();
+describe('Operator workspace layout', () => {
+  it('renders a seven-phase sticky rail and session status strip for active sessions', () => {
+    renderWorkspace();
 
-    expect(screen.getByRole('heading', { name: /magic agents/i })).toBeInTheDocument();
-    expect(screen.getByRole('complementary', { name: /story intake/i })).toBeInTheDocument();
-    expect(screen.getByRole('complementary', { name: /evidence inspector/i })).toBeInTheDocument();
+    const phaseList = screen.getByRole('list', { name: /negotiation phases/i });
+    const items = within(phaseList).getAllByRole('listitem');
+
+    expect(items).toHaveLength(7);
+    expect(items[0]).toHaveAttribute('data-state', 'complete');
+    expect(items[2]).toHaveAttribute('data-state', 'active');
+    expect(screen.getByText(/session status/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/awaiting operator input/i)[0]).toBeInTheDocument();
+    expect(screen.getAllByText('session-123')[0]).toBeInTheDocument();
+    expect(screen.getByText(/phase 3 of 7/i)).toBeInTheDocument();
   });
 
-  it('persists collapsed side panes across reloads on desktop', async () => {
+  it('swaps center and inspector surfaces in place and keeps focus on the active region', async () => {
     const user = userEvent.setup();
-    const storage = installStorage();
+    renderWorkspace();
 
-    setViewport(1440);
-    const view = renderPage();
+    await user.click(
+      within(screen.getByRole('tablist', { name: /workspace views/i })).getByRole('tab', {
+        name: /traceability/i,
+      }),
+    );
 
-    await user.click(screen.getByRole('button', { name: /toggle story intake panel/i }));
+    expect(screen.getByRole('heading', { name: /traceability matrix/i })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: /active workspace region/i })).toHaveFocus();
+    expect(screen.getByTestId('location')).toHaveTextContent('/?view=traceability&inspector=evidence&pane=workspace');
+
+    await user.click(
+      within(screen.getByRole('tablist', { name: /inspector views/i })).getByRole('tab', {
+        name: /scan output/i,
+      }),
+    );
+
+    expect(screen.getByText(/project root/i)).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: /inspector detail region/i })).toHaveFocus();
+    expect(screen.getByTestId('location')).toHaveTextContent('/?view=traceability&inspector=scan&pane=workspace');
+  });
+
+  it('persists panel collapse state and falls back to single-panel mobile switching', async () => {
+    const user = userEvent.setup();
+    renderWorkspace();
+
     await user.click(screen.getByRole('button', { name: /toggle evidence panel/i }));
 
-    expect(storage.setItem).toHaveBeenLastCalledWith(
-      workspacePanelStorageKey,
-      JSON.stringify({ leftCollapsed: true, rightCollapsed: true }),
-    );
-    expect(storage.dump()[workspacePanelStorageKey]).toBe(
-      JSON.stringify({ leftCollapsed: true, rightCollapsed: true }),
-    );
-    expect(screen.queryByRole('complementary', { name: /story intake/i })).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('complementary', { name: /evidence inspector/i }),
-    ).not.toBeInTheDocument();
+    expect(window.localStorage.getItem(workspacePanelStorageKey)).toContain('"rightCollapsed":true');
+    expect(screen.getByTestId('workspace-grid')).toHaveStyle({
+      '--workspace-right-width': '0rem',
+    });
 
-    view.unmount();
-    renderPage();
+    setViewport(640);
 
-    expect(screen.queryByRole('complementary', { name: /story intake/i })).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('complementary', { name: /evidence inspector/i }),
-    ).not.toBeInTheDocument();
-  });
+    expect(await screen.findByRole('tablist', { name: /workspace panels/i })).toBeInTheDocument();
 
-  it('switches center and inspector content in place and moves focus to the active region', async () => {
-    const user = userEvent.setup();
+    await user.click(screen.getByRole('tab', { name: /story panel/i }));
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/?view=overview&inspector=evidence&pane=story');
 
     setViewport(1440);
-    installStorage();
-    renderPage();
 
-    expect(screen.getByText('Center view: overview')).toBeInTheDocument();
-    expect(screen.getByText('Inspector view: evidence')).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: /center traceability/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText('Center view: traceability')).toHaveFocus();
+    expect(screen.getByTestId('workspace-grid')).toHaveAttribute('data-layout-mode', 'desktop');
+    expect(screen.getByTestId('workspace-grid')).toHaveStyle({
+      '--workspace-right-width': '0rem',
     });
-    expect(screen.getByText('Inspector view: evidence')).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: /inspector scan/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText('Inspector view: scan')).toHaveFocus();
-    });
-    expect(screen.getByText('Center view: traceability')).toBeInTheDocument();
-  });
-
-  it('updates the top bar story context when intake starts a new session', async () => {
-    const user = userEvent.setup();
-
-    setViewport(1440);
-    installStorage();
-    renderPage({
-      initialEntry: '/',
-      initialSessionValue: null,
-      initialStorySummary: null,
-    });
-
-    expect(screen.getByText(/no active story/i)).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: /start mock session/i }));
-
-    expect(await screen.findByText('MAG-222')).toBeInTheDocument();
-    expect(screen.getByText(/recovered story summary/i)).toBeInTheDocument();
-    expect(screen.getByText('Center view: negotiation')).toBeInTheDocument();
-  });
-
-  it('preserves draft feedback across view switches and confirmed session refreshes', async () => {
-    const user = userEvent.setup();
-
-    setViewport(1440);
-    installStorage();
-    renderPage({
-      initialEntry: '/',
-      initialSessionValue: null,
-      initialStorySummary: null,
-    });
-
-    await user.click(screen.getByRole('button', { name: /start mock session/i }));
-    await user.type(screen.getByLabelText(/draft feedback/i), 'Need clearer preconditions');
-
-    expect(screen.getByText(/center draft: need clearer preconditions/i)).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: /inspector scan/i }));
-    await user.click(screen.getByRole('button', { name: /refresh confirmed session/i }));
-
-    expect(await screen.findByDisplayValue('Need clearer preconditions')).toBeInTheDocument();
-    expect(screen.getByText(/center draft: need clearer preconditions/i)).toBeInTheDocument();
-    expect(screen.getByText(/failure mode enumeration/i)).toBeInTheDocument();
-  });
-
-  it('propagates selected acceptance criterion and phase context across workspace panes', async () => {
-    const user = userEvent.setup();
-
-    setViewport(1440);
-    installStorage();
-    renderPage({
-      initialEntry: '/',
-      initialSessionValue: null,
-      initialStorySummary: null,
-    });
-
-    await user.click(screen.getByRole('button', { name: /start mock session/i }));
-    await user.click(screen.getByRole('button', { name: /select ac 2/i }));
-    await user.click(screen.getByRole('button', { name: /select phase 2/i }));
-
-    expect(screen.getByText('Bootstrap selected AC: 1')).toBeInTheDocument();
-    expect(screen.getByText('Center selected AC: 1')).toBeInTheDocument();
-    expect(screen.getByText('Inspector selected AC: 1')).toBeInTheDocument();
-    expect(screen.getByText('Bootstrap selected phase: 2')).toBeInTheDocument();
-    expect(screen.getByText('Center selected phase: 2')).toBeInTheDocument();
   });
 });

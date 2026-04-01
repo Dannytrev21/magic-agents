@@ -47,6 +47,8 @@ export function WorkspaceCenterPane({
     );
   }
 
+  const visiblePhaseNumber = selectedPhaseNumber ?? activeSession.phase_number;
+
   return (
     <div className={styles.stack}>
       <section className={styles.stickyRail} data-sticky="true">
@@ -73,9 +75,9 @@ export function WorkspaceCenterPane({
           {negotiationPhases.map((phase, index) => {
             const phaseNumber = index + 1;
             const state =
-              phaseNumber < activeSession.phase_number
+              phaseNumber < visiblePhaseNumber
                 ? 'complete'
-                : phaseNumber === activeSession.phase_number
+                : phaseNumber === visiblePhaseNumber
                   ? 'active'
                   : 'pending';
 
@@ -112,7 +114,13 @@ export function WorkspaceCenterPane({
         </div>
       </section>
 
-      <section className={styles.focusRegion} ref={focusRef} tabIndex={-1}>
+      <section
+        aria-label="Active workspace region"
+        className={styles.focusRegion}
+        ref={focusRef}
+        role="region"
+        tabIndex={-1}
+      >
         {activeView === 'overview' ? (
           <OverviewContent activeSession={activeSession} selectedPhaseNumber={selectedPhaseNumber} />
         ) : null}
