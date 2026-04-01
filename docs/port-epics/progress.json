@@ -1,0 +1,144 @@
+{
+  "last_updated": "2026-03-31T23:15:00Z",
+  "epics": [
+    {
+      "id": "P01",
+      "name": "Token Budget Enforcement & Cost Tracking",
+      "file": "P01-token-budget-enforcement.md",
+      "stories": [
+        { "id": "P1.1", "name": "Wire BackPressureController into LLMClient", "status": "done" },
+        { "id": "P1.2", "name": "Enforce Budget Checks Before Each Negotiation Turn", "status": "done" },
+        { "id": "P1.3", "name": "Per-Phase Cost Reporting in Usage Summary", "status": "done" },
+        { "id": "P1.4", "name": "Configurable Budget Limits via Constitution", "status": "done" }
+      ]
+    },
+    {
+      "id": "P02",
+      "name": "Skill Registry & Capability Discovery",
+      "file": "P02-skill-registry-discovery-v1.md",
+      "stories": [
+        { "id": "P2.R1", "name": "Descriptor Registration", "status": "done" },
+        { "id": "P2.R2", "name": "Capability Discovery", "status": "done" },
+        { "id": "P2.R3", "name": "Dispatch Validation", "status": "done" },
+        { "id": "P2.R4", "name": "Web Introspection", "status": "done" }
+      ]
+    },
+    { "id": "P03", "name": "Transcript Compaction", "file": "P03-transcript-compaction.md", "stories": [], "status": "not_started" },
+    { "id": "P04", "name": "Command Routing Engine", "file": "P04-command-routing-engine.md", "stories": [], "status": "not_started" },
+    { "id": "P05", "name": "Permission & Access Control", "file": "P05-permission-access-control.md", "stories": [], "status": "not_started" },
+    { "id": "P06", "name": "Structured Streaming Events", "file": "P06-structured-streaming-events.md", "stories": [], "status": "not_started" },
+    { "id": "P07", "name": "Session Cost Accounting", "file": "P07-session-cost-accounting.md", "stories": [], "status": "not_started" },
+    { "id": "P08", "name": "Bootstrap & Initialization Graph", "file": "P08-bootstrap-initialization-graph.md", "stories": [], "status": "not_started" },
+    { "id": "P09", "name": "Hook & Event System", "file": "P09-hook-event-system.md", "stories": [], "status": "not_started" },
+    { "id": "P10", "name": "MCP Server Wrapper", "file": "P10-mcp-server-wrapper.md", "stories": [], "status": "not_started" },
+    {
+      "id": "P11",
+      "name": "Codebase Discovery & Explore Agent",
+      "file": "P11-codebase-discovery-explorer.md",
+      "priority": 2.5,
+      "stories": [
+        { "id": "P11.1", "name": "Language & Framework Auto-Detection", "status": "not_started" },
+        { "id": "P11.2", "name": "Structural Index Builder (Multi-Language)", "status": "not_started" },
+        { "id": "P11.3", "name": "Auto-Generate Draft Constitution from Index", "status": "not_started" },
+        { "id": "P11.4", "name": "Explore Agent CLI & Web Endpoint", "status": "not_started" },
+        { "id": "P11.5", "name": "Inject Codebase Context into Negotiation Phases", "status": "not_started" }
+      ]
+    }
+  ],
+  "ui_epics": [
+    {
+      "id": "U01",
+      "name": "Foundation & Design System",
+      "file": "docs/ui-port-claude/U01-foundation-design-system.md",
+      "priority": 1,
+      "stories": [
+        { "id": "U01.1", "name": "Vite + React + TypeScript Project Scaffold", "status": "not_started" },
+        { "id": "U01.2", "name": "Design Token System (CSS Custom Properties)", "status": "not_started" },
+        { "id": "U01.3", "name": "Typography & Font Loading", "status": "not_started" },
+        { "id": "U01.4", "name": "Base Component Primitives", "status": "not_started" }
+      ]
+    },
+    {
+      "id": "U02",
+      "name": "Three-Panel Layout Shell",
+      "file": "docs/ui-port-claude/U02-three-panel-layout.md",
+      "priority": 2,
+      "stories": [
+        { "id": "U02.1", "name": "AppShell with Three-Panel Grid", "status": "not_started" },
+        { "id": "U02.2", "name": "Panel Collapse & Expand", "status": "not_started" },
+        { "id": "U02.3", "name": "Responsive Breakpoint Behavior", "status": "not_started" },
+        { "id": "U02.4", "name": "Top Bar with Session Context", "status": "not_started" }
+      ]
+    },
+    {
+      "id": "U03",
+      "name": "Story Intake & Session Rail (Left Panel)",
+      "file": "docs/ui-port-claude/U03-story-intake-session-rail.md",
+      "priority": 3,
+      "stories": [
+        { "id": "U03.1", "name": "Jira Story Picker", "status": "not_started" },
+        { "id": "U03.2", "name": "Acceptance Criteria Checklist", "status": "not_started" },
+        { "id": "U03.3", "name": "Phase Progress Timeline", "status": "not_started" },
+        { "id": "U03.4", "name": "Session Health Indicators", "status": "not_started" }
+      ]
+    },
+    {
+      "id": "U04",
+      "name": "Active Phase Workspace (Center Panel)",
+      "file": "docs/ui-port-claude/U04-active-phase-workspace.md",
+      "priority": 4,
+      "stories": [
+        { "id": "U04.1", "name": "Phase Content Container with Transitions", "status": "not_started" },
+        { "id": "U04.2", "name": "Phase Output Display", "status": "not_started" },
+        { "id": "U04.3", "name": "Inline Approve & Revise Actions", "status": "not_started" },
+        { "id": "U04.4", "name": "Conversation Transcript View", "status": "not_started" }
+      ]
+    },
+    {
+      "id": "U05",
+      "name": "Evidence Inspector (Right Panel)",
+      "file": "docs/ui-port-claude/U05-evidence-inspector.md",
+      "priority": 5,
+      "stories": [
+        { "id": "U05.1", "name": "Inspector Tab System", "status": "not_started" },
+        { "id": "U05.2", "name": "Codebase Scan Results View", "status": "not_started" },
+        { "id": "U05.3", "name": "Spec Contract Viewer", "status": "not_started" },
+        { "id": "U05.4", "name": "Traceability Matrix", "status": "not_started" }
+      ]
+    },
+    {
+      "id": "U06",
+      "name": "Phase Rail & Navigation",
+      "file": "docs/ui-port-claude/U06-phase-rail-navigation.md",
+      "priority": 6,
+      "stories": [
+        { "id": "U06.1", "name": "Sticky Phase Mini-Rail in Center Workspace", "status": "not_started" },
+        { "id": "U06.2", "name": "Breadcrumb Trail with Phase Context", "status": "not_started" },
+        { "id": "U06.3", "name": "Phase Quick-Jump Keyboard Shortcuts", "status": "not_started" }
+      ]
+    },
+    {
+      "id": "U07",
+      "name": "Real-time Updates & Streaming",
+      "file": "docs/ui-port-claude/U07-realtime-updates-streaming.md",
+      "priority": 7,
+      "stories": [
+        { "id": "U07.1", "name": "SSE Client with Auto-Reconnection", "status": "not_started" },
+        { "id": "U07.2", "name": "Client-Side Event Store", "status": "not_started" },
+        { "id": "U07.3", "name": "Live Phase Progress Indicator", "status": "not_started" }
+      ]
+    },
+    {
+      "id": "U08",
+      "name": "Verification & Results Dashboard",
+      "file": "docs/ui-port-claude/U08-verification-results-dashboard.md",
+      "priority": 8,
+      "stories": [
+        { "id": "U08.1", "name": "Results Summary Header", "status": "not_started" },
+        { "id": "U08.2", "name": "Verdict Cards per AC", "status": "not_started" },
+        { "id": "U08.3", "name": "Cost Summary & Session Report", "status": "not_started" },
+        { "id": "U08.4", "name": "Empty & Error States", "status": "not_started" }
+      ]
+    }
+  ]
+}

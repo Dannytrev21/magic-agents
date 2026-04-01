@@ -172,6 +172,30 @@ class TestSaveCheckpoint:
         assert path.exists()
         assert path.name == "checkpoint_phase_0.json"
 
+    def test_save_checkpoint_persists_session_identity_and_usage(
+        self, temp_sessions_dir, sample_context
+    ):
+        """Checkpoint files should preserve runtime session identity and usage metadata."""
+        sample_context.session_id = "session-checkpoint-001"
+        sample_context.usage = {
+            "api_calls": 8,
+            "cost_usd": 0.18,
+            "max_tokens": 500000,
+            "tokens_used": 125000,
+        }
+
+        save_checkpoint(sample_context, "phase_1")
+
+        checkpoint_path = (
+            temp_sessions_dir / sample_context.jira_key / "checkpoint_phase_1.json"
+        )
+        with open(checkpoint_path) as f:
+            data = json.load(f)
+
+        assert data["session_id"] == "session-checkpoint-001"
+        assert data["usage"]["api_calls"] == 8
+        assert data["usage"]["tokens_used"] == 125000
+
 
 class TestLoadCheckpoint:
     """Tests for load_checkpoint function."""
@@ -289,6 +313,28 @@ class TestLoadCheckpoint:
         assert ctx.negotiation_log == []
         assert ctx.approved is False
 
+    def test_load_checkpoint_restores_session_identity_and_usage(
+        self, temp_sessions_dir, populated_context
+    ):
+        """Loading a checkpoint should restore optional runtime metadata when present."""
+        populated_context.session_id = "session-checkpoint-001"
+        populated_context.usage = {
+            "api_calls": 8,
+            "cost_usd": 0.18,
+            "max_tokens": 500000,
+            "tokens_used": 125000,
+        }
+
+        save_checkpoint(populated_context, "phase_2")
+
+        result = load_checkpoint(populated_context.jira_key)
+        assert result is not None
+
+        ctx, _ = result
+        assert getattr(ctx, "session_id", "") == "session-checkpoint-001"
+        assert getattr(ctx, "usage", {}).get("api_calls") == 8
+        assert getattr(ctx, "usage", {}).get("tokens_used") == 125000
+
 
 class TestHasCheckpoint:
     """Tests for has_checkpoint function."""
@@ -351,6 +397,30 @@ class TestGetSessionInfo:
         assert info["checkpoint_path"].endswith("checkpoint_phase_1.json")
         assert info["log_entries"] == 1
         assert info["approved"] is False
+
+    def test_get_session_info_includes_phase_summary_and_usage_metadata(
+        self, temp_sessions_dir, populated_context
+    ):
+        """Session metadata should include phase labels and any saved usage summary."""
+        populated_context.current_phase = "phase_3"
+        populated_context.session_id = "session-checkpoint-001"
+        populated_context.usage = {
+            "api_calls": 8,
+            "cost_usd": 0.18,
+            "max_tokens": 500000,
+            "tokens_used": 125000,
+        }
+
+        save_checkpoint(populated_context, "phase_3")
+
+        info = get_session_info(populated_context.jira_key)
+
+        assert info is not None
+        assert info["jira_summary"] == "Test Story"
+        assert info["phase_number"] == 3
+        assert info["phase_title"] == "Precondition Formalization"
+        assert info["session_id"] == "session-checkpoint-001"
+        assert info["usage"]["api_calls"] == 8
 
     def test_get_session_info_reflects_approved_status(
         self, temp_sessions_dir, populated_context

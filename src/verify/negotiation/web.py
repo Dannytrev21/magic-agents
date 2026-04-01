@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -9,31 +10,41 @@ from fastapi.staticfiles import StaticFiles
 
 from verify.context import VerificationContext
 from verify.llm_client import LLMClient
-from verify.negotiation.harness import NegotiationHarness
+from verify.negotiation.checkpoint import get_session_info
 from verify.negotiation.phase1 import run_phase1
 from verify.negotiation.phase2 import run_phase2
 from verify.negotiation.phase3 import run_phase3
 from verify.negotiation.phase4 import run_phase4
+from verify.negotiation.phase5 import run_phase5
+from verify.negotiation.phase6 import run_phase6
+from verify.negotiation.phase7 import run_phase7
 from verify.negotiation.synthesis import run_synthesis
-from verify.compiler import compile_and_write
-from verify.generator import generate_and_write
-from verify.runner import run_and_parse
-from verify.evaluator import evaluate_spec
-from verify.pipeline import update_jira
+from verify.runtime import SessionState, SessionStore
 
 app = FastAPI(title="Negotiation UI")
 
 STATIC_DIR = Path(__file__).parent.parent.parent.parent / "static"
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
-# In-memory session (single-user localhost)
-_session: dict = {}
+SESSION_STORE = SessionStore()
+
+# Legacy alias kept for tests that clear the in-memory session dictionary directly.
+_session = SESSION_STORE.sessions
+
+SCAN_STATE: dict[str, Any] = {
+    "project_root": "",
+    "scanned": False,
+    "summary": "",
+}
 
 PHASE_SKILLS = [
-    ("Phase 1 of 4: Interface & Actor Discovery", run_phase1),
-    ("Phase 2 of 4: Happy Path Contract", run_phase2),
-    ("Phase 3 of 4: Precondition Formalization", run_phase3),
-    ("Phase 4 of 4: Failure Mode Enumeration", run_phase4),
+    ("Interface & Actor Discovery", run_phase1),
+    ("Happy Path Contract", run_phase2),
+    ("Precondition Formalization", run_phase3),
+    ("Failure Mode Enumeration", run_phase4),
+    ("Invariant Extraction", run_phase5),
+    ("Routing & Completeness Sweep", run_phase6),
+    ("EARS Formalization", run_phase7),
 ]
 
 
@@ -44,7 +55,14 @@ PHASE_SKILLS = [
 
 @app.get("/", response_class=HTMLResponse)
 async def index():
-    return (STATIC_DIR / "index.html").read_text()
+    return _resolve_frontend_index().read_text()
+
+
+def _resolve_frontend_index() -> Path:
+    built_index = STATIC_DIR / "ui" / "index.html"
+    if built_index.exists():
+        return built_index
+    return STATIC_DIR / "index.html"
 
 
 # ------------------------------------------------------------------
@@ -61,6 +79,24 @@ async def jira_configured():
         and os.environ.get("JIRA_API_TOKEN")
     )
     return JSONResponse({"configured": configured})
+
+
+@app.get("/api/skills")
+async def skills_index():
+    """Return a lightweight skill inventory for the inspector."""
+    skills_dir = Path(__file__).parent.parent / "skills"
+    skills = []
+    for path in sorted(skills_dir.glob("*.py")):
+        if path.stem == "__init__":
+            continue
+        skills.append({"name": path.stem, "path": str(path)})
+    return JSONResponse(skills)
+
+
+@app.get("/api/scan/status")
+async def scan_status():
+    """Return the current code scan status for the inspector surface."""
+    return JSONResponse(SCAN_STATE)
 
 
 @app.get("/api/jira/stories")
@@ -94,6 +130,27 @@ async def jira_ticket(jira_key: str):
         return JSONResponse({"error": str(e)}, status_code=400)
 
 
+@app.get("/api/session/{jira_key}")
+async def session_info(jira_key: str):
+    """Return checkpoint metadata for a story if one exists."""
+    session = get_session_info(jira_key)
+    if session is None:
+        return JSONResponse({"has_checkpoint": False})
+    return JSONResponse({"has_checkpoint": True, "session": session})
+
+
+@app.post("/api/session/{jira_key}/resume")
+async def resume_session(jira_key: str):
+    """Restore the most recent checkpoint for a story."""
+    state = SESSION_STORE.restore(jira_key)
+    if state is None:
+        return JSONResponse(
+            {"error": f"No checkpoint found for {jira_key}"},
+            status_code=400,
+        )
+    return JSONResponse(_build_resumed_session_payload(state))
+
+
 # ------------------------------------------------------------------
 # Negotiation
 # ------------------------------------------------------------------
@@ -113,50 +170,49 @@ async def start_negotiation(request: Request):
             "api": {"base_path": "/api/v1"},
         }),
     )
-    llm = LLMClient()
-    harness = NegotiationHarness(ctx)
-
-    _session["ctx"] = ctx
-    _session["llm"] = llm
-    _session["harness"] = harness
-    _session["phase_idx"] = 0
-
-    return _run_current_phase()
+    state = SESSION_STORE.create(context=ctx, llm=LLMClient(), phase_idx=0)
+    return _run_current_phase(state)
 
 
 @app.post("/api/respond")
 async def respond(request: Request):
     body = await request.json()
-    user_input = body.get("input", "approve").strip()
+    user_input = str(body.get("input", "approve")).strip()
 
-    if "harness" not in _session:
-        return JSONResponse({"error": "No active session"}, status_code=400)
+    resolved = _resolve_session_response(_extract_session_id(body))
+    if isinstance(resolved, JSONResponse):
+        return resolved
 
-    harness: NegotiationHarness = _session["harness"]
-    ctx: VerificationContext = _session["ctx"]
-    phase_idx: int = _session["phase_idx"]
+    state = resolved
+    harness = state.harness
+    ctx = state.context
 
     harness.add_to_log(harness.current_phase, "human", user_input)
 
     # If not approve/skip, re-run current phase with developer feedback
     is_approval = user_input.lower() in ("approve", "skip", "")
     if not is_approval:
-        return _rerun_current_phase(user_input)
+        return _rerun_current_phase(state, user_input)
 
     # Advance to next phase
-    harness.advance_phase()
-    _session["phase_idx"] = phase_idx + 1
+    current_phase = ctx.current_phase
+    next_phase = harness.advance_phase()
+    if next_phase != current_phase:
+        state.phase_idx += 1
 
-    if _session["phase_idx"] >= len(PHASE_SKILLS):
+    if state.phase_idx >= len(PHASE_SKILLS):
         run_synthesis(ctx)
-        return JSONResponse({
-            "done": True,
-            "phase_number": len(PHASE_SKILLS),
-            "total_phases": len(PHASE_SKILLS),
-            "summary": _build_summary(ctx),
-        })
+        return JSONResponse(
+            _build_session_payload(
+                state,
+                done=True,
+                phase_number=len(PHASE_SKILLS),
+                phase_title=PHASE_SKILLS[-1][0],
+                summary=_build_summary(ctx),
+            )
+        )
 
-    return _run_current_phase()
+    return _run_current_phase(state)
 
 
 # ------------------------------------------------------------------
@@ -167,10 +223,13 @@ async def respond(request: Request):
 @app.post("/api/compile")
 async def compile_spec_endpoint():
     """Compile the negotiated context into a YAML spec file."""
-    if "ctx" not in _session:
-        return JSONResponse({"error": "No active session"}, status_code=400)
+    from verify.compiler import compile_and_write
 
-    ctx: VerificationContext = _session["ctx"]
+    resolved = _resolve_session_response()
+    if isinstance(resolved, JSONResponse):
+        return resolved
+
+    ctx = resolved.context
     try:
         spec_path = compile_and_write(ctx, output_dir="specs")
         with open(spec_path) as f:
@@ -186,10 +245,16 @@ async def compile_spec_endpoint():
 @app.post("/api/generate-tests")
 async def generate_tests_endpoint():
     """Generate tests from the compiled spec, run them, and evaluate."""
-    if "ctx" not in _session:
-        return JSONResponse({"error": "No active session"}, status_code=400)
+    from verify.evaluator import evaluate_spec
+    from verify.generator import generate_and_write
+    from verify.runner import run_and_parse
 
-    ctx: VerificationContext = _session["ctx"]
+    resolved = _resolve_session_response()
+    if isinstance(resolved, JSONResponse):
+        return resolved
+
+    state = resolved
+    ctx = state.context
     if not ctx.spec_path:
         return JSONResponse({"error": "No spec compiled yet. Call /api/compile first."}, status_code=400)
 
@@ -212,8 +277,8 @@ async def generate_tests_endpoint():
         all_passed = all(v["passed"] for v in verdicts)
         steps.append({"step": "evaluate", "status": "ok", "all_passed": all_passed})
 
-        # Store verdicts for Jira update
-        _session["verdicts"] = verdicts
+        ctx.verdicts = verdicts
+        ctx.all_passed = all_passed
 
         return JSONResponse({
             "steps": steps,
@@ -235,11 +300,14 @@ async def generate_tests_endpoint():
 @app.post("/api/jira/update")
 async def jira_update():
     """Update Jira ticket with verdicts — tick checkboxes and post evidence."""
-    if "ctx" not in _session:
-        return JSONResponse({"error": "No active session"}, status_code=400)
+    from verify.pipeline import update_jira
 
-    ctx: VerificationContext = _session["ctx"]
-    verdicts = _session.get("verdicts")
+    resolved = _resolve_session_response()
+    if isinstance(resolved, JSONResponse):
+        return resolved
+
+    ctx = resolved.context
+    verdicts = ctx.verdicts
     if not verdicts:
         return JSONResponse({"error": "No verdicts available. Run /api/generate-tests first."}, status_code=400)
 
@@ -264,74 +332,166 @@ async def jira_update():
 # ------------------------------------------------------------------
 
 
-def _run_current_phase():
-    ctx: VerificationContext = _session["ctx"]
-    llm: LLMClient = _session["llm"]
-    harness: NegotiationHarness = _session["harness"]
-    phase_idx: int = _session["phase_idx"]
-
-    title, skill_fn = PHASE_SKILLS[phase_idx]
+def _run_current_phase(state: SessionState):
+    ctx = state.context
+    title, skill_fn = PHASE_SKILLS[state.phase_idx]
+    llm = _ensure_llm(state)
     results = skill_fn(ctx, llm)
 
-    harness.add_to_log(
-        harness.current_phase, "ai",
-        f"{title}: produced {len(results)} items",
+    state.harness.add_to_log(
+        state.harness.current_phase,
+        "ai",
+        f"{title}: produced {_result_count(results)} items",
     )
 
-    questions = _extract_questions(phase_idx)
+    return JSONResponse(
+        _build_session_payload(
+            state,
+            phase_number=state.phase_idx + 1,
+            phase_title=title,
+            questions=_extract_questions(llm, state.phase_idx),
+            results=results,
+            revised=False,
+        )
+    )
 
-    return JSONResponse({
-        "done": False,
-        "phase_title": title,
-        "phase_number": phase_idx + 1,
-        "total_phases": len(PHASE_SKILLS),
-        "results": results,
-        "questions": questions,
-        "revised": False,
-    })
 
-
-def _rerun_current_phase(feedback: str):
+def _rerun_current_phase(state: SessionState, feedback: str):
     """Re-run the current phase with developer feedback for revision."""
-    ctx: VerificationContext = _session["ctx"]
-    llm: LLMClient = _session["llm"]
-    harness: NegotiationHarness = _session["harness"]
-    phase_idx: int = _session["phase_idx"]
+    title, skill_fn = PHASE_SKILLS[state.phase_idx]
+    llm = _ensure_llm(state)
+    results = skill_fn(state.context, llm, feedback=feedback)
 
-    title, skill_fn = PHASE_SKILLS[phase_idx]
-    results = skill_fn(ctx, llm, feedback=feedback)
-
-    harness.add_to_log(
-        harness.current_phase, "ai",
-        f"{title} (revised): produced {len(results)} items",
+    state.harness.add_to_log(
+        state.harness.current_phase,
+        "ai",
+        f"{title} (revised): produced {_result_count(results)} items",
     )
 
-    questions = _extract_questions(phase_idx)
+    return JSONResponse(
+        _build_session_payload(
+            state,
+            phase_number=state.phase_idx + 1,
+            phase_title=f"{title} (revised)",
+            questions=_extract_questions(llm, state.phase_idx),
+            results=results,
+            revised=True,
+        )
+    )
 
-    return JSONResponse({
-        "done": False,
-        "phase_title": title + " (revised)",
-        "phase_number": phase_idx + 1,
-        "total_phases": len(PHASE_SKILLS),
-        "results": results,
-        "questions": questions,
-        "revised": True,
-    })
 
-
-def _extract_questions(phase_idx: int) -> list[str]:
-    llm: LLMClient = _session["llm"]
+def _extract_questions(llm: LLMClient, phase_idx: int) -> list[str]:
     if llm._mock:
         from verify.negotiation.phase1 import SYSTEM_PROMPT as P1
         from verify.negotiation.phase2 import SYSTEM_PROMPT as P2
         from verify.negotiation.phase3 import SYSTEM_PROMPT as P3
         from verify.negotiation.phase4 import SYSTEM_PROMPT as P4
-        prompts = [P1, P2, P3, P4]
+        from verify.negotiation.phase5 import SYSTEM_PROMPT as P5
+        from verify.negotiation.phase6 import SYSTEM_PROMPT as P6
+        from verify.negotiation.phase7 import SYSTEM_PROMPT as P7
+
+        prompts = [P1, P2, P3, P4, P5, P6, P7]
         if phase_idx < len(prompts):
             mock_resp = llm._mock_response(prompts[phase_idx])
             if isinstance(mock_resp, dict):
                 return mock_resp.get("questions", [])
     return []
+
+
+def _ensure_llm(state: SessionState) -> LLMClient:
+    if state.llm is None:
+        state.llm = LLMClient()
+    return state.llm
+
+
+def _build_resumed_session_payload(state: SessionState) -> dict[str, Any]:
+    phase_number = _resume_phase_number(state.context.current_phase)
+    return _build_session_payload(
+        state,
+        phase_number=phase_number,
+        phase_title=_phase_title_for_number(phase_number),
+        resumed=True,
+    )
+
+
+def _build_session_payload(
+    state: SessionState,
+    *,
+    done: bool = False,
+    phase_number: int | None = None,
+    phase_title: str | None = None,
+    questions: list[str] | None = None,
+    results: Any | None = None,
+    revised: bool | None = None,
+    resumed: bool = False,
+    summary: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    ctx = state.context
+    resolved_phase_number = phase_number if phase_number is not None else state.phase_idx + 1
+    payload: dict[str, Any] = {
+        "acceptance_criteria": ctx.raw_acceptance_criteria,
+        "approved": ctx.approved,
+        "classifications": ctx.classifications,
+        "current_phase": ctx.current_phase,
+        "done": done,
+        "jira_key": ctx.jira_key,
+        "jira_summary": ctx.jira_summary,
+        "log_entries": len(ctx.negotiation_log),
+        "phase_number": resolved_phase_number,
+        "phase_title": phase_title or _phase_title_for_number(resolved_phase_number),
+        "session_id": state.session_id,
+        "total_phases": len(PHASE_SKILLS),
+        "usage": ctx.usage or None,
+        "verdicts": ctx.verdicts,
+    }
+    if questions is not None:
+        payload["questions"] = questions
+    if results is not None:
+        payload["results"] = results
+    if revised is not None:
+        payload["revised"] = revised
+    if resumed:
+        payload["resumed"] = True
+    if summary is not None:
+        payload["summary"] = summary
+    return payload
+
+
+def _resolve_session_response(
+    session_id: str | None = None,
+) -> SessionState | JSONResponse:
+    state = SESSION_STORE.resolve(session_id)
+    if state is None:
+        return JSONResponse({"error": "No active session"}, status_code=400)
+    return state
+
+
+def _extract_session_id(body: dict[str, Any]) -> str | None:
+    session_id = body.get("session_id")
+    if isinstance(session_id, str) and session_id.strip():
+        return session_id
+    return None
+
+
+def _phase_title_for_number(phase_number: int) -> str:
+    if 1 <= phase_number <= len(PHASE_SKILLS):
+        return PHASE_SKILLS[phase_number - 1][0]
+    return PHASE_SKILLS[0][0]
+
+
+def _resume_phase_number(current_phase: str) -> int:
+    if not current_phase.startswith("phase_"):
+        return 0
+    try:
+        return int(current_phase.split("_", 1)[1])
+    except ValueError:
+        return 0
+
+
+def _result_count(results: Any) -> int:
+    if hasattr(results, "__len__"):
+        return len(results)
+    return 1
 
 
 def _build_summary(ctx: VerificationContext) -> dict:

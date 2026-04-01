@@ -7,7 +7,10 @@ import os
 import re
 from typing import TYPE_CHECKING, Union
 
-import anthropic
+try:
+    import anthropic
+except ModuleNotFoundError:  # pragma: no cover - exercised in mock/test environments
+    anthropic = None
 
 if TYPE_CHECKING:
     from verify.backpressure import BackPressureController
@@ -374,6 +377,10 @@ class LLMClient:
         self._mock = os.environ.get("LLM_MOCK", "").lower() == "true"
         self.backpressure = backpressure
         if not self._mock:
+            if anthropic is None:
+                raise RuntimeError(
+                    "The anthropic package is required when LLM_MOCK is false."
+                )
             self._client = anthropic.Anthropic(
                 api_key=api_key or os.environ.get("ANTHROPIC_API_KEY"),
                 timeout=120.0,
@@ -403,7 +410,10 @@ class LLMClient:
             raise RuntimeError(f"Backpressure limits exceeded: {'; '.join(messages)}")
 
         if self._mock:
-            return self._mock_response(system_prompt, user_message)
+            result = self._mock_response(system_prompt, user_message)
+            if self.backpressure:
+                self.backpressure.record_api_call(0, 0)
+            return result
 
         message = self._client.messages.create(
             model=self.model,
@@ -416,7 +426,6 @@ class LLMClient:
 
         # Record usage if backpressure is enabled
         if self.backpressure:
-            # Estimate tokens: input_tokens + output_tokens from the response
             input_tokens = message.usage.input_tokens
             output_tokens = message.usage.output_tokens
             self.backpressure.record_api_call(input_tokens, output_tokens)
@@ -447,7 +456,10 @@ class LLMClient:
             raise RuntimeError(f"Backpressure limits exceeded: {'; '.join(messages_err)}")
 
         if self._mock:
-            return self._mock_response(system_prompt)
+            result = self._mock_response(system_prompt)
+            if self.backpressure:
+                self.backpressure.record_api_call(0, 0)
+            return result
 
         message = self._client.messages.create(
             model=self.model,

@@ -4,13 +4,41 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Any, Optional
 
 
 class BackPressureLimitExceeded(Exception):
     """Raised when a hard limit is exceeded."""
 
     pass
+
+
+@dataclass
+class PhaseCostReport:
+    """Cost report for a single negotiation phase."""
+
+    phase_name: str
+    api_calls: int
+    tokens_in: int
+    tokens_out: int
+    wall_clock_seconds: float
+    retries: int
+    status: str  # "success", "failed", "budget_exceeded"
+
+    @staticmethod
+    def aggregate(reports: list[PhaseCostReport]) -> dict[str, Any]:
+        """Aggregate cost reports across phases into a summary dict."""
+        total_in = sum(r.tokens_in for r in reports)
+        total_out = sum(r.tokens_out for r in reports)
+        return {
+            "total_api_calls": sum(r.api_calls for r in reports),
+            "total_tokens_in": total_in,
+            "total_tokens_out": total_out,
+            "total_tokens": total_in + total_out,
+            "total_wall_clock_seconds": sum(r.wall_clock_seconds for r in reports),
+            "total_retries": sum(r.retries for r in reports),
+            "phases": len(reports),
+        }
 
 
 @dataclass
@@ -43,6 +71,49 @@ class BackPressureController:
     tokens_used: int = field(default=0)
     start_time: float = field(default_factory=time.time)
     retries_by_phase: dict[str, int] = field(default_factory=dict)
+
+    # Known budget fields that can be overridden via constitution
+    _BUDGET_FIELDS = {
+        "max_api_calls",
+        "max_tokens",
+        "max_wall_clock_seconds",
+        "max_retries_per_phase",
+        "warn_api_calls",
+        "warn_tokens",
+    }
+
+    _WARN_TO_MAX = {
+        "warn_api_calls": "max_api_calls",
+        "warn_tokens": "max_tokens",
+    }
+
+    @classmethod
+    def from_constitution(cls, constitution: dict) -> BackPressureController:
+        """Create a controller from a constitution dict's optional budget section."""
+        budget = constitution.get("budget") or {}
+        kwargs: dict[str, Any] = {}
+        for key, value in budget.items():
+            if key not in cls._BUDGET_FIELDS:
+                continue
+            if not isinstance(value, int) or value < 0:
+                raise ValueError(
+                    f"budget.{key} must be a positive integer, got {value!r}"
+                )
+            kwargs[key] = value
+
+        controller = cls(**kwargs)
+
+        # Validate warn <= max constraints
+        for warn_key, max_key in cls._WARN_TO_MAX.items():
+            warn_val = getattr(controller, warn_key)
+            max_val = getattr(controller, max_key)
+            if warn_val > max_val:
+                raise ValueError(
+                    f"budget.{warn_key} ({warn_val}) must not exceed "
+                    f"budget.{max_key} ({max_val}): warn must be <= max"
+                )
+
+        return controller
 
     def record_api_call(self, tokens_in: int, tokens_out: int) -> None:
         """Record an API call with input and output tokens.

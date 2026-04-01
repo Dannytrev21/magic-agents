@@ -39,3 +39,7 @@ class VerificationContext:
 
     # Negotiation log — timestamped entries from add_to_log
     negotiation_log: list[dict] = field(default_factory=list)
+
+    # Runtime session metadata
+    session_id: str = ""
+    usage: dict = field(default_factory=dict)

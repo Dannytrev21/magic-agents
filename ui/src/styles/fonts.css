@@ -1,0 +1,34 @@
+@font-face {
+  font-family: 'Operator Sans';
+  src:
+    local('Instrument Sans'),
+    local('Aptos'),
+    local('Segoe UI'),
+    local('Helvetica Neue');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Operator Mono';
+  src:
+    local('JetBrains Mono'),
+    local('SF Mono'),
+    local('IBM Plex Mono'),
+    local('Menlo');
+  font-display: swap;
+}
+
+:root {
+  --font-sans:
+    'Operator Sans',
+    'Instrument Sans',
+    'Aptos',
+    'Segoe UI',
+    sans-serif;
+  --font-mono:
+    'Operator Mono',
+    'JetBrains Mono',
+    'SF Mono',
+    'IBM Plex Mono',
+    monospace;
+}
