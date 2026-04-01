@@ -49,10 +49,10 @@ This port keeps the same operational value, but upgrades the representation for 
 
 ### Acceptance Criteria
 
-- [ ] A `TranscriptCompactor` type exists with configurable `compaction_threshold` and `keep_recent`.
-- [ ] Compaction emits a single `compaction_summary` entry instead of naive truncation.
-- [ ] The summary content includes phase coverage and compacted counts.
-- [ ] Repeated compaction does not stack multiple summary entries at the front.
+- [x]A `TranscriptCompactor` type exists with configurable `compaction_threshold` and `keep_recent`.
+- [x]Compaction emits a single `compaction_summary` entry instead of naive truncation.
+- [x]The summary content includes phase coverage and compacted counts.
+- [x]Repeated compaction does not stack multiple summary entries at the front.
 
 ## Story P03.2: Harness-Level Integration
 
@@ -81,10 +81,10 @@ This port keeps the same operational value, but upgrades the representation for 
 
 ### Acceptance Criteria
 
-- [ ] `NegotiationHarness` accepts an optional compactor dependency.
-- [ ] `add_to_log()` compacts automatically after append.
-- [ ] Existing checkpoint save/load behavior still round-trips compacted logs.
-- [ ] Focused tests cover compactor behavior and harness integration.
+- [x]`NegotiationHarness` accepts an optional compactor dependency.
+- [x]`add_to_log()` compacts automatically after append.
+- [x]Existing checkpoint save/load behavior still round-trips compacted logs.
+- [x]Focused tests cover compactor behavior and harness integration.
 
 ## Red-Green Plan
 

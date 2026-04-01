@@ -1,7 +1,7 @@
 # Epic P8: Bootstrap & Initialization Graph
 
 **Priority:** 8 (Medium-Low)
-**Status:** Not Started
+**Status:** Done
 **Ported From:** `claw-code/src/bootstrap_graph.py` (BootstrapGraph with phased stages), `claw-code/src/setup.py` (WorkspaceSetup, prefetch, deferred init)
 **Integration Target:** `src/verify/negotiation/web.py`, `src/verify/negotiation/cli.py`
 
@@ -37,10 +37,10 @@ magic-agents initializes its web server and CLI with ad-hoc setup code scattered
 
 ### Acceptance Criteria
 
-- [ ] `BootstrapStage` dataclass with `name`, `description`, `dependencies`, `handler`.
-- [ ] `BootstrapGraph` with `add_stage()`, `execute()`, `report()` methods.
-- [ ] Topological sort respects dependencies.
-- [ ] Failed stages cause dependent stages to be skipped.
+- [x]`BootstrapStage` dataclass with `name`, `description`, `dependencies`, `handler`.
+- [x]`BootstrapGraph` with `add_stage()`, `execute()`, `report()` methods.
+- [x]Topological sort respects dependencies.
+- [x]Failed stages cause dependent stages to be skipped.
 
 ### How to Test
 
@@ -95,10 +95,10 @@ def test_cycle_detection():
 
 ### Acceptance Criteria
 
-- [ ] `run_web.py` uses `BootstrapGraph.execute()` for initialization.
-- [ ] `run_negotiation.py` uses `BootstrapGraph.execute()` for initialization.
-- [ ] Bootstrap failure produces readable diagnostic on stderr.
-- [ ] `GET /api/health/bootstrap` returns the report with per-stage timing.
+- [x]`run_web.py` uses `BootstrapGraph.execute()` for initialization.
+- [x]`run_negotiation.py` uses `BootstrapGraph.execute()` for initialization.
+- [x]Bootstrap failure produces readable diagnostic on stderr.
+- [x]`GET /api/health/bootstrap` returns the report with per-stage timing.
 
 ### How to Test
 
@@ -140,10 +140,10 @@ def test_bootstrap_fails_on_missing_env(monkeypatch):
 
 ### Acceptance Criteria
 
-- [ ] `GET /api/health` returns 200 with readiness and stage status.
-- [ ] `ready: false` when any required stage failed.
-- [ ] Each stage includes `duration_ms`.
-- [ ] Failed stages include an `error` field.
+- [x]`GET /api/health` returns 200 with readiness and stage status.
+- [x]`ready: false` when any required stage failed.
+- [x]Each stage includes `duration_ms`.
+- [x]Failed stages include an `error` field.
 
 ### How to Test
 

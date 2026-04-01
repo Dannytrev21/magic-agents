@@ -1,7 +1,7 @@
 # Epic P6: Structured Streaming Events
 
 **Priority:** 6 (Medium)
-**Status:** Not Started
+**Status:** Done
 **Ported From:** `claw-code/src/query_engine.py` (`stream_submit_message` — typed SSE yields with `message_start`, `command_match`, `tool_match`, `permission_denial`, `message_delta`, `message_stop`)
 **Integration Target:** `src/verify/runtime.py` (RuntimeEvent), `src/verify/negotiation/web.py` (SSE endpoints)
 
