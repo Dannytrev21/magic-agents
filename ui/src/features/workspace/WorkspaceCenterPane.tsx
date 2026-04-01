@@ -209,7 +209,13 @@ export function WorkspaceCenterPane({
         </div>
       </section>
 
-      <section className={styles.focusRegion} ref={focusRef} tabIndex={-1}>
+      <section
+        aria-label="Active workspace region"
+        className={styles.focusRegion}
+        ref={focusRef}
+        role="region"
+        tabIndex={-1}
+      >
         {activeView === 'overview' ? (
           <OverviewContent
             activeSession={activeSession}

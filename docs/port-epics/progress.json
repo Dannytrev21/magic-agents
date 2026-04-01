@@ -55,11 +55,11 @@
       "file": "P11-codebase-discovery-explorer.md",
       "priority": 2.5,
       "stories": [
-        { "id": "P11.1", "name": "Language & Framework Auto-Detection", "status": "not_started" },
-        { "id": "P11.2", "name": "Structural Index Builder (Multi-Language)", "status": "not_started" },
-        { "id": "P11.3", "name": "Auto-Generate Draft Constitution from Index", "status": "not_started" },
-        { "id": "P11.4", "name": "Explore Agent CLI & Web Endpoint", "status": "not_started" },
-        { "id": "P11.5", "name": "Inject Codebase Context into Negotiation Phases", "status": "not_started" }
+        { "id": "P11.1", "name": "Language & Framework Auto-Detection", "status": "done" },
+        { "id": "P11.2", "name": "Structural Index Builder (Multi-Language)", "status": "done" },
+        { "id": "P11.3", "name": "Auto-Generate Draft Constitution from Index", "status": "done" },
+        { "id": "P11.4", "name": "Explore Agent CLI & Web Endpoint", "status": "done" },
+        { "id": "P11.5", "name": "Inject Codebase Context into Negotiation Phases", "status": "done" }
       ]
     }
   ],

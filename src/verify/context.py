@@ -37,6 +37,9 @@ class VerificationContext:
     verdicts: list[dict] = field(default_factory=list)
     all_passed: bool = False
 
+    # Codebase index — optional, from explore agent (P11)
+    codebase_index: dict | None = None
+
     # Negotiation log — timestamped entries from add_to_log
     negotiation_log: list[dict] = field(default_factory=list)
 

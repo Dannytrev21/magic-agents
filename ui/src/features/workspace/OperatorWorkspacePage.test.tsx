@@ -1,11 +1,12 @@
-import type { RefObject } from 'react';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { type RefObject } from 'react';
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { SessionIntakeStory } from '@/features/session/sessionIntakeModel';
-import { workspacePanelStorageKey } from '@/features/workspace/workspaceModel';
+import { MemoryRouter, useLocation } from 'react-router-dom';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AppProviders } from '@/app/AppProviders';
 import { OperatorWorkspacePage } from '@/features/workspace/OperatorWorkspacePage';
+import { workspacePanelStorageKey } from '@/features/workspace/workspaceModel';
+import type { SessionIntakeStory } from '@/features/session/sessionIntakeModel';
 import type { StartNegotiationResponse } from '@/lib/api/types';
 
 const mockRespondMutation = vi.fn();
@@ -238,76 +239,78 @@ const originalLocalStorage = window.localStorage;
 
 const initialSession: StartNegotiationResponse = {
   done: false,
-  jira_key: 'MAG-201',
+  jira_key: 'MAG-22',
   phase_number: 3,
-  phase_title: 'Precondition Formalization',
-  session_id: 'session-u2',
+  phase_title: 'Phase 3: Precondition Formalization',
+  revised: false,
+  session_id: 'session-123',
   total_phases: 7,
 };
 
-type StorageStub = Storage & {
-  dump: () => Record<string, string>;
-};
+function LocationProbe() {
+  const location = useLocation();
+  return <output data-testid="location">{`${location.pathname}${location.search}`}</output>;
+}
+
+function renderWorkspace(entry = '/?view=overview&inspector=evidence&pane=workspace') {
+  return render(
+    <AppProviders>
+      <MemoryRouter initialEntries={[entry]}>
+        <OperatorWorkspacePage
+          initialSession={initialSession}
+          initialStorySummary="Port the operator workspace layout"
+        />
+        <LocationProbe />
+      </MemoryRouter>
+    </AppProviders>,
+  );
+}
 
 function setViewport(width: number) {
-  Object.defineProperty(window, 'innerWidth', {
-    configurable: true,
-    writable: true,
-    value: width,
+  act(() => {
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: width,
+      writable: true,
+    });
+    window.dispatchEvent(new Event('resize'));
   });
 }
 
-function installStorage(initial: Record<string, string> = {}): StorageStub {
-  const values = new Map(Object.entries(initial));
-  const storage = {
-    clear: vi.fn(() => {
-      values.clear();
-    }),
-    dump: () => Object.fromEntries(values.entries()),
-    getItem: vi.fn((key: string) => values.get(key) ?? null),
-    key: vi.fn((index: number) => Array.from(values.keys())[index] ?? null),
-    get length() {
-      return values.size;
-    },
-    removeItem: vi.fn((key: string) => {
-      values.delete(key);
-    }),
-    setItem: vi.fn((key: string, value: string) => {
-      values.set(key, value);
-    }),
-  } satisfies StorageStub;
-
+function installStorage() {
+  const store = new Map<string, string>();
   Object.defineProperty(window, 'localStorage', {
     configurable: true,
-    value: storage,
+    value: {
+      clear: () => { store.clear(); },
+      getItem: (key: string) => store.get(key) ?? null,
+      removeItem: (key: string) => { store.delete(key); },
+      setItem: (key: string, value: string) => { store.set(key, value); },
+    },
   });
-
-  return storage;
 }
 
-function renderPage({
-  initialEntry = '/?view=overview&inspector=evidence&pane=workspace',
-  initialSessionValue = initialSession,
-  initialStorySummary = 'Port operator workspace layout',
-}: {
+function renderPage(options?: {
   initialEntry?: string;
   initialSessionValue?: StartNegotiationResponse | null;
   initialStorySummary?: string | null;
-} = {}) {
+}) {
+  const {
+    initialEntry = '/?view=overview&inspector=evidence&pane=workspace',
+    initialSessionValue = initialSession,
+    initialStorySummary = 'Port the operator workspace layout',
+  } = options ?? {};
+
   return render(
-    <MemoryRouter initialEntries={[initialEntry]}>
-      <Routes>
-        <Route
-          element={
-            <OperatorWorkspacePage
-              initialSession={initialSessionValue}
-              initialStorySummary={initialStorySummary}
-            />
-          }
-          path="/"
+    <AppProviders>
+      <MemoryRouter initialEntries={[initialEntry]}>
+        <OperatorWorkspacePage
+          initialSession={initialSessionValue}
+          initialStorySummary={initialStorySummary}
         />
-      </Routes>
-    </MemoryRouter>,
+        <LocationProbe />
+      </MemoryRouter>
+    </AppProviders>,
   );
 }
 
@@ -323,69 +326,73 @@ afterEach(() => {
     configurable: true,
     value: originalLocalStorage,
   });
-  vi.restoreAllMocks();
 });
 
-describe('OperatorWorkspacePage', () => {
-  it('falls back to default pane state when storage APIs are unavailable', () => {
-    setViewport(1440);
-    Object.defineProperty(window, 'localStorage', {
-      configurable: true,
-      value: {},
-    });
+describe('Operator workspace layout', () => {
+  it('renders a seven-phase sticky rail and session status strip for active sessions', () => {
+    renderWorkspace();
 
-    renderPage();
+    const phaseList = screen.getByRole('list', { name: /negotiation phases/i });
+    const items = within(phaseList).getAllByRole('listitem');
 
-    expect(screen.getByRole('heading', { name: /magic agents/i })).toBeInTheDocument();
-    expect(screen.getByRole('complementary', { name: /story intake/i })).toBeInTheDocument();
-    expect(screen.getByRole('complementary', { name: /evidence inspector/i })).toBeInTheDocument();
+    expect(items).toHaveLength(7);
+    expect(items[0]).toHaveAttribute('data-state', 'complete');
+    expect(items[2]).toHaveAttribute('data-state', 'active');
+    expect(screen.getByText(/session status/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/awaiting operator input/i)[0]).toBeInTheDocument();
+    expect(screen.getAllByText('session-123')[0]).toBeInTheDocument();
+    expect(screen.getByText(/phase 3 of 7/i)).toBeInTheDocument();
   });
 
-  it('persists collapsed side panes across reloads on desktop', async () => {
+  it('swaps center and inspector surfaces in place and keeps focus on the active region', async () => {
     const user = userEvent.setup();
-    const storage = installStorage();
+    renderWorkspace();
 
-    setViewport(1440);
-    const view = renderPage();
+    await user.click(
+      within(screen.getByRole('tablist', { name: /workspace views/i })).getByRole('tab', {
+        name: /traceability/i,
+      }),
+    );
 
-    await user.click(screen.getByRole('button', { name: /toggle story intake panel/i }));
+    expect(screen.getByRole('heading', { name: /traceability matrix/i })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: /active workspace region/i })).toHaveFocus();
+    expect(screen.getByTestId('location')).toHaveTextContent('/?view=traceability&inspector=evidence&pane=workspace');
+
+    await user.click(
+      within(screen.getByRole('tablist', { name: /inspector views/i })).getByRole('tab', {
+        name: /scan output/i,
+      }),
+    );
+
+    expect(screen.getByText(/project root/i)).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: /inspector detail region/i })).toHaveFocus();
+    expect(screen.getByTestId('location')).toHaveTextContent('/?view=traceability&inspector=scan&pane=workspace');
+  });
+
+  it('persists panel collapse state and falls back to single-panel mobile switching', async () => {
+    const user = userEvent.setup();
+    renderWorkspace();
+
     await user.click(screen.getByRole('button', { name: /toggle evidence panel/i }));
 
-    expect(storage.setItem).toHaveBeenLastCalledWith(
-      workspacePanelStorageKey,
-      JSON.stringify({ leftCollapsed: true, rightCollapsed: true }),
-    );
-    expect(storage.dump()[workspacePanelStorageKey]).toBe(
-      JSON.stringify({ leftCollapsed: true, rightCollapsed: true }),
-    );
-    expect(screen.queryByRole('complementary', { name: /story intake/i })).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('complementary', { name: /evidence inspector/i }),
-    ).not.toBeInTheDocument();
+    expect(window.localStorage.getItem(workspacePanelStorageKey)).toContain('"rightCollapsed":true');
+    expect(screen.getByTestId('workspace-grid')).toHaveStyle({
+      '--workspace-right-width': '0rem',
+    });
 
-    view.unmount();
-    renderPage();
+    setViewport(640);
 
-    expect(screen.queryByRole('complementary', { name: /story intake/i })).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('complementary', { name: /evidence inspector/i }),
-    ).not.toBeInTheDocument();
-  });
+    expect(await screen.findByRole('tablist', { name: /workspace panels/i })).toBeInTheDocument();
 
-  it('switches center and inspector content in place and moves focus to the active region', async () => {
-    const user = userEvent.setup();
+    await user.click(screen.getByRole('tab', { name: /story panel/i }));
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/?view=overview&inspector=evidence&pane=story');
 
     setViewport(1440);
-    installStorage();
-    renderPage();
 
-    expect(screen.getByText('Center view: overview')).toBeInTheDocument();
-    expect(screen.getByText('Inspector view: evidence')).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: /center traceability/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText('Center view: traceability')).toHaveFocus();
+    expect(screen.getByTestId('workspace-grid')).toHaveAttribute('data-layout-mode', 'desktop');
+    expect(screen.getByTestId('workspace-grid')).toHaveStyle({
+      '--workspace-right-width': '0rem',
     });
     expect(screen.getByText('Inspector view: evidence')).toBeInTheDocument();
 
@@ -470,7 +477,7 @@ describe('OperatorWorkspacePage', () => {
       ...initialSession,
       phase_number: 4,
       phase_title: 'Failure Mode Enumeration',
-      session_id: 'session-u2',
+      session_id: 'session-123',
     });
 
     setViewport(1440);
@@ -482,7 +489,7 @@ describe('OperatorWorkspacePage', () => {
     await waitFor(() => {
       expect(mockRespondMutation).toHaveBeenCalledWith({
         input: 'approve',
-        session_id: 'session-u2',
+        session_id: 'session-123',
       });
     });
     expect(screen.getByText('Center selected phase: 4')).toBeInTheDocument();
@@ -504,7 +511,7 @@ describe('OperatorWorkspacePage', () => {
     await waitFor(() => {
       expect(mockRespondMutation).toHaveBeenCalledWith({
         input: 'Need tighter error handling',
-        session_id: 'session-u2',
+        session_id: 'session-123',
       });
     });
     expect(screen.getAllByDisplayValue('Need tighter error handling')).toHaveLength(2);
