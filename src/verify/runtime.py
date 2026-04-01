@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
@@ -28,7 +29,11 @@ class SessionState:
         detail: str,
         data: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        entry = {"title": title, "detail": detail}
+        entry = {
+            "title": title,
+            "detail": detail,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
         if data:
             entry["data"] = data
         self.history.append(entry)

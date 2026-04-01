@@ -8,6 +8,14 @@ import { workspacePanelStorageKey } from '@/features/workspace/workspaceModel';
 import { OperatorWorkspacePage } from '@/features/workspace/OperatorWorkspacePage';
 import type { StartNegotiationResponse } from '@/lib/api/types';
 
+const mockRespondMutation = vi.fn();
+
+vi.mock('@/lib/query/sessionHooks', () => ({
+  useRespondMutation: () => ({
+    mutateAsync: mockRespondMutation,
+  }),
+}));
+
 vi.mock('@/features/session/SessionBootstrap', () => {
   type SessionBootstrapProps = {
     activeSession?: StartNegotiationResponse | null;
@@ -122,9 +130,18 @@ vi.mock('@/features/workspace/WorkspaceCenterPane', () => {
     activeView: string;
     draftFeedback?: string;
     focusRef: RefObject<HTMLElement | null>;
+    onApprovePhase?: () => void;
+    onDraftFeedbackChange?: (value: string) => void;
+    onPhaseSelect?: (phaseNumber: number) => void;
+    onRevisePhase?: () => void;
     onViewChange: (view: 'overview' | 'negotiation' | 'traceability') => void;
+    phaseActionState?: {
+      message?: string | null;
+      status?: string;
+    };
     selectedAcceptanceCriterionIndex?: number | null;
     selectedPhaseNumber?: number | null;
+    storySummary?: string | null;
   };
 
   return {
@@ -132,9 +149,15 @@ vi.mock('@/features/workspace/WorkspaceCenterPane', () => {
       activeView,
       draftFeedback,
       focusRef,
+      onApprovePhase,
+      onDraftFeedbackChange,
+      onPhaseSelect,
+      onRevisePhase,
       onViewChange,
+      phaseActionState,
       selectedAcceptanceCriterionIndex,
       selectedPhaseNumber,
+      storySummary,
     }: WorkspaceCenterPaneProps) => (
       <div>
         <button onClick={() => onViewChange('overview')} type="button">
@@ -146,12 +169,31 @@ vi.mock('@/features/workspace/WorkspaceCenterPane', () => {
         <button onClick={() => onViewChange('traceability')} type="button">
           Center traceability
         </button>
+        <button onClick={() => onPhaseSelect?.(3)} type="button">
+          Center phase 3
+        </button>
+        <button onClick={() => onApprovePhase?.()} type="button">
+          Approve phase
+        </button>
+        <button onClick={() => onRevisePhase?.()} type="button">
+          Revise phase
+        </button>
+        <label>
+          Center revision feedback
+          <textarea
+            onChange={(event) => onDraftFeedbackChange?.(event.target.value)}
+            value={draftFeedback ?? ''}
+          />
+        </label>
         <section ref={focusRef} tabIndex={-1}>
           Center view: {activeView}
         </section>
         <p>Center selected AC: {selectedAcceptanceCriterionIndex ?? 'none'}</p>
         <p>Center selected phase: {selectedPhaseNumber ?? 'none'}</p>
         <p>Center draft: {draftFeedback || 'empty'}</p>
+        <p>Center story summary: {storySummary ?? 'empty'}</p>
+        <p>Center action message: {phaseActionState?.message ?? 'none'}</p>
+        <p>Center action status: {phaseActionState?.status ?? 'idle'}</p>
       </div>
     ),
   };
@@ -271,6 +313,7 @@ function renderPage({
 
 afterEach(() => {
   cleanup();
+  mockRespondMutation.mockReset();
   Object.defineProperty(window, 'innerWidth', {
     configurable: true,
     writable: true,
@@ -370,7 +413,7 @@ describe('OperatorWorkspacePage', () => {
     await user.click(screen.getByRole('button', { name: /start mock session/i }));
 
     expect(await screen.findByText('MAG-222')).toBeInTheDocument();
-    expect(screen.getByText(/recovered story summary/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/recovered story summary/i)).toHaveLength(2);
     expect(screen.getByText('Center view: negotiation')).toBeInTheDocument();
   });
 
@@ -393,7 +436,7 @@ describe('OperatorWorkspacePage', () => {
     await user.click(screen.getByRole('button', { name: /inspector scan/i }));
     await user.click(screen.getByRole('button', { name: /refresh confirmed session/i }));
 
-    expect(await screen.findByDisplayValue('Need clearer preconditions')).toBeInTheDocument();
+    expect(await screen.findAllByDisplayValue('Need clearer preconditions')).toHaveLength(2);
     expect(screen.getByText(/center draft: need clearer preconditions/i)).toBeInTheDocument();
     expect(screen.getByText(/failure mode enumeration/i)).toBeInTheDocument();
   });
@@ -418,5 +461,54 @@ describe('OperatorWorkspacePage', () => {
     expect(screen.getByText('Inspector selected AC: 1')).toBeInTheDocument();
     expect(screen.getByText('Bootstrap selected phase: 2')).toBeInTheDocument();
     expect(screen.getByText('Center selected phase: 2')).toBeInTheDocument();
+  });
+
+  it('applies approve responses in place and advances the confirmed phase context', async () => {
+    const user = userEvent.setup();
+
+    mockRespondMutation.mockResolvedValue({
+      ...initialSession,
+      phase_number: 4,
+      phase_title: 'Failure Mode Enumeration',
+      session_id: 'session-u2',
+    });
+
+    setViewport(1440);
+    installStorage();
+    renderPage();
+
+    await user.click(screen.getByRole('button', { name: /approve phase/i }));
+
+    await waitFor(() => {
+      expect(mockRespondMutation).toHaveBeenCalledWith({
+        input: 'approve',
+        session_id: 'session-u2',
+      });
+    });
+    expect(screen.getByText('Center selected phase: 4')).toBeInTheDocument();
+    expect(screen.getByText(/center action message: phase approved/i)).toBeInTheDocument();
+  });
+
+  it('surfaces revise failures inline without losing the active draft feedback', async () => {
+    const user = userEvent.setup();
+
+    mockRespondMutation.mockRejectedValue(new Error('Revision request failed'));
+
+    setViewport(1440);
+    installStorage();
+    renderPage();
+
+    await user.type(screen.getByLabelText(/center revision feedback/i), 'Need tighter error handling');
+    await user.click(screen.getByRole('button', { name: /revise phase/i }));
+
+    await waitFor(() => {
+      expect(mockRespondMutation).toHaveBeenCalledWith({
+        input: 'Need tighter error handling',
+        session_id: 'session-u2',
+      });
+    });
+    expect(screen.getAllByDisplayValue('Need tighter error handling')).toHaveLength(2);
+    expect(screen.getByText(/center action status: error/i)).toBeInTheDocument();
+    expect(screen.getByText(/revision request failed/i)).toBeInTheDocument();
   });
 });

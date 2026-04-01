@@ -3,7 +3,10 @@ import { useSearchParams } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import { SessionBootstrap } from '@/features/session/SessionBootstrap';
 import type { SessionIntakeStory } from '@/features/session/sessionIntakeModel';
-import { WorkspaceCenterPane } from '@/features/workspace/WorkspaceCenterPane';
+import {
+  WorkspaceCenterPane,
+  type PhaseActionState,
+} from '@/features/workspace/WorkspaceCenterPane';
 import { WorkspaceInspector } from '@/features/workspace/WorkspaceInspector';
 import {
   centerWorkspaceViews,
@@ -17,6 +20,7 @@ import {
   type WorkspacePaneId,
 } from '@/features/workspace/workspaceModel';
 import type { StartNegotiationResponse } from '@/lib/api/types';
+import { useRespondMutation } from '@/lib/query/sessionHooks';
 
 type OperatorWorkspacePageProps = {
   initialSession?: StartNegotiationResponse | null;
@@ -33,6 +37,13 @@ const defaultPanelPreferences: PanelPreferences = {
   rightCollapsed: false,
 };
 
+const defaultPhaseActionState: PhaseActionState = {
+  activeAction: null,
+  isPending: false,
+  message: null,
+  status: 'idle',
+};
+
 export function OperatorWorkspacePage({
   initialSession = null,
   initialStorySummary = null,
@@ -45,11 +56,13 @@ export function OperatorWorkspacePage({
   const [selectedPhaseNumber, setSelectedPhaseNumber] = useState<number | null>(
     initialSession?.phase_number ?? null,
   );
+  const [phaseActionState, setPhaseActionState] = useState<PhaseActionState>(defaultPhaseActionState);
   const [layoutMode, setLayoutMode] = useState(() => getWorkspaceLayoutMode(window.innerWidth));
   const [panelPreferences, setPanelPreferences] = useState<PanelPreferences>(readPanelPreferences);
   const [tabletInspectorOpen, setTabletInspectorOpen] = useState(false);
   const [isTransitionPending, startShellTransition] = useTransition();
   const [searchParams, setSearchParams] = useSearchParams();
+  const respondMutation = useRespondMutation();
   const centerFocusRef = useRef<HTMLElement | null>(null);
   const inspectorFocusRef = useRef<HTMLElement | null>(null);
   const hasRenderedCenterView = useRef(false);
@@ -144,6 +157,7 @@ export function OperatorWorkspacePage({
       next.set('inspector', 'evidence');
       next.set('pane', 'workspace');
       setSearchParams(next, { replace: true });
+      setPhaseActionState(defaultPhaseActionState);
     });
   }
 
@@ -156,6 +170,9 @@ export function OperatorWorkspacePage({
       ...current,
       [activeSession.session_id]: value,
     }));
+    setPhaseActionState((current) =>
+      current.status === 'idle' && !current.message ? current : defaultPhaseActionState,
+    );
   }
 
   function handleAcceptanceCriterionSelect(index: number) {
@@ -176,6 +193,71 @@ export function OperatorWorkspacePage({
 
   function handleMobilePaneChange(pane: WorkspacePaneId) {
     updateWorkspaceRoute({ pane });
+  }
+
+  async function submitPhaseResponse(input: string, action: 'approve' | 'revise') {
+    if (!activeSession) {
+      return;
+    }
+
+    setPhaseActionState({
+      activeAction: action,
+      isPending: true,
+      message: action === 'approve' ? 'Submitting approval' : 'Submitting revision request',
+      status: 'idle',
+    });
+
+    try {
+      const nextSession = await respondMutation.mutateAsync({
+        input,
+        session_id: activeSession.session_id,
+      });
+
+      startShellTransition(() => {
+        setActiveSession(nextSession);
+        setStorySummary(nextSession.jira_summary ?? storySummary);
+        setSelectedPhaseNumber((current) => resolveSelectedPhaseNumber(current, activeSession, nextSession));
+        setPhaseActionState({
+          activeAction: action,
+          isPending: false,
+          message: buildPhaseActionMessage(action, nextSession),
+          status: 'success',
+        });
+      });
+    } catch (error) {
+      setPhaseActionState({
+        activeAction: action,
+        isPending: false,
+        message: resolvePhaseActionError(error, action),
+        status: 'error',
+      });
+    }
+  }
+
+  function handleApprovePhase() {
+    if (!activeSession || phaseActionState.isPending) {
+      return;
+    }
+
+    void submitPhaseResponse('approve', 'approve');
+  }
+
+  function handleRevisePhase() {
+    if (!activeSession || phaseActionState.isPending) {
+      return;
+    }
+
+    if (!draftFeedback.trim()) {
+      setPhaseActionState({
+        activeAction: 'revise',
+        isPending: false,
+        message: 'Enter revision feedback before requesting a revised phase response.',
+        status: 'error',
+      });
+      return;
+    }
+
+    void submitPhaseResponse(draftFeedback, 'revise');
   }
 
   function handleToggleLeftPane() {
@@ -216,10 +298,16 @@ export function OperatorWorkspacePage({
           draftFeedback={draftFeedback}
           focusRef={centerFocusRef}
           isTransitionPending={isTransitionPending}
+          onApprovePhase={handleApprovePhase}
+          onDraftFeedbackChange={handleDraftFeedbackChange}
+          onPhaseSelect={handlePhaseSelect}
+          onRevisePhase={handleRevisePhase}
           onViewChange={handleCenterViewChange}
+          phaseActionState={phaseActionState}
           selectedAcceptanceCriterionIndex={selectedAcceptanceCriterionIndex}
           selectedPhaseNumber={selectedPhaseNumber}
           statusLabel={statusLabel}
+          storySummary={activeStory?.summary ?? storySummary}
         />
       }
       layoutMode={layoutMode}
@@ -258,6 +346,43 @@ export function OperatorWorkspacePage({
       workspaceLabel={workspaceLabel}
     />
   );
+}
+
+function buildPhaseActionMessage(
+  action: 'approve' | 'revise',
+  session: StartNegotiationResponse,
+) {
+  if (action === 'revise') {
+    return `Revision response loaded for ${session.phase_title}.`;
+  }
+
+  if (session.done) {
+    return 'Negotiation complete. Review the final summary and traceability.';
+  }
+
+  return `Phase approved. The workspace advanced to ${session.phase_title}.`;
+}
+
+function resolveSelectedPhaseNumber(
+  current: number | null,
+  previousSession: StartNegotiationResponse,
+  nextSession: StartNegotiationResponse,
+) {
+  if (current === null || current >= previousSession.phase_number) {
+    return nextSession.phase_number;
+  }
+
+  return current;
+}
+
+function resolvePhaseActionError(error: unknown, action: 'approve' | 'revise') {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return action === 'approve'
+    ? 'Unable to approve the active phase.'
+    : 'Unable to request a revised phase response.';
 }
 
 function readPanelPreferences(): PanelPreferences {

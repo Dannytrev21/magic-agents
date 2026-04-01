@@ -5,6 +5,7 @@ import {
   fetchScanStatus,
   fetchSessionInfo,
   fetchSkills,
+  respondToSession,
   resumeSession,
   startNegotiation,
 } from '@/lib/api/client';
@@ -96,6 +97,17 @@ export function useResumeSessionMutation() {
     mutationFn: (jiraKey: string) => resumeSession(jiraKey),
     onSuccess: (session) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.scanStatus });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.sessionInfo(session.jira_key) });
+    },
+  });
+}
+
+export function useRespondMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: { input: string; session_id: string }) => respondToSession(payload),
+    onSuccess: (session) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.sessionInfo(session.jira_key) });
     },
   });
