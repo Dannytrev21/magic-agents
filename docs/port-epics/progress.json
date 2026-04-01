@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-03-31T23:15:00Z",
+  "last_updated": "2026-04-01T04:30:00Z",
   "epics": [
     {
       "id": "P01",
@@ -23,7 +23,16 @@
         { "id": "P2.R4", "name": "Web Introspection", "status": "done" }
       ]
     },
-    { "id": "P03", "name": "Transcript Compaction", "file": "P03-transcript-compaction.md", "stories": [], "status": "not_started" },
+    {
+      "id": "P03",
+      "name": "Transcript Compaction",
+      "file": "P03-transcript-compaction.md",
+      "stories": [
+        { "id": "P3.1", "name": "Implement TranscriptCompactor with Summarization Strategy", "status": "done" },
+        { "id": "P3.2", "name": "Integrate Compaction into SessionState Record Methods", "status": "done" },
+        { "id": "P3.3", "name": "History Log Compaction with Event Deduplication", "status": "done" }
+      ]
+    },
     { "id": "P04", "name": "Command Routing Engine", "file": "P04-command-routing-engine.md", "stories": [], "status": "not_started" },
     { "id": "P05", "name": "Permission & Access Control", "file": "P05-permission-access-control.md", "stories": [], "status": "not_started" },
     { "id": "P06", "name": "Structured Streaming Events", "file": "P06-structured-streaming-events.md", "stories": [], "status": "not_started" },

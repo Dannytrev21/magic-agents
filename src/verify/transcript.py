@@ -98,8 +98,83 @@ class TranscriptCompactor:
             sections.append(line)
         return self._truncate(" ".join(sections), 480)
 
+    # ------------------------------------------------------------------
+    # History compaction (P3.3)
+    # ------------------------------------------------------------------
+
+    def compact_history(
+        self,
+        entries: list[dict[str, Any]],
+        threshold: int = 60,
+        keep_recent: int = 20,
+    ) -> list[dict[str, Any]]:
+        """Compact history entries by merging consecutive same-title runs.
+
+        Only *consecutive* entries with the same ``title`` are merged.
+        Non-consecutive duplicates are preserved as separate entries.
+        The most recent ``keep_recent`` entries are always preserved verbatim.
+        """
+        if len(entries) <= threshold:
+            return list(entries)
+
+        if keep_recent > 0:
+            to_compact = entries[:-keep_recent]
+            recent = [dict(e) for e in entries[-keep_recent:]]
+        else:
+            to_compact = list(entries)
+            recent = []
+
+        merged = self._merge_consecutive(to_compact)
+        return merged + recent
+
+    @staticmethod
+    def _merge_consecutive(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Merge consecutive runs of same-title history entries."""
+        if not entries:
+            return []
+
+        result: list[dict[str, Any]] = []
+        run_start = entries[0]
+        run_count = 1
+        run_last = entries[0]
+
+        for entry in entries[1:]:
+            if entry.get("title") == run_start.get("title"):
+                run_count += 1
+                run_last = entry
+            else:
+                result.append(
+                    _build_merged(run_start, run_last, run_count)
+                    if run_count >= 2
+                    else dict(run_start)
+                )
+                run_start = entry
+                run_last = entry
+                run_count = 1
+
+        result.append(
+            _build_merged(run_start, run_last, run_count)
+            if run_count >= 2
+            else dict(run_start)
+        )
+        return result
+
     @staticmethod
     def _truncate(text: str, limit: int) -> str:
         if len(text) <= limit:
             return text
         return text[: limit - 3].rstrip() + "..."
+
+
+def _build_merged(
+    first: dict[str, Any], last: dict[str, Any], count: int
+) -> dict[str, Any]:
+    """Create a merged history entry from a run of consecutive same-title entries."""
+    return {
+        "timestamp": last.get("timestamp", ""),
+        "first_timestamp": first.get("timestamp", ""),
+        "last_timestamp": last.get("timestamp", ""),
+        "title": first.get("title", ""),
+        "detail": last.get("detail", ""),
+        "count": count,
+    }
