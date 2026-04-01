@@ -48,7 +48,7 @@ export class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorB
         <Panel aria-labelledby="workspace-unavailable-title" tone="subtle">
           <div style={{ display: 'grid', gap: 'var(--space-3)', maxWidth: '32rem' }}>
             <Text as="p" size="sm" tone="signal">
-              Operator workspace
+              SPECIFI
             </Text>
             <Text as="h1" size="xl" weight="semibold" id="workspace-unavailable-title">
               Workspace unavailable

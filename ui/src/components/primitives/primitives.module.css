@@ -125,13 +125,20 @@
 .sectionHeader {
   display: grid;
   gap: var(--space-1);
+  min-width: 0;
 }
 
 .sectionHeaderRow {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-3);
+  min-width: 0;
+}
+
+.sectionHeaderRow > * {
+  min-width: 0;
 }
 
 .sectionHeaderDescription {

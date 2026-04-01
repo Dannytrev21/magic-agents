@@ -29,8 +29,8 @@ export default function WorkspaceInspectorAnalysisView({
   if (!activeSession) {
     return (
       <EmptyState
-        title="No analyst context yet"
-        description="Start a session to open planner, critique, and spec-diff surfaces without leaving the workspace."
+        title="No tools yet"
+        description="Start a session to unlock plan, critique, and diff."
       />
     );
   }
@@ -43,14 +43,11 @@ export default function WorkspaceInspectorAnalysisView({
 
   return (
     <div className={styles.sectionStack}>
-      <SectionHeader
-        title="Planning & critique"
-        description="Analyst tools stay secondary to the active phase while keeping planner, critique, and spec-diff context one click away."
-      />
+      <SectionHeader title="Tools" />
       <div className={styles.detailList}>
         <div className={styles.detailRow}>
           <Text as="p" size="xs" tone="muted">
-            Session context
+            Context
           </Text>
           <div className={styles.inlineCluster}>
             <Mono>{activeSession.session_id}</Mono>
@@ -63,14 +60,14 @@ export default function WorkspaceInspectorAnalysisView({
         <article className={styles.reviewItem}>
           <div className={styles.reviewItemHeader}>
             <Text as="h3" size="sm" weight="medium">
-              Planner output
+              Plan
             </Text>
             <Button
               loading={planningMutation.isPending}
               onClick={() => planningMutation.mutate()}
               variant="secondary"
             >
-              Load planner output
+              Load plan
             </Button>
           </div>
           {planningMutation.data ? (
@@ -97,21 +94,21 @@ export default function WorkspaceInspectorAnalysisView({
             </div>
           ) : (
             <Text as="p" size="sm">
-              Session-scoped planning summarizes the next proof steps without taking the operator out of the negotiation workspace.
+              Load a quick plan for the current session.
             </Text>
           )}
         </article>
         <article className={styles.reviewItem}>
           <div className={styles.reviewItemHeader}>
             <Text as="h3" size="sm" weight="medium">
-              Phase critique
+              Critique
             </Text>
             <Button
               loading={critiqueMutation.isPending}
               onClick={() => critiqueMutation.mutate(activePhaseKey)}
               variant="secondary"
             >
-              Run phase critique
+              Run critique
             </Button>
           </div>
           {critiqueMutation.data ? (
@@ -134,21 +131,21 @@ export default function WorkspaceInspectorAnalysisView({
             </div>
           ) : (
             <Text as="p" size="sm">
-              Critique output flags missing coverage and quality gaps for the active phase without interrupting the operator workflow.
+              Check the active phase for gaps.
             </Text>
           )}
         </article>
         <article className={styles.reviewItem}>
           <div className={styles.reviewItemHeader}>
             <Text as="h3" size="sm" weight="medium">
-              Spec diff
+              Diff
             </Text>
             <Button
               loading={specDiffMutation.isPending}
               onClick={() => specDiffMutation.mutate()}
               variant="secondary"
             >
-              Compare historical specs
+              Compare specs
             </Button>
           </div>
           {specDiffMutation.data ? (
@@ -162,7 +159,7 @@ export default function WorkspaceInspectorAnalysisView({
             )
           ) : (
             <Text as="p" size="sm">
-              Historical spec comparisons remain optional and session-scoped so the primary phase composer stays untouched.
+              Compare against an older spec when one exists.
             </Text>
           )}
         </article>

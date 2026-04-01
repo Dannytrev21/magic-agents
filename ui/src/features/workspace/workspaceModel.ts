@@ -19,9 +19,9 @@ export const centerWorkspaceViews = [
 
 export const inspectorViews = [
   { value: 'evidence', label: 'Evidence' },
-  { value: 'scan', label: 'Scan output' },
-  { value: 'traceability', label: 'Traceability' },
-  { value: 'analysis', label: 'Planning & critique' },
+  { value: 'scan', label: 'Scan' },
+  { value: 'traceability', label: 'Links' },
+  { value: 'analysis', label: 'Tools' },
 ] as const;
 
 export const mobileWorkspacePanes = [

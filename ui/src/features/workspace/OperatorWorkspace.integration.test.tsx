@@ -179,9 +179,9 @@ describe('Operator workspace integration', () => {
 
     renderWorkspace();
 
-    expect(await screen.findByText(/jira configuration required/i)).toBeInTheDocument();
+    expect(await screen.findByText(/jira is unavailable/i)).toBeInTheDocument();
 
-    await user.click(screen.getByRole('tab', { name: /manual entry/i }));
+    await user.click(screen.getByRole('button', { name: /use manual entry/i }));
     await user.type(screen.getByLabelText(/jira key/i), 'MAG-804');
     await user.type(screen.getByLabelText(/summary/i), 'Manual story integration');
     await user.type(
@@ -197,11 +197,8 @@ describe('Operator workspace integration', () => {
       );
     });
 
-    await user.type(
-      screen.getByLabelText(/^revision feedback$/i),
-      'Clarify the actor and interface before advancing.',
-    );
-    await user.click(screen.getByRole('button', { name: /request revision/i }));
+    await user.type(screen.getByLabelText(/^notes$/i), 'Clarify the actor and interface before advancing.');
+    await user.click(screen.getByRole('button', { name: /^revise$/i }));
 
     await waitFor(() => {
       expect(api.respondToSession).toHaveBeenCalledWith({
@@ -215,7 +212,7 @@ describe('Operator workspace integration', () => {
       );
     });
 
-    await user.click(screen.getByRole('button', { name: /approve phase/i }));
+    await user.click(screen.getByRole('button', { name: /^approve$/i }));
 
     await waitFor(() => {
       expect(api.respondToSession).toHaveBeenLastCalledWith({

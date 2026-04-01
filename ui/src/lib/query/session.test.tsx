@@ -84,10 +84,10 @@ describe('Session bootstrap query layer', () => {
     render(<SessionBootstrap />, { wrapper: createWrapper() });
 
     await waitFor(() => {
-      expect(screen.getByText(/jira configuration required/i)).toBeInTheDocument();
+      expect(screen.getByText(/jira is unavailable/i)).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole('tab', { name: /manual entry/i }));
+    await user.click(screen.getByRole('button', { name: /use manual entry/i }));
 
     expect(screen.getByLabelText(/acceptance criteria/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /start session from manual story/i })).toBeInTheDocument();
@@ -100,7 +100,7 @@ describe('Session bootstrap query layer', () => {
     render(<SessionBootstrap />, { wrapper: createWrapper() });
 
     await waitFor(() => {
-      expect(screen.getByText(/no in-progress jira stories/i)).toBeInTheDocument();
+      expect(screen.getByText(/no active jira stories/i)).toBeInTheDocument();
     });
   });
 
@@ -124,7 +124,7 @@ describe('Session bootstrap query layer', () => {
     render(<SessionBootstrap />, { wrapper: createWrapper() });
 
     await waitFor(() => {
-      expect(screen.getByText(/jira intake is temporarily unavailable/i)).toBeInTheDocument();
+      expect(screen.getByText(/jira is temporarily unavailable/i)).toBeInTheDocument();
     });
   });
 

@@ -18,6 +18,7 @@ Adopt a three-part rollout and quality model:
 - treat the FastAPI root as a reversible rollout boundary by supporting `MAGIC_AGENTS_FRONTEND_MODE=auto|react|legacy` and `/?frontend=react|legacy` overrides while preserving the legacy HTML entrypoint
 
 Add bundle budgets as part of the shipped contract by generating a Vite manifest and checking the entry shell plus lazy-loaded workspace chunks from [`/Users/dannytrevino/development/magic-agents/ui/config/bundle-budgets.json`](/Users/dannytrevino/development/magic-agents/ui/config/bundle-budgets.json). Keep the verification console behind a lazy import so artifact-heavy proof surfaces do not inflate the initial workspace shell.
+Treat a budget failure as a regression in the shipped product surface. The default response is to trim shell chrome or split code further; budget increases require an intentional scope change rather than a convenience edit.
 
 Make the Playwright browser runtime explicit and environment-selectable. Keep Chromium, Firefox, and WebKit available through `PLAYWRIGHT_BROWSER` or dedicated package scripts instead of hard-wiring a single engine into the shared config. Add a supported remote-browser path through `playwright run-server` plus `PW_TEST_CONNECT_WS_ENDPOINT` so Codex-hosted or otherwise restricted environments can still execute the deterministic mocked operator journey without launching browsers locally.
 

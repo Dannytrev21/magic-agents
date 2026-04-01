@@ -37,32 +37,39 @@
   top: 0;
   z-index: 10;
   display: grid;
-  grid-template-columns: minmax(0, 18rem) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 22rem) minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-4);
   min-height: 4.5rem;
   padding: var(--space-4) var(--space-6);
   border-bottom: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
   backdrop-filter: blur(var(--surface-blur-medium));
-  background: color-mix(in srgb, var(--color-bg) 74%, transparent);
+  background: var(--color-bg);
   box-shadow: var(--shadow-soft);
 }
 
 .brandBlock {
-  display: grid;
-  gap: var(--space-1);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
   min-width: 0;
+  padding: 0.4375rem 0.875rem 0.5625rem 0.5rem;
+  border: 1px solid color-mix(in srgb, white 8%, var(--color-border));
+  border-radius: 1.25rem;
+  background: color-mix(in srgb, var(--color-surface) 84%, var(--color-bg-elevated));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 12%, transparent);
 }
 
-.kicker {
-  color: var(--color-text-muted);
-  letter-spacing: 0.16em;
+.brandMark {
+  display: block;
+  margin: 0;
+  font-size: clamp(1.78rem, 0.74vw + 1.34rem, 2.22rem);
+  font-weight: 700;
+  letter-spacing: -0.038em;
+  line-height: 0.88;
   text-transform: uppercase;
-}
-
-.brandName {
-  display: grid;
-  gap: 0;
+  color: color-mix(in srgb, white 95%, var(--color-text) 5%);
 }
 
 .contextBlock {
@@ -183,9 +190,14 @@
 .pane {
   min-width: 0;
   min-height: 0;
+  overflow: hidden;
   border-right: 1px solid var(--color-border);
-  background: color-mix(in srgb, var(--color-surface) 64%, transparent);
+  background: var(--color-surface);
   box-shadow: inset -1px 0 0 color-mix(in srgb, white 3%, transparent);
+}
+
+.leftPane {
+  grid-column: 1;
 }
 
 .pane:last-child {
@@ -193,10 +205,19 @@
 }
 
 .mainPane {
-  background: color-mix(in srgb, var(--color-bg-elevated) 78%, transparent);
+  grid-column: 2;
+  background: var(--color-bg-elevated);
 }
 
-.inspectorPane {}
+.inspectorPane {
+  grid-column: 3;
+}
+
+.workspaceGrid[data-layout-mode='mobile'] .leftPane,
+.workspaceGrid[data-layout-mode='mobile'] .mainPane,
+.workspaceGrid[data-layout-mode='mobile'] .inspectorPane {
+  grid-column: 1;
+}
 
 .paneSurface {
   height: calc(100vh - 4.5rem);
@@ -211,7 +232,7 @@
   bottom: 0;
   width: min(24rem, calc(100vw - 3rem));
   border-left: 1px solid var(--color-border);
-  background: color-mix(in srgb, var(--color-bg) 78%, transparent);
+  background: var(--color-bg);
   backdrop-filter: blur(var(--surface-blur-strong));
   box-shadow: var(--shadow-floating);
 }
@@ -232,7 +253,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   border-top: 1px solid var(--color-border);
-  background: color-mix(in srgb, var(--color-bg) 78%, transparent);
+  background: var(--color-bg);
   backdrop-filter: blur(var(--surface-blur-medium));
   box-shadow: 0 -12px 24px color-mix(in srgb, var(--color-ink) 28%, transparent);
 }

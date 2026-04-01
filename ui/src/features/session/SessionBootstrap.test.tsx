@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SessionBootstrap } from '@/features/session/SessionBootstrap';
 import * as api from '@/lib/api/client';
+import type { StartNegotiationResponse } from '@/lib/api/types';
 
 function createWrapper() {
   const client = new QueryClient({
@@ -30,16 +31,37 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+const activeSession: StartNegotiationResponse = {
+  acceptance_criteria: [
+    {
+      checked: false,
+      index: 0,
+      text: 'Operator can continue with the started Jira session from the rail.',
+    },
+  ],
+  approved: false,
+  done: false,
+  jira_key: 'MAG-804',
+  jira_summary: 'Manual fallback rail coverage',
+  phase_number: 1,
+  phase_title: 'Interface & Actor Discovery',
+  session_id: 'session-ops-804',
+  total_phases: 7,
+};
+
 describe('SessionBootstrap', () => {
   it('keeps manual entry available when Jira intake falls back', async () => {
     const user = userEvent.setup();
 
     render(<SessionBootstrap />, { wrapper: createWrapper() });
 
-    expect(await screen.findByText(/jira configuration required/i)).toBeInTheDocument();
-    expect(screen.getByText(/manual entry remains available/i)).toBeInTheDocument();
+    expect(await screen.findByText(/jira is unavailable/i)).toBeInTheDocument();
+    expect(screen.getByText(/manual entry stays available/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/story search/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /start session from jira/i })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('tab', { name: /manual entry/i }));
+    await user.click(screen.getByRole('button', { name: /use manual entry/i }));
+
     await user.type(screen.getByLabelText(/jira key/i), 'MAG-801');
     await user.type(screen.getByLabelText(/summary/i), 'Manual fallback rail coverage');
     await user.type(
@@ -84,5 +106,27 @@ describe('SessionBootstrap', () => {
     expect(screen.getByRole('button', { name: /resume session/i })).toBeEnabled();
     expect(screen.getByText(/failure mode enumeration/i)).toBeInTheDocument();
     expect(screen.getByText(/14 log entries/i)).toBeInTheDocument();
+  });
+
+  it('resets the left rail scroll position when a new session becomes active', async () => {
+    const { rerender } = render(
+      <div data-testid="scroll-shell">
+        <SessionBootstrap />
+      </div>,
+      { wrapper: createWrapper() },
+    );
+
+    const scrollShell = screen.getByTestId('scroll-shell');
+    scrollShell.scrollTop = 180;
+
+    rerender(
+      <div data-testid="scroll-shell">
+        <SessionBootstrap activeSession={activeSession} />
+      </div>,
+    );
+
+    await waitFor(() => {
+      expect(scrollShell.scrollTop).toBe(0);
+    });
   });
 });

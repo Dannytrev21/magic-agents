@@ -51,7 +51,7 @@ export function AppShell({
   const gridStyle = {
     '--workspace-left-width':
       layoutMode === 'desktop' && !leftPaneCollapsed
-        ? '18rem'
+        ? '22rem'
         : layoutMode === 'tablet' && !leftPaneCollapsed
           ? '18rem'
           : '0rem',
@@ -75,17 +75,9 @@ export function AppShell({
       </a>
       <header className={styles.topBar} data-sticky="true">
         <div className={styles.brandBlock}>
-          <Text as="p" size="xs" tone="muted" className={styles.kicker}>
-            Acceptance criteria to proof
+          <Text as="h1" className={styles.brandMark} size="xl" weight="semibold">
+            SPECIFI
           </Text>
-          <div className={styles.brandName}>
-            <Text as="h1" size="lg" weight="semibold">
-              Magic Agents
-            </Text>
-            <Text as="p" size="sm" tone="muted">
-              Operator workspace
-            </Text>
-          </div>
         </div>
         <div className={styles.contextBlock}>
           <div className={styles.metaColumn}>
@@ -168,7 +160,8 @@ export function AppShell({
           <aside
             aria-hidden={leftPaneHidden}
             aria-label="Story intake"
-            className={styles.pane}
+            className={`${styles.pane} ${styles.leftPane}`}
+            data-pane-slot="left"
             data-pane-state={leftPaneHidden ? 'collapsed' : 'expanded'}
             data-scroll-region="independent"
             hidden={leftPaneHidden}
@@ -180,6 +173,7 @@ export function AppShell({
             aria-hidden={centerPaneHidden}
             className={`${styles.pane} ${styles.mainPane}`}
             data-pane-priority="primary"
+            data-pane-slot="main"
             data-scroll-region="independent"
             hidden={centerPaneHidden}
             id="workspace-main"
@@ -190,6 +184,7 @@ export function AppShell({
             aria-hidden={rightPaneHidden}
             aria-label="Evidence inspector"
             className={`${styles.pane} ${styles.inspectorPane}`}
+            data-pane-slot="right"
             data-pane-state={rightPaneHidden ? 'collapsed' : 'expanded'}
             data-scroll-region="independent"
             hidden={rightPaneHidden}

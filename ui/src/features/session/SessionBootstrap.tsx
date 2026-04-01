@@ -1,7 +1,9 @@
 import {
   startTransition,
   useDeferredValue,
+  useEffect,
   useId,
+  useRef,
   useState,
   type ChangeEvent,
   type FormEvent,
@@ -64,6 +66,7 @@ export function SessionBootstrap({
   selectedAcceptanceCriterionIndex = null,
   selectedPhaseNumber = null,
 }: SessionBootstrapProps) {
+  const rootRef = useRef<HTMLDivElement | null>(null);
   const [draft, setDraft] = useState(defaultSessionIntakeDraft);
   const [mode, setMode] = useState<SessionIntakeMode>('jira');
   const [selectedStoryKey, setSelectedStoryKey] = useState<string | null>(null);
@@ -124,8 +127,34 @@ export function SessionBootstrap({
     !storiesError &&
     stories.length > 0 &&
     filteredStories.length === 0;
+  const showStoryFilter =
+    !isLoading && !isError && !showConfigurationFallback && stories.length > 0;
   const isSubmitting = startMutation.isPending || resumeMutation.isPending || isHydratingStory;
   const canResume = Boolean(selectedStory && selectedCheckpoint && mode === 'jira');
+  const intakeStatus = resolveIntakeStatus({
+    configured,
+    hasStories: stories.length > 0,
+    storiesError,
+  });
+  const intakeMeta = buildIntakeMeta({
+    canResume,
+    configured,
+    hasStories: stories.length > 0,
+    selectedStoryKey,
+  });
+
+  useEffect(() => {
+    if (!activeSession?.session_id) {
+      return;
+    }
+
+    const scrollContainer = rootRef.current?.parentElement;
+    if (!scrollContainer) {
+      return;
+    }
+
+    scrollContainer.scrollTop = 0;
+  }, [activeSession?.session_id]);
 
   function updateDraft(key: keyof SessionIntakeDraft) {
     return (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -220,48 +249,56 @@ export function SessionBootstrap({
   }
 
   return (
-    <div className={styles.stack}>
+    <div className={styles.stack} ref={rootRef}>
       <div className={styles.section}>
         <SectionHeader
           title="Story intake"
-          description="Choose Jira intake or manual entry without leaving the left rail."
+          description="Start from Jira or enter a story manually without leaving the rail."
           action={
-            <Badge tone={configured && !storiesError ? 'success' : 'warning'}>
-              {configured && !storiesError ? 'Jira ready' : 'Manual fallback'}
-            </Badge>
+            <div className={styles.intakeStatus} data-state={intakeStatus.state}>
+              <span aria-hidden="true" className={styles.intakeStatusDot} />
+              <Text as="span" size="xs" weight="medium">
+                {intakeStatus.label}
+              </Text>
+            </div>
           }
         />
-        <div className={styles.metaRow}>
-          <Badge tone="neutral">Parallel bootstrap</Badge>
-          <Badge tone="info">{stories.length} Jira stories</Badge>
-          {selectedStory ? <Badge tone="success">Selection ready</Badge> : null}
-        </div>
-        <div aria-label="Story intake modes" className={styles.modeTabs} role="tablist">
-          <button
-            aria-controls={jiraPanelId}
-            aria-selected={mode === 'jira'}
-            className={styles.modeTab}
-            id={jiraTabId}
-            onClick={() => handleModeChange('jira')}
-            role="tab"
-            type="button"
-          >
-            Jira intake
-          </button>
-          <button
-            aria-controls={manualPanelId}
-            aria-selected={mode === 'manual'}
-            className={styles.modeTab}
-            id={manualTabId}
-            onClick={() => handleModeChange('manual')}
-            role="tab"
-            type="button"
-          >
-            Manual entry
-          </button>
+        <div className={styles.modeGroup}>
+          {intakeMeta.length ? (
+            <div className={styles.intakeMeta}>
+              {intakeMeta.map((item) => (
+                <Text as="p" className={styles.intakeMetaItem} key={item} size="xs" tone="muted">
+                  {item}
+                </Text>
+              ))}
+            </div>
+          ) : null}
+          <div aria-label="Story intake modes" className={styles.modeTabs} role="tablist">
+            <button
+              aria-controls={jiraPanelId}
+              aria-selected={mode === 'jira'}
+              className={styles.modeTab}
+              id={jiraTabId}
+              onClick={() => handleModeChange('jira')}
+              role="tab"
+              type="button"
+            >
+              Jira intake
+            </button>
+            <button
+              aria-controls={manualPanelId}
+              aria-selected={mode === 'manual'}
+              className={styles.modeTab}
+              id={manualTabId}
+              onClick={() => handleModeChange('manual')}
+              role="tab"
+              type="button"
+            >
+              Manual entry
+            </button>
+          </div>
         </div>
       </div>
-      <Divider />
       <form className={styles.form} onSubmit={handleSubmit}>
         {mode === 'jira' ? (
           <section
@@ -270,48 +307,88 @@ export function SessionBootstrap({
             id={jiraPanelId}
             role="tabpanel"
           >
-            <SectionHeader
-              title="Jira intake"
-              description="Select an active Jira story and hydrate its acceptance criteria into the workspace session."
-            />
-            <div className={styles.field}>
-              <Text as="label" htmlFor="story-filter" size="xs" tone="muted">
-                Story search
+            <div className={styles.modeLead}>
+              <Text as="p" className={styles.modeEyebrow} size="xs" tone="muted">
+                From Jira
               </Text>
-              <input
-                className={styles.input}
-                id="story-filter"
-                onChange={updateDraft('storyFilter')}
-                placeholder="Filter by key or summary"
-                type="search"
-                value={draft.storyFilter}
-              />
+              <Text as="p" size="sm">
+                Select an active story and hydrate its acceptance criteria into the workspace.
+              </Text>
             </div>
+            {showStoryFilter ? (
+              <div className={styles.field}>
+                <Text as="label" htmlFor="story-filter" size="xs" tone="muted">
+                  Story search
+                </Text>
+                <input
+                  className={styles.input}
+                  id="story-filter"
+                  name="story-filter"
+                  onChange={updateDraft('storyFilter')}
+                  placeholder="Filter by key or summary…"
+                  type="search"
+                  value={draft.storyFilter}
+                />
+              </div>
+            ) : null}
             {isLoading ? <Text size="sm">Loading Jira intake</Text> : null}
             {isLoading ? <Skeleton aria-label="Loading Jira intake" /> : null}
             {isError ? (
-              <EmptyState
-                title="Jira intake is temporarily unavailable"
-                description="Refresh the workspace or continue in manual entry while the bootstrap query recovers."
-              />
+              <div className={styles.inlineNotice} data-tone="warning">
+                <div className={styles.inlineNoticeBody}>
+                  <Text as="p" size="sm" weight="semibold">
+                    Jira is temporarily unavailable
+                  </Text>
+                  <Text as="p" size="sm" tone="muted">
+                    Refresh the workspace or continue in manual entry while the connection recovers.
+                  </Text>
+                </div>
+                <Button onClick={() => handleModeChange('manual')} type="button" variant="secondary">
+                  Use manual entry
+                </Button>
+              </div>
             ) : null}
             {showConfigurationFallback ? (
-              <EmptyState
-                title="Jira configuration required"
-                description="Jira credentials or access are unavailable. Manual entry remains available in this rail."
-              />
+              <div className={styles.inlineNotice} data-tone="warning">
+                <div className={styles.inlineNoticeBody}>
+                  <Text as="p" size="sm" weight="semibold">
+                    Jira is unavailable
+                  </Text>
+                  <Text as="p" size="sm" tone="muted">
+                    Credentials or access are missing. Manual entry stays available in this rail.
+                  </Text>
+                </div>
+                <Button onClick={() => handleModeChange('manual')} type="button" variant="secondary">
+                  Use manual entry
+                </Button>
+              </div>
             ) : null}
             {showEmptyState ? (
-              <EmptyState
-                title="No in-progress Jira stories"
-                description="Choose manual entry to keep working until the backend exposes active tickets."
-              />
+              <div className={styles.inlineNotice}>
+                <div className={styles.inlineNoticeBody}>
+                  <Text as="p" size="sm" weight="semibold">
+                    No active Jira stories
+                  </Text>
+                  <Text as="p" size="sm" tone="muted">
+                    Switch to manual entry to keep working until the backend exposes active tickets.
+                  </Text>
+                </div>
+                <Button onClick={() => handleModeChange('manual')} type="button" variant="secondary">
+                  Use manual entry
+                </Button>
+              </div>
             ) : null}
             {showNoMatches ? (
-              <EmptyState
-                title="No stories match this filter"
-                description="Try a different key or summary term to narrow the Jira list."
-              />
+              <div className={styles.inlineNotice}>
+                <div className={styles.inlineNoticeBody}>
+                  <Text as="p" size="sm" weight="semibold">
+                    No stories match this filter
+                  </Text>
+                  <Text as="p" size="sm" tone="muted">
+                    Try a different key or summary term to narrow the Jira list.
+                  </Text>
+                </div>
+              </div>
             ) : null}
             {!isLoading && !isError && !showConfigurationFallback && filteredStories.length ? (
               <div className={styles.list}>
@@ -456,13 +533,15 @@ export function SessionBootstrap({
               Start fresh session
             </Button>
           </div>
+        ) : mode === 'jira' ? (
+          selectedStoryKey ? (
+            <Button loading={isSubmitting} type="submit">
+              Start session from Jira
+            </Button>
+          ) : null
         ) : (
-          <Button
-            disabled={mode === 'jira' && !selectedStoryKey}
-            loading={isSubmitting}
-            type="submit"
-          >
-            {mode === 'jira' ? 'Start session from Jira' : 'Start session from manual story'}
+          <Button loading={isSubmitting} type="submit">
+            Start session from manual story
           </Button>
         )}
         {startMutation.data?.session_id ? (
@@ -648,6 +727,54 @@ function resolveResumeError(error: unknown) {
   }
 
   return 'Unable to resume the saved session.';
+}
+
+function resolveIntakeStatus({
+  configured,
+  hasStories,
+  storiesError,
+}: {
+  configured: boolean;
+  hasStories: boolean;
+  storiesError: string | null;
+}) {
+  if (!configured || storiesError) {
+    return { label: 'Manual fallback', state: 'fallback' as const };
+  }
+
+  if (!hasStories) {
+    return { label: 'No active stories', state: 'fallback' as const };
+  }
+
+  return { label: 'Jira ready', state: 'ready' as const };
+}
+
+function buildIntakeMeta({
+  canResume,
+  configured,
+  hasStories,
+  selectedStoryKey,
+}: {
+  canResume: boolean;
+  configured: boolean;
+  hasStories: boolean;
+  selectedStoryKey: string | null;
+}) {
+  const items: string[] = [];
+
+  if (configured && hasStories) {
+    items.push('Active Jira stories available');
+  }
+
+  if (selectedStoryKey) {
+    items.push(`Selected ${selectedStoryKey}`);
+  }
+
+  if (canResume) {
+    items.push('Checkpoint available');
+  }
+
+  return items;
 }
 
 function formatHealthStateLabel(state: string) {

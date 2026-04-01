@@ -133,7 +133,9 @@ describe('WorkspaceCenterPane', () => {
     expect(phaseButtons[4]).toHaveAttribute('data-state', 'pending');
   });
 
-  it('renders a structured review surface with a summary-first hierarchy, clarifying questions, and raw payload fallback', () => {
+  it('renders a structured review surface with quieter copy and collapsible detail areas', async () => {
+    const user = userEvent.setup();
+
     render(
       <WorkspaceCenterPane
         activeSession={activeSession}
@@ -156,12 +158,16 @@ describe('WorkspaceCenterPane', () => {
 
     expect(screen.getByText(/primary decision/i)).toBeInTheDocument();
     expect(screen.getByText(/failure responses are mapped/i)).toBeInTheDocument();
-    expect(screen.getByText(/clarifying questions/i)).toBeInTheDocument();
+    expect(screen.getByText(/^questions$/i)).toBeInTheDocument();
     expect(screen.getByText(/404 or 410/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /approve phase/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /request revision/i })).toBeInTheDocument();
-    expect(screen.getByText(/raw payload/i)).toBeInTheDocument();
-    expect(screen.getByRole('log', { name: /phase transcript/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^approve$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^revise$/i })).toBeInTheDocument();
+    expect(screen.getByText(/raw data/i)).toBeInTheDocument();
+    expect(screen.getByText(/^log$/i).closest('details')).not.toHaveAttribute('open');
+
+    await user.click(screen.getByText(/^log$/i));
+
+    expect(screen.getByText(/^log$/i).closest('details')).toHaveAttribute('open');
   });
 
   it('routes revise feedback inline and disables duplicate submissions while an action is pending', async () => {
@@ -188,8 +194,8 @@ describe('WorkspaceCenterPane', () => {
       />,
     );
 
-    await user.type(screen.getByLabelText(/revision feedback/i), ' Please keep owner checks explicit.');
-    await user.click(screen.getByRole('button', { name: /request revision/i }));
+    await user.type(screen.getByLabelText(/notes/i), ' Please keep owner checks explicit.');
+    await user.click(screen.getByRole('button', { name: /^revise$/i }));
 
     expect(onDraftFeedbackChange).toHaveBeenCalled();
     expect(onRevisePhase).toHaveBeenCalledTimes(1);
@@ -219,8 +225,8 @@ describe('WorkspaceCenterPane', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: /approve phase/i })).toBeDisabled();
-    expect(screen.getByRole('button', { name: /request revision/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^approve$/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^revise$/i })).toBeDisabled();
   });
 
   it('supports completed-phase reopening and suppresses quick jumps while the feedback field is focused', async () => {
@@ -253,7 +259,7 @@ describe('WorkspaceCenterPane', () => {
     await user.keyboard('3');
     expect(onPhaseSelect).toHaveBeenCalledWith(3);
 
-    const feedback = screen.getByLabelText(/revision feedback/i);
+    const feedback = screen.getByLabelText(/notes/i);
     await user.click(feedback);
     await user.keyboard('2');
 

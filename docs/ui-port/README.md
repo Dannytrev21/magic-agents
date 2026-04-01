@@ -66,7 +66,7 @@
 ## Current Status
 
 - As of 2026-04-01, `progress.json` reports all 36 UI-port stories complete and the U1 through U8 epic markdown acceptance checklists are synchronized to that shipped state.
-- This verification pass re-ran `npm test`, `npm run build`, and `npm run test:ci` in [`/Users/dannytrevino/development/magic-agents/ui`](/Users/dannytrevino/development/magic-agents/ui). The non-browser frontend gate is green again after recalibrating the raw shell CSS budget to match the current workspace chrome.
+- This verification pass re-ran `npm test`, `npm run build`, and `npm run test:ci` in [`/Users/dannytrevino/development/magic-agents/ui`](/Users/dannytrevino/development/magic-agents/ui). The non-browser frontend gate is green again after trimming the shipped shell chrome and sticky rail to keep the existing 33.5 kB raw / 7 kB gzip CSS budget intact.
 - U8.2 browser coverage remains implemented; when Codex-hosted macOS cannot launch Playwright locally, the supported path is `npm run test:e2e:server` outside Codex plus `npm run test:e2e:remote` or `PW_TEST_CONNECT_WS_ENDPOINT=... npm run test:e2e` inside Codex.
 - The shell, rails, workspace, and verification console now consume a typed graphite/bone/signal design system mirrored into CSS tokens.
 - Workspace announcements, pane focus handoff, busy states, and the pipeline log now support keyboard and screen-reader operation without pointer-only assumptions.

@@ -1,11 +1,11 @@
 import { Suspense, lazy, useDeferredValue, useEffect, useState, type RefObject } from 'react';
 import { Button } from '@/components/primitives/Button';
 import { Badge } from '@/components/primitives/Badge';
-import { Divider } from '@/components/primitives/Divider';
 import { EmptyState } from '@/components/primitives/EmptyState';
 import { Mono } from '@/components/primitives/Mono';
 import { SectionHeader } from '@/components/primitives/SectionHeader';
 import { Text } from '@/components/primitives/Text';
+import { WorkspaceDisclosure } from '@/features/workspace/WorkspaceDisclosure';
 import {
   buildTraceabilityItems,
   formatScanSummary,
@@ -53,7 +53,7 @@ export function WorkspaceInspector({
     useInspectorActions();
   const [specView, setSpecView] = useState<'raw' | 'structured'>('structured');
   const [traceabilityMode, setTraceabilityMode] = useState<'browser' | 'matrix'>('browser');
-  const contractState = activeSession ? 'Session-bound' : 'Waiting for session';
+  const contractState = activeSession ? 'Live' : 'Waiting';
 
   useEffect(() => {
     compileMutation.reset();
@@ -66,8 +66,8 @@ export function WorkspaceInspector({
   return (
     <div className={styles.stack}>
       <SectionHeader
-        title="Evidence inspector"
-        description="Evidence, scan output, traceability, and analyst context stay visible without forcing a route change."
+        title="Inspector"
+        action={<Badge tone={activeSession ? 'success' : 'warning'}>{contractState}</Badge>}
       />
       <div aria-label="Inspector views" className={styles.viewTabs} role="tablist">
         {inspectorViews.map((view) => (
@@ -91,22 +91,6 @@ export function WorkspaceInspector({
         tabIndex={-1}
       >
         <div className={styles.sectionStack}>
-          <div className={styles.detailList}>
-            <div className={styles.detailRow}>
-              <Text as="p" size="xs" tone="muted">
-                Contract state
-              </Text>
-              <div className={styles.inlineCluster}>
-                <Text as="p" size="sm" weight="medium">
-                  {contractState}
-                </Text>
-                <Badge tone={activeSession ? 'success' : 'warning'}>
-                  {activeSession ? 'Phase surface mounted' : 'Awaiting intake'}
-                </Badge>
-              </div>
-            </div>
-          </div>
-          <Divider />
           {activeView === 'evidence' ? (
             <EvidenceView
               activeSession={activeSession}
@@ -177,45 +161,54 @@ function EvidenceView({
 
   return (
     <div className={styles.sectionStack}>
-      <div className={styles.detailList}>
-        <div className={styles.detailRow}>
-          <Text as="p" size="xs" tone="muted">
-            Typed API handoff
-          </Text>
-          <div className={styles.codeList}>
-            <Mono>/api/start</Mono>
-            <Mono>/api/respond</Mono>
-            <Mono>/api/compile</Mono>
+      <WorkspaceDisclosure
+        defaultOpen={false}
+        meta={
+          selectedAcceptanceCriterionIndex !== null
+            ? `AC ${selectedAcceptanceCriterionIndex + 1}`
+            : 'No AC'
+        }
+        title="Session"
+      >
+        <div className={styles.detailList}>
+          <div className={styles.detailRow}>
+            <Text as="p" size="xs" tone="muted">
+              API
+            </Text>
+            <div className={styles.codeList}>
+              <Mono>/api/start</Mono>
+              <Mono>/api/respond</Mono>
+              <Mono>/api/compile</Mono>
+            </div>
+          </div>
+          <div className={styles.detailRow}>
+            <Text as="p" size="xs" tone="muted">
+              AC
+            </Text>
+            <Text as="p" size="sm">
+              {selectedAcceptanceCriterionIndex !== null
+                ? `AC ${selectedAcceptanceCriterionIndex + 1}`
+                : 'None'}
+            </Text>
           </div>
         </div>
-        <div className={styles.detailRow}>
-          <Text as="p" size="xs" tone="muted">
-            Selected AC
-          </Text>
-          <Text as="p" size="sm">
-            {selectedAcceptanceCriterionIndex !== null
-              ? `AC ${selectedAcceptanceCriterionIndex + 1}`
-              : 'Awaiting rail selection'}
-          </Text>
-        </div>
-      </div>
+      </WorkspaceDisclosure>
       {!activeSession ? (
         <EmptyState
-          title="No evidence yet"
-          description="Run the next phase to populate traceability, specs, and generated verification artifacts."
+          title="No session yet"
+          description="Start a story to load spec data here."
         />
       ) : (
         <div className={styles.sectionStack}>
           <SectionHeader
-            title="Spec contract viewer"
-            description="Structured requirements stay beside the raw YAML artifact so operators can inspect routing without losing the compiled contract."
+            title="Spec"
             action={
               <Button
                 loading={compileMutation.isPending}
                 onClick={() => compileMutation.mutate()}
                 variant="secondary"
               >
-                {compileMutation.data ? 'Refresh compiled spec' : 'Load compiled spec'}
+                {compileMutation.data ? 'Refresh spec' : 'Load spec'}
               </Button>
             }
           />
@@ -226,8 +219,8 @@ function EvidenceView({
           ) : null}
           {!compileMutation.data ? (
             <EmptyState
-              title="Spec not yet compiled"
-              description="Compile the current session to inspect immutable requirement IDs, verification routing, and the raw YAML contract."
+              title="No spec yet"
+              description="Load the compiled spec to inspect routes and YAML."
             />
           ) : (
             <div className={styles.sectionStack}>
@@ -239,7 +232,7 @@ function EvidenceView({
                   role="tab"
                   type="button"
                 >
-                  Structured contract
+                  Details
                 </button>
                 <button
                   aria-selected={specView === 'raw'}
@@ -248,7 +241,7 @@ function EvidenceView({
                   role="tab"
                   type="button"
                 >
-                  Raw YAML
+                  YAML
                 </button>
               </div>
               {specView === 'structured' ? (
@@ -280,8 +273,8 @@ function StructuredContractView({
   if (!compiledSpec.requirements?.length) {
     return (
       <EmptyState
-        title="No structured requirements"
-        description="The compiled artifact returned raw YAML but no parsed requirements yet."
+        title="No parsed requirements"
+        description="The spec came back as YAML only."
       />
     );
   }
@@ -339,17 +332,18 @@ function StructuredContractView({
         <div className={styles.detailList}>
           <div className={styles.detailRow}>
             <Text as="p" size="xs" tone="muted">
-              Interface
+              Route
             </Text>
             <div className={styles.inlineCluster}>
               <Badge tone="info">{activeRequirement.contract?.interface?.method ?? 'method?'}</Badge>
               <Mono>{activeRequirement.contract?.interface?.path ?? '/unknown'}</Mono>
             </div>
           </div>
-          <div className={styles.detailRow}>
-            <Text as="p" size="xs" tone="muted">
-              Verification routing
-            </Text>
+          <WorkspaceDisclosure
+            defaultOpen
+            meta={`${activeRequirement.verification?.length ?? 0}`}
+            title="Checks"
+          >
             <div className={styles.reviewList}>
               {activeRequirement.verification?.map((route, index) => (
                 <article className={styles.reviewItem} key={`${route.skill ?? 'route'}-${index}`}>
@@ -365,11 +359,8 @@ function StructuredContractView({
                 </article>
               ))}
             </div>
-          </div>
-          <div className={styles.detailRow}>
-            <Text as="p" size="xs" tone="muted">
-              Traceability refs
-            </Text>
+          </WorkspaceDisclosure>
+          <WorkspaceDisclosure defaultOpen={false} meta={`${verificationRefs.length}`} title="Refs">
             <div className={styles.reviewList}>
               {verificationRefs.map((ref) => (
                 <article className={styles.reviewItem} key={ref.ref}>
@@ -383,7 +374,7 @@ function StructuredContractView({
                 </article>
               ))}
             </div>
-          </div>
+          </WorkspaceDisclosure>
         </div>
       </article>
     </div>
@@ -423,22 +414,21 @@ function ScanView({
   return (
     <div className={styles.sectionStack}>
       <SectionHeader
-        title="Codebase scan"
-        description="Run a repository scan from the workspace and keep the resulting summary mounted beside the active phase review."
+        title="Scan"
         action={
           <Button
             loading={scanMutation.isPending}
             onClick={() => scanMutation.mutate(projectRootInput || 'dog-service')}
             variant="secondary"
           >
-            Run codebase scan
+            Run scan
           </Button>
         }
       />
       <div className={styles.detailList}>
         <div className={styles.detailRow}>
           <Text as="label" htmlFor="scan-project-root" size="xs" tone="muted">
-            Project root
+            Root
           </Text>
           <input
             className={styles.inspectorInput}
@@ -449,14 +439,14 @@ function ScanView({
         </div>
         <div className={styles.detailRow}>
           <Text as="p" size="xs" tone="muted">
-            Scan status
+            Status
           </Text>
           <div className={styles.inlineCluster}>
             <Badge tone={resolveScanTone(scanMutation.isPending, scanMutation.isError, scanned)}>
               {resolveScanLabel(scanMutation.isPending, scanMutation.isError, scanned)}
             </Badge>
             <Text as="p" size="sm">
-              {skillCount} skill descriptors available for routing context
+              {skillCount} skills ready
             </Text>
           </div>
         </div>
@@ -470,8 +460,8 @@ function ScanView({
         <pre className={styles.rawPayloadPre}>{summaryText}</pre>
       ) : (
         <EmptyState
-          title="Scan not started"
-          description="Launch a scan to persist the latest repository summary in the inspector."
+          title="No scan yet"
+          description="Run a scan to save a repo summary here."
         />
       )}
     </div>
@@ -499,8 +489,8 @@ function TraceabilityView({
   if (!traceabilityItems.length) {
     return (
       <EmptyState
-        title="Traceability will populate after synthesis"
-        description="Complete more of the negotiation loop to browse per-AC evidence chains and matrix scanning views."
+        title="No links yet"
+        description="Finish more of the flow to build links."
       />
     );
   }
@@ -522,10 +512,7 @@ function TraceabilityView({
 
   return (
     <div className={styles.sectionStack}>
-      <SectionHeader
-        title="Traceability browser"
-        description="Inspect each acceptance criterion as a linked chain of negotiated evidence without displacing the active phase workspace."
-      />
+      <SectionHeader title="Links" />
       <div aria-label="Traceability modes" className={styles.viewTabs} role="tablist">
         <button
           aria-selected={mode === 'browser'}
@@ -534,7 +521,7 @@ function TraceabilityView({
           role="tab"
           type="button"
         >
-          Per-AC browser
+          Browser
         </button>
         <button
           aria-selected={mode === 'matrix'}
@@ -543,7 +530,7 @@ function TraceabilityView({
           role="tab"
           type="button"
         >
-          Matrix view
+          Table
         </button>
       </div>
       {copyStatus ? (
@@ -555,13 +542,13 @@ function TraceabilityView({
         <div className={styles.matrix}>
           <div className={styles.matrixHeader}>
             <Text as="p" size="xs" tone="muted">
-              Acceptance criterion
+              AC
             </Text>
             <Text as="p" size="xs" tone="muted">
-              Classification & requirement
+              Type / Req
             </Text>
             <Text as="p" size="xs" tone="muted">
-              Verification refs
+              Refs
             </Text>
           </div>
           {traceabilityItems.map((item) => (
@@ -617,80 +604,92 @@ function TraceabilityView({
               </div>
             </div>
             <div className={styles.detailList}>
-              <div className={styles.detailRow}>
-                <Text as="p" size="xs" tone="muted">
-                  Preconditions
-                </Text>
+              <WorkspaceDisclosure defaultOpen title="Before">
                 <div className={styles.reviewList}>
-                  {activeItem.preconditions?.map((precondition) => (
-                    <div className={styles.reviewItem} key={precondition.id}>
-                      <div className={styles.reviewItemHeader}>
-                        <Mono>{precondition.id}</Mono>
-                        <Badge tone="neutral">{precondition.category ?? 'precondition'}</Badge>
+                  {activeItem.preconditions?.length ? (
+                    activeItem.preconditions.map((precondition) => (
+                      <div className={styles.reviewItem} key={precondition.id}>
+                        <div className={styles.reviewItemHeader}>
+                          <Mono>{precondition.id}</Mono>
+                          <Badge tone="neutral">{precondition.category ?? 'precondition'}</Badge>
+                        </div>
+                        <Text as="p" size="sm">
+                          {precondition.description ?? precondition.formal ?? 'No description'}
+                        </Text>
                       </div>
-                      <Text as="p" size="sm">
-                        {precondition.description ?? precondition.formal ?? 'No description'}
-                      </Text>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <Text as="p" size="sm" tone="muted">
+                      None
+                    </Text>
+                  )}
                 </div>
-              </div>
-              <div className={styles.detailRow}>
-                <Text as="p" size="xs" tone="muted">
-                  Postconditions
-                </Text>
+              </WorkspaceDisclosure>
+              <WorkspaceDisclosure defaultOpen={false} title="After">
                 <div className={styles.reviewList}>
-                  {activeItem.postconditions?.map((postcondition, index) => (
-                    <div className={styles.reviewItem} key={`${postcondition.status ?? 'success'}-${index}`}>
-                      <div className={styles.reviewItemHeader}>
-                        <Badge tone="success">
-                          {postcondition.status ? `HTTP ${postcondition.status}` : 'Success'}
-                        </Badge>
-                        {postcondition.content_type ? <Mono>{postcondition.content_type}</Mono> : null}
+                  {activeItem.postconditions?.length ? (
+                    activeItem.postconditions.map((postcondition, index) => (
+                      <div className={styles.reviewItem} key={`${postcondition.status ?? 'success'}-${index}`}>
+                        <div className={styles.reviewItemHeader}>
+                          <Badge tone="success">
+                            {postcondition.status ? `HTTP ${postcondition.status}` : 'Success'}
+                          </Badge>
+                          {postcondition.content_type ? <Mono>{postcondition.content_type}</Mono> : null}
+                        </div>
+                        <Text as="p" size="sm">
+                          {postcondition.schema ? 'Structured response schema captured for this AC.' : 'No response schema captured.'}
+                        </Text>
                       </div>
-                      <Text as="p" size="sm">
-                        {postcondition.schema ? 'Structured response schema captured for this AC.' : 'No response schema captured.'}
-                      </Text>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <Text as="p" size="sm" tone="muted">
+                      None
+                    </Text>
+                  )}
                 </div>
-              </div>
-              <div className={styles.detailRow}>
-                <Text as="p" size="xs" tone="muted">
-                  Failure modes
-                </Text>
+              </WorkspaceDisclosure>
+              <WorkspaceDisclosure defaultOpen={false} title="Failures">
                 <div className={styles.reviewList}>
-                  {activeItem.failureModes.map((failureMode) => (
-                    <div className={styles.reviewItem} key={failureMode.id}>
-                      <div className={styles.reviewItemHeader}>
-                        <Mono>{failureMode.id}</Mono>
-                        {failureMode.status ? <Badge tone="warning">HTTP {failureMode.status}</Badge> : null}
+                  {activeItem.failureModes.length ? (
+                    activeItem.failureModes.map((failureMode) => (
+                      <div className={styles.reviewItem} key={failureMode.id}>
+                        <div className={styles.reviewItemHeader}>
+                          <Mono>{failureMode.id}</Mono>
+                          {failureMode.status ? <Badge tone="warning">HTTP {failureMode.status}</Badge> : null}
+                        </div>
+                        <Text as="p" size="sm">
+                          {failureMode.description ?? 'No failure description'}
+                        </Text>
                       </div>
-                      <Text as="p" size="sm">
-                        {failureMode.description ?? 'No failure description'}
-                      </Text>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <Text as="p" size="sm" tone="muted">
+                      None
+                    </Text>
+                  )}
                 </div>
-              </div>
-              <div className={styles.detailRow}>
-                <Text as="p" size="xs" tone="muted">
-                  Verification refs
-                </Text>
+              </WorkspaceDisclosure>
+              <WorkspaceDisclosure defaultOpen={false} title="Refs">
                 <div className={styles.reviewList}>
-                  {activeItem.verificationRefs.map((ref) => (
-                    <div className={styles.reviewItem} key={ref.ref}>
-                      <div className={styles.reviewItemHeader}>
-                        <Mono>{ref.ref}</Mono>
-                        <Badge tone="neutral">{ref.verification_type ?? 'ref'}</Badge>
+                  {activeItem.verificationRefs.length ? (
+                    activeItem.verificationRefs.map((ref) => (
+                      <div className={styles.reviewItem} key={ref.ref}>
+                        <div className={styles.reviewItemHeader}>
+                          <Mono>{ref.ref}</Mono>
+                          <Badge tone="neutral">{ref.verification_type ?? 'ref'}</Badge>
+                        </div>
+                        <Text as="p" size="sm">
+                          {ref.description ?? 'No traceability description provided.'}
+                        </Text>
                       </div>
-                      <Text as="p" size="sm">
-                        {ref.description ?? 'No traceability description provided.'}
-                      </Text>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <Text as="p" size="sm" tone="muted">
+                      None
+                    </Text>
+                  )}
                 </div>
-              </div>
+              </WorkspaceDisclosure>
             </div>
           </article>
         </div>

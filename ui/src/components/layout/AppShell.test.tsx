@@ -51,7 +51,7 @@ describe('AppShell', () => {
     expect(screen.getByRole('banner')).toHaveAttribute('data-sticky', 'true');
     expect(grid).toHaveAttribute('data-layout-mode', 'desktop');
     expect(grid).toHaveStyle({
-      '--workspace-left-width': '18rem',
+      '--workspace-left-width': '22rem',
       '--workspace-right-width': '20rem',
     });
     expect(main).toHaveAttribute('data-pane-priority', 'primary');
@@ -69,7 +69,8 @@ describe('AppShell', () => {
   it('shows top-bar story context and workspace controls', () => {
     renderShell();
 
-    expect(screen.getByRole('heading', { name: /magic agents/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /specifi/i })).toBeInTheDocument();
+    expect(screen.queryByText(/magic agents/i)).not.toBeInTheDocument();
     expect(screen.getByText('MAG-22')).toBeInTheDocument();
     expect(screen.getByText(/negotiation surface/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /toggle story intake panel/i })).toBeInTheDocument();
@@ -116,5 +117,34 @@ describe('AppShell', () => {
 
     await user.click(screen.getByRole('button', { name: /toggle evidence panel/i }));
     expect(onToggleRightPane).toHaveBeenCalled();
+  });
+
+  it('keeps fixed pane slots when the desktop story rail is collapsed', () => {
+    render(
+      <AppShell
+        centerPane={<div>Center workspace</div>}
+        layoutMode="desktop"
+        leftPaneCollapsed
+        leftRail={<div>Story intake</div>}
+        mobilePane="workspace"
+        onMobilePaneChange={vi.fn()}
+        onToggleLeftPane={vi.fn()}
+        onToggleRightPane={vi.fn()}
+        phaseLabel="Phase 2: Happy Path Contract"
+        rightPaneCollapsed={false}
+        rightRail={<div>Evidence inspector</div>}
+        sessionState="idle"
+        statusLabel="No active session"
+        storyKey={null}
+        workspaceLabel="Workspace overview"
+      />,
+    );
+
+    const main = screen.getByRole('main');
+    const inspector = screen.getByRole('complementary', { name: /evidence inspector/i });
+
+    expect(screen.queryByRole('complementary', { name: /story intake/i })).not.toBeInTheDocument();
+    expect(main).toHaveAttribute('data-pane-slot', 'main');
+    expect(inspector).toHaveAttribute('data-pane-slot', 'right');
   });
 });
