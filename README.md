@@ -32,7 +32,7 @@ Every arrow below represents a handoff between components. Each handoff has a de
 - On 2026-04-02, the default Vitest worker fan-out was capped at `1` in [`/Users/dannytrevino/development/magic-agents/ui/vitest.config.ts`](/Users/dannytrevino/development/magic-agents/ui/vitest.config.ts) after a rerun showed the full jsdom-heavy UI suite could pass file-by-file but timed out under concurrent worker contention.
 - On 2026-04-02, the shared Vitest setup added durable `MutationObserver`, `ResizeObserver`, `IntersectionObserver`, `matchMedia`, and `scrollIntoView` fallbacks so component and integration failures track UI behavior instead of host DOM gaps.
 - On 2026-04-01, a local Chromium rerun of the mocked operator journey (`npm run test:e2e:chromium`) revalidated intake fallback, in-place phase approval, and pipeline execution after browser coverage caught stale UI-contract drift in the Jira fallback and approval path.
-- The current non-browser shell CSS budget remains 33.5 kB raw and 7 kB gzip. The latest 2026-04-02 verification run measured the shipped shell at 29.95 kB raw and 5.63 kB gzip after trimming decorative chrome instead of raising thresholds.
+- The current non-browser shell CSS budget remains 33.5 kB raw and 7 kB gzip. The latest 2026-04-02 verification run measured the shipped shell at 30.94 kB raw and 5.78 kB gzip after trimming decorative chrome instead of raising thresholds.
 - A follow-up 2026-04-01 workspace verification reran `npm run test:ui`, `npm run build`, and `npm run test:budgets` after tightening the inspector tab chrome and idle evidence state; all three gates remained green.
 
 ```
