@@ -29,11 +29,12 @@ class MockEventSource {
 }
 
 function Probe({ sessionId }: { sessionId: string | null }) {
-  const { connectionStatus } = usePhaseWorkspaceModel(sessionId);
+  const { connectionLabel, connectionStatus } = usePhaseWorkspaceModel(sessionId);
   const phaseEvents = usePhaseEvents();
 
   return (
     <div>
+      <output data-testid="connection-label">{connectionLabel}</output>
       <output data-testid="connection-status">{connectionStatus}</output>
       <output data-testid="phase-event-count">{phaseEvents.length}</output>
     </div>
@@ -60,6 +61,7 @@ describe('usePhaseWorkspaceModel', () => {
     );
 
     expect(MockEventSource.instances).toHaveLength(1);
+    expect(screen.getByTestId('connection-label')).toHaveTextContent('Connecting live updates');
     expect(screen.getByTestId('connection-status')).toHaveTextContent('connecting');
     expect(screen.getByTestId('phase-event-count')).toHaveTextContent('0');
 
@@ -73,6 +75,7 @@ describe('usePhaseWorkspaceModel', () => {
       });
     });
 
+    expect(screen.getByTestId('connection-label')).toHaveTextContent('Live updates connected');
     expect(screen.getByTestId('connection-status')).toHaveTextContent('connected');
 
     await waitFor(() => {
@@ -140,6 +143,7 @@ describe('usePhaseWorkspaceModel', () => {
       </EventStoreProvider>,
     );
 
+    expect(screen.getByTestId('connection-label')).toHaveTextContent('Live updates idle');
     expect(screen.getByTestId('connection-status')).toHaveTextContent('disconnected');
 
     await waitFor(() => {

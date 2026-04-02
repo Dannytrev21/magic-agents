@@ -78,6 +78,7 @@
 - The evidence inspector now keeps its idle state to a single compact prompt until a story/session exists, which preserves a calmer right rail without hiding the tab structure.
 - Workspace announcements, pane focus handoff, busy states, and the pipeline log now support keyboard and screen-reader operation without pointer-only assumptions.
 - Reduced-motion fallbacks and shared timing tokens now govern pane transitions, live console behavior, and responsive shell refinements.
+- A 2026-04-02 follow-up on the `feat/u07-realtime-streaming-events` continuation wired live SSE status into the top bar, kept the shared event store in the app provider stack, and surfaced phase progress in both the sticky mini-rail and the center workspace header.
 - The frontend now ships explicit quality gates: `npm run test:ci` for lint + Vitest + build + bundle budgets, `npm run test:e2e` for deterministic mock-mode browser journeys, and a FastAPI rollout switch that can force either React or legacy HTML at request or process scope.
 - ESLint now uses a dedicated typed project file for tracked source plus Playwright config/spec files and ignores generated browser caches, which keeps the completed UI-port epic focused on product-code regressions instead of local tool output.
 

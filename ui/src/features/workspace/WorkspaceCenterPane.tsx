@@ -3,6 +3,7 @@ import { Button } from '@/components/primitives/Button';
 import { Badge } from '@/components/primitives/Badge';
 import { EmptyState } from '@/components/primitives/EmptyState';
 import { Mono } from '@/components/primitives/Mono';
+import { PhaseProgressBar } from '@/features/workspace/PhaseProgressBar';
 import { SectionHeader } from '@/components/primitives/SectionHeader';
 import { Text } from '@/components/primitives/Text';
 import { PhaseTranscript } from '@/features/workspace/PhaseTranscript';
@@ -189,6 +190,7 @@ export function WorkspaceCenterPane({
             {isTransitionPending ? 'Updating' : 'Live'}
           </Badge>
         </div>
+        <PhaseProgressBar surface="rail" />
         <ol aria-label="Negotiation phases" className={styles.phaseRail}>
           {negotiationPhases.map((phase, index) => {
             const phaseNumber = index + 1;
@@ -246,6 +248,7 @@ export function WorkspaceCenterPane({
         role="region"
         tabIndex={-1}
       >
+        <PhaseProgressBar surface="workspace" />
         {activeView === 'overview' ? (
           <OverviewContent
             activeSession={activeSession}

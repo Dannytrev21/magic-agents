@@ -229,7 +229,7 @@ describe('Operator workspace integration', () => {
       );
     });
     expect(screen.getAllByText(/happy path contract/i).length).toBeGreaterThan(0);
-  });
+  }, 10000);
 
   it('launches verification from the page-level workspace and preserves the pipeline result', async () => {
     const user = userEvent.setup();

@@ -451,6 +451,30 @@ describe('Operator workspace layout', () => {
     expect(screen.getByText('Center view: negotiation')).toBeInTheDocument();
   });
 
+  it('switches the live-update indicator from idle to connecting when a session starts', async () => {
+    const user = userEvent.setup();
+
+    setViewport(1440);
+    installStorage();
+    renderPage({
+      initialEntry: '/',
+      initialSessionValue: null,
+      initialStorySummary: null,
+    });
+
+    expect(screen.getByRole('status', { name: /connection status/i })).toHaveTextContent(
+      /live updates idle/i,
+    );
+
+    await user.click(screen.getByRole('button', { name: /start mock session/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('status', { name: /connection status/i })).toHaveTextContent(
+        /connecting live updates/i,
+      );
+    });
+  });
+
   it('announces session and phase transitions while keeping focus on the active workspace flow', async () => {
     const user = userEvent.setup();
 
@@ -592,7 +616,9 @@ describe('Operator workspace layout', () => {
       MockEventSource.instances[0].simulateOpen();
     });
 
-    expect(screen.getByRole('status', { name: /stream status/i })).toHaveTextContent(/stream live/i);
+    expect(screen.getByRole('status', { name: /connection status/i })).toHaveTextContent(
+      /live updates connected/i,
+    );
 
     act(() => {
       MockEventSource.instances[0].simulateMessage({

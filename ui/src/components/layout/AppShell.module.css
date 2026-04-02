@@ -103,7 +103,7 @@
   padding: 0.55rem 0.8rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-round);
-  background: transparent;
+  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
 }
 
 .statusDot {

@@ -13,6 +13,8 @@ function renderShell() {
     <AppProviders>
       <AppShell
         centerPane={<div>Center workspace</div>}
+        connectionLabel="Live updates connected"
+        connectionStatus="connected"
         layoutMode="desktop"
         leftPaneCollapsed={false}
         leftRail={<div>Story intake</div>}
@@ -23,7 +25,6 @@ function renderShell() {
         phaseLabel="Phase 2: Happy Path Contract"
         rightPaneCollapsed={false}
         rightRail={<div>Evidence inspector</div>}
-        connectionStatus="connected"
         sessionState="active"
         statusLabel="Awaiting operator input"
         storyKey="MAG-22"
@@ -77,12 +78,14 @@ describe('AppShell', () => {
     expect(screen.queryByText(/magic agents/i)).not.toBeInTheDocument();
     expect(screen.getByText('MAG-22')).toBeInTheDocument();
     expect(screen.getByText(/negotiation surface/i)).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: /connection status/i })).toHaveTextContent(
+      /live updates connected/i,
+    );
     expect(screen.getByRole('button', { name: /toggle story intake panel/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /toggle evidence panel/i })).toBeInTheDocument();
     expect(screen.getByRole('status', { name: /session status/i })).toHaveTextContent(
       /awaiting operator input/i,
     );
-    expect(screen.getByRole('status', { name: /stream status/i })).toHaveTextContent(/stream live/i);
   });
 
   it('supports collapsed panel state and mobile panel switching controls', async () => {
@@ -95,6 +98,8 @@ describe('AppShell', () => {
       <AppProviders>
         <AppShell
           centerPane={<div>Center workspace</div>}
+          connectionLabel="Live updates idle"
+          connectionStatus="disconnected"
           layoutMode="mobile"
           leftPaneCollapsed
           leftRail={<div>Story intake</div>}
@@ -105,7 +110,6 @@ describe('AppShell', () => {
           phaseLabel="Phase 2: Happy Path Contract"
           rightPaneCollapsed
           rightRail={<div>Evidence inspector</div>}
-          connectionStatus="disconnected"
           sessionState="idle"
           statusLabel="No active session"
           storyKey={null}
@@ -132,6 +136,8 @@ describe('AppShell', () => {
       <AppProviders>
         <AppShell
           centerPane={<div>Center workspace</div>}
+          connectionLabel="Live updates idle"
+          connectionStatus="disconnected"
           layoutMode="desktop"
           leftPaneCollapsed
           leftRail={<div>Story intake</div>}
@@ -142,7 +148,6 @@ describe('AppShell', () => {
           phaseLabel="Phase 2: Happy Path Contract"
           rightPaneCollapsed={false}
           rightRail={<div>Evidence inspector</div>}
-          connectionStatus="disconnected"
           sessionState="idle"
           statusLabel="No active session"
           storyKey={null}

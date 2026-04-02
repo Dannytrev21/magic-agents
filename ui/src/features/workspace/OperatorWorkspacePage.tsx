@@ -65,6 +65,9 @@ export function OperatorWorkspacePage({
   const [isTransitionPending, startShellTransition] = useTransition();
   const [searchParams, setSearchParams] = useSearchParams();
   const respondMutation = useRespondMutation();
+  const { connectionLabel, connectionStatus } = usePhaseWorkspaceModel(
+    activeSession?.session_id ?? null,
+  );
   const centerFocusRef = useRef<HTMLElement | null>(null);
   const inspectorFocusRef = useRef<HTMLElement | null>(null);
   const hasRenderedCenterView = useRef(false);
@@ -79,7 +82,6 @@ export function OperatorWorkspacePage({
   const inspectorView = parseInspectorWorkspaceView(searchParams.get('inspector'));
   const mobilePane = parseMobileWorkspacePane(searchParams.get('pane'));
   const statusLabel = getWorkspaceStatusLabel(activeSession);
-  const { connectionStatus } = usePhaseWorkspaceModel(activeSession?.session_id ?? null);
   const workspaceLabel =
     centerWorkspaceViews.find((view) => view.value === centerView)?.label ?? 'Overview';
   const rightPaneCollapsed =
@@ -367,6 +369,7 @@ export function OperatorWorkspacePage({
           storySummary={activeStory?.summary ?? storySummary}
         />
       }
+      connectionLabel={connectionLabel}
       connectionStatus={connectionStatus}
       layoutMode={layoutMode}
       leftPaneCollapsed={panelPreferences.leftCollapsed}

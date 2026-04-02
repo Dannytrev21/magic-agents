@@ -1,6 +1,6 @@
 import { useCallback, useLayoutEffect } from 'react';
 import { useEventStoreController } from '@/lib/api/eventStore';
-import { useSSE } from '@/lib/api/useSSE';
+import { useSSE, type SSEConnectionStatus } from '@/lib/api/useSSE';
 
 export function usePhaseWorkspaceModel(sessionId: string | null) {
   const { clear, clearForSession, dispatch } = useEventStoreController();
@@ -24,7 +24,25 @@ export function usePhaseWorkspaceModel(sessionId: string | null) {
   }, [clear, clearForSession, sessionId]);
 
   return {
+    connectionLabel: formatConnectionLabel(connectionStatus, sessionId),
     connectionStatus,
     lastEvent,
   };
+}
+
+function formatConnectionLabel(status: SSEConnectionStatus, sessionId: string | null) {
+  if (!sessionId) {
+    return 'Live updates idle';
+  }
+
+  switch (status) {
+    case 'connected':
+      return 'Live updates connected';
+    case 'reconnecting':
+      return 'Reconnecting live updates';
+    case 'disconnected':
+      return 'Live updates disconnected';
+    default:
+      return 'Connecting live updates';
+  }
 }

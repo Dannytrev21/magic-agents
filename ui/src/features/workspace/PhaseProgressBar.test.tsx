@@ -1,4 +1,4 @@
-import { cleanup, render, screen, act } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PhaseProgressBar } from '@/features/workspace/PhaseProgressBar';
 import { createEventStore, EventStoreProvider } from '@/lib/api/eventStore';
@@ -122,11 +122,13 @@ describe('PhaseProgressBar', () => {
       });
     });
 
-    expect(screen.getByRole('progressbar', { name: /phase phase_1 in progress/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('progressbar', { name: /phase progress in the workspace header/i }),
+    ).toHaveAttribute('data-state', 'active');
     expect(screen.getByText('Formalizing preconditions')).toBeInTheDocument();
   });
 
-  it('hides on phase_complete', () => {
+  it('marks the indicator complete on phase_complete and hides after the linger window', () => {
     const store = createEventStore();
     const { container } = render(<PhaseProgressBar />, {
       wrapper: makeWrapper(store),
@@ -151,6 +153,12 @@ describe('PhaseProgressBar', () => {
         result_count: 5,
         phase_index: 0,
       });
+    });
+
+    expect(container.querySelector('[role="progressbar"]')).toHaveAttribute('data-state', 'complete');
+
+    act(() => {
+      vi.advanceTimersByTime(320);
     });
 
     expect(container.querySelector('[role="progressbar"]')).toBeNull();
@@ -205,7 +213,6 @@ describe('PhaseProgressBar', () => {
 
     expect(screen.getByText('10s')).toBeInTheDocument();
 
-    // New phase starts - timer should reset
     act(() => {
       store.dispatch({
         type: 'phase_start',

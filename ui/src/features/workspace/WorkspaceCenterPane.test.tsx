@@ -1,8 +1,13 @@
-import { createRef } from 'react';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { createRef, type ReactElement, type ReactNode } from 'react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { WorkspaceCenterPane } from '@/features/workspace/WorkspaceCenterPane';
+import {
+  createEventStore,
+  EventStoreProvider,
+  type EventStore,
+} from '@/lib/api/eventStore';
 import type { StartNegotiationResponse } from '@/lib/api/types';
 
 const activeSession: StartNegotiationResponse = {
@@ -97,10 +102,23 @@ afterEach(() => {
   cleanup();
 });
 
+function makeWrapper(store: EventStore) {
+  return function Wrapper({ children }: { children: ReactNode }) {
+    return EventStoreProvider({ store, children });
+  };
+}
+
+function renderPane(ui: ReactElement, store = createEventStore()) {
+  return {
+    store,
+    ...render(ui, { wrapper: makeWrapper(store) }),
+  };
+}
+
 describe('WorkspaceCenterPane', () => {
   it('renders a sticky mini-rail with completed, active, and pending phase states', () => {
     const focusRef = createRef<HTMLElement>();
-    const { container } = render(
+    const { container } = renderPane(
       <WorkspaceCenterPane
         activeSession={activeSession}
         activeView="negotiation"
@@ -136,7 +154,7 @@ describe('WorkspaceCenterPane', () => {
   it('renders a structured review surface with quieter copy and collapsible detail areas', async () => {
     const user = userEvent.setup();
 
-    render(
+    renderPane(
       <WorkspaceCenterPane
         activeSession={activeSession}
         activeView="negotiation"
@@ -174,6 +192,7 @@ describe('WorkspaceCenterPane', () => {
     const user = userEvent.setup();
     const onRevisePhase = vi.fn();
     const onDraftFeedbackChange = vi.fn();
+    const store = createEventStore();
     const { rerender } = render(
       <WorkspaceCenterPane
         activeSession={activeSession}
@@ -192,6 +211,7 @@ describe('WorkspaceCenterPane', () => {
         statusLabel="Awaiting operator input"
         storySummary="Port the active phase workspace"
       />,
+      { wrapper: makeWrapper(store) },
     );
 
     fireEvent.change(screen.getByLabelText(/notes/i), {
@@ -235,7 +255,7 @@ describe('WorkspaceCenterPane', () => {
     const user = userEvent.setup();
     const onPhaseSelect = vi.fn();
 
-    render(
+    renderPane(
       <WorkspaceCenterPane
         activeSession={activeSession}
         activeView="negotiation"
@@ -271,7 +291,7 @@ describe('WorkspaceCenterPane', () => {
   });
 
   it('marks the active workspace region busy during in-place transitions', () => {
-    render(
+    renderPane(
       <WorkspaceCenterPane
         activeSession={activeSession}
         activeView="negotiation"
@@ -295,5 +315,57 @@ describe('WorkspaceCenterPane', () => {
       'aria-busy',
       'true',
     );
+  });
+
+  it('surfaces live phase progress in both the mini-rail and workspace header', () => {
+    const store = createEventStore();
+
+    renderPane(
+      <WorkspaceCenterPane
+        activeSession={activeSession}
+        activeView="negotiation"
+        draftFeedback=""
+        focusRef={createRef<HTMLElement>()}
+        isTransitionPending={false}
+        onApprovePhase={vi.fn()}
+        onDraftFeedbackChange={vi.fn()}
+        onPhaseSelect={vi.fn()}
+        onRevisePhase={vi.fn()}
+        onViewChange={vi.fn()}
+        phaseActionState={{ activeAction: null, isPending: false, message: null, status: 'idle' }}
+        selectedAcceptanceCriterionIndex={null}
+        selectedPhaseNumber={4}
+        statusLabel="Awaiting operator input"
+        storySummary="Port the active phase workspace"
+      />,
+      store,
+    );
+
+    act(() => {
+      store.dispatch({
+        type: 'phase_start',
+        session_id: 'session-u4',
+        phase: 'phase_4',
+        phase_index: 3,
+      });
+    });
+
+    expect(
+      screen.getByRole('progressbar', { name: /phase progress in the phase rail/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('progressbar', { name: /phase progress in the workspace header/i }),
+    ).toBeInTheDocument();
+
+    act(() => {
+      store.dispatch({
+        type: 'phase_progress',
+        session_id: 'session-u4',
+        phase: 'phase_4',
+        message: 'Enumerating deleted-user failures',
+      });
+    });
+
+    expect(screen.getAllByText(/enumerating deleted-user failures/i)).toHaveLength(2);
   });
 });

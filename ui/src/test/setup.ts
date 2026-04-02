@@ -12,6 +12,21 @@ class MockObserver {
   }
 }
 
+class TestEventSource {
+  public onerror: ((event: Event) => void) | null = null;
+  public onmessage: ((event: MessageEvent) => void) | null = null;
+  public onopen: ((event: Event) => void) | null = null;
+  public readonly url: string;
+
+  constructor(url: string) {
+    this.url = url;
+  }
+
+  close() {
+    return undefined;
+  }
+}
+
 if (typeof globalThis.MutationObserver !== 'function') {
   Object.defineProperty(globalThis, 'MutationObserver', {
     configurable: true,
@@ -32,6 +47,14 @@ if (typeof globalThis.IntersectionObserver !== 'function') {
   Object.defineProperty(globalThis, 'IntersectionObserver', {
     configurable: true,
     value: MockObserver,
+    writable: true,
+  });
+}
+
+if (typeof globalThis.EventSource !== 'function') {
+  Object.defineProperty(globalThis, 'EventSource', {
+    configurable: true,
+    value: TestEventSource,
     writable: true,
   });
 }

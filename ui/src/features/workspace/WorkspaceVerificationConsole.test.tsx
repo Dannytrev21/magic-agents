@@ -4,6 +4,7 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WorkspaceCenterPane } from '@/features/workspace/WorkspaceCenterPane';
+import { createEventStore, EventStoreProvider } from '@/lib/api/eventStore';
 import * as api from '@/lib/api/client';
 import type { StartNegotiationResponse } from '@/lib/api/types';
 
@@ -14,9 +15,13 @@ function createWrapper() {
       queries: { retry: false },
     },
   });
+  const eventStore = createEventStore();
 
   return function Wrapper({ children }: { children: ReactNode }) {
-    return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+    return EventStoreProvider({
+      children: <QueryClientProvider client={client}>{children}</QueryClientProvider>,
+      store: eventStore,
+    });
   };
 }
 

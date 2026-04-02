@@ -18,7 +18,7 @@ claw-code's terminal UI processes events inline within the turn loop. For a web 
 
 2. **Exponential backoff**: On connection drop, reconnects with delays of `1s, 2s, 4s, 8s, ...` capped at 30s. Backoff resets after a successful reconnection.
 
-3. **Connection status**: Exposed as `'connecting' | 'connected' | 'reconnecting' | 'disconnected'`. The top bar status indicator consumes this.
+3. **Connection status**: Exposed as `'connecting' | 'connected' | 'reconnecting' | 'disconnected'`. `usePhaseWorkspaceModel()` maps this into stable top-bar copy so the shell can surface live-stream health without duplicating SSE wiring.
 
 4. **Workspace bridge hook**: `usePhaseWorkspaceModel(sessionId)` is the page-level integration point. It owns the live `EventSource` subscription for the active session, clears stale event-store state when the session changes, and dispatches each parsed SSE payload into the shared client-side event store so the shell stream-status pill and `PhaseProgressBar` stay in sync.
 
@@ -36,11 +36,11 @@ claw-code's terminal UI processes events inline within the turn loop. For a web 
 
 4. **FIFO overflow**: The store retains at most 100 events. Oldest events are evicted on overflow.
 
-5. **Session scoping**: `clearForSession(id)` clears events when the session ID changes.
+5. **Session scoping**: `clearForSession(id)` clears events when the session ID changes. `usePhaseWorkspaceModel()` owns that handoff so stale phase activity never bleeds across sessions.
 
 ### U07.3: Phase Progress Bar
 
-1. **Event-driven rendering**: `PhaseProgressBar` subscribes to phase events via `usePhaseEvents()`. It appears on `phase_start`, updates step description on `phase_progress`, hides on `phase_complete`, and turns red on `phase_error`.
+1. **Event-driven rendering**: `PhaseProgressBar` subscribes to phase events via `usePhaseEvents()`. It appears on `phase_start`, updates step description on `phase_progress`, lingers in a terminal complete state on `phase_complete`, and turns red on `phase_error`. The workspace renders it in both the sticky mini-rail and the center header.
 
 2. **Elapsed timer**: A 1-second interval counts up from the `phase_start` timestamp. Resets when a new phase starts.
 
@@ -52,6 +52,7 @@ claw-code's terminal UI processes events inline within the turn loop. For a web 
 - The SSE connection is resilient to network drops with bounded retry.
 - No polling overhead. The backend pushes events; the UI reacts.
 - The event store is testable in isolation (no React required for the core).
+- The page-level workspace keeps one session-scoped event history inside the shared store while still letting shell chrome and workspace surfaces react independently.
 - The PhaseProgressBar provides real-time feedback during negotiation without additional API calls.
 - Routing store writes through `useSSE(..., { onEvent })` preserves ordered `phase_start` + `phase_progress` pairs that can otherwise collapse if React batches incoming events into one render.
-- The React provider stack now mounts `EventStoreProvider` in `ui/src/app/AppProviders.tsx`, while `usePhaseWorkspaceModel()` bridges `useSSE()` into the store and feeds the top-bar stream indicator plus the shell-level phase progress strip.
+- The React provider stack mounts `EventStoreProvider` in `ui/src/app/AppProviders.tsx`, while `usePhaseWorkspaceModel()` bridges `useSSE()` into the store and feeds the top-bar stream indicator plus the mini-rail and workspace-header progress bars.
