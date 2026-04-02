@@ -1,7 +1,6 @@
 import {
   createContext,
   createElement,
-  useCallback,
   useContext,
   useMemo,
   useSyncExternalStore,
@@ -115,6 +114,21 @@ export function useEventStore() {
   const store = useStore();
   const events = useSyncExternalStore(store.subscribe, store.getEvents);
   return { events, dispatch: store.dispatch, clear: store.clear };
+}
+
+/**
+ * Access store controls without subscribing to the full event array.
+ */
+export function useEventStoreController() {
+  const store = useStore();
+  return useMemo(
+    () => ({
+      clear: store.clear,
+      clearForSession: store.clearForSession,
+      dispatch: store.dispatch,
+    }),
+    [store],
+  );
 }
 
 /**

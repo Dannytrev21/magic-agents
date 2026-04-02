@@ -1,4 +1,11 @@
-import { Suspense, lazy, useDeferredValue, useEffect, useState, type RefObject } from 'react';
+import {
+  Suspense,
+  lazy,
+  useDeferredValue,
+  useEffect,
+  useState,
+  type RefObject,
+} from 'react';
 import { Button } from '@/components/primitives/Button';
 import { Badge } from '@/components/primitives/Badge';
 import { EmptyState } from '@/components/primitives/EmptyState';
@@ -54,14 +61,6 @@ export function WorkspaceInspector({
   const [specView, setSpecView] = useState<'raw' | 'structured'>('structured');
   const [traceabilityMode, setTraceabilityMode] = useState<'browser' | 'matrix'>('browser');
   const contractState = activeSession ? 'Live' : 'Waiting';
-
-  useEffect(() => {
-    compileMutation.reset();
-    critiqueMutation.reset();
-    planningMutation.reset();
-    specDiffMutation.reset();
-    setSpecView('structured');
-  }, [activeSession?.session_id]);
 
   return (
     <div className={`${styles.stack} ${styles.inspectorStack}`}>

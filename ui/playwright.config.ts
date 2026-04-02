@@ -10,11 +10,16 @@ const skipWebServer = ['1', 'true', 'yes'].includes(
   (process.env.PW_SKIP_WEBSERVER ?? '').toLowerCase(),
 );
 const usingRemoteBrowser = Boolean(process.env.PW_TEST_CONNECT_WS_ENDPOINT);
+const retainTraceOnFailure =
+  Boolean(process.env.CI) ||
+  ['1', 'true', 'yes'].includes((process.env.PW_TRACE ?? '').toLowerCase());
 const sharedUse = {
   baseURL,
   browserName,
   screenshot: 'only-on-failure' as const,
-  trace: 'retain-on-failure' as const,
+  // Local Codex-hosted Chromium can fail while persisting trace archives.
+  // Keep failure screenshots by default and allow traces explicitly or in CI.
+  trace: retainTraceOnFailure ? ('retain-on-failure' as const) : ('off' as const),
   viewport: { width: 1440, height: 980 },
 };
 const browserUse =
@@ -23,7 +28,9 @@ const webServerCommand = `${JSON.stringify(process.execPath)} ./node_modules/vit
 
 export default defineConfig({
   testDir: './tests/e2e',
-  fullyParallel: true,
+  fullyParallel: false,
+  // The mocked workspace journey is small and more reliable without browser-worker fan-out.
+  workers: 1,
   projects: [
     {
       name: browserName,

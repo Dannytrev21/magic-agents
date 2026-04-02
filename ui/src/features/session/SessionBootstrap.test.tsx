@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { type ReactNode } from 'react';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SessionBootstrap } from '@/features/session/SessionBootstrap';
@@ -63,12 +63,15 @@ describe('SessionBootstrap', () => {
 
     await user.click(screen.getByRole('button', { name: /use manual entry/i }));
 
-    await user.type(screen.getByLabelText(/jira key/i), 'MAG-801');
-    await user.type(screen.getByLabelText(/summary/i), 'Manual fallback rail coverage');
-    await user.type(
-      screen.getByLabelText(/acceptance criteria/i),
-      'Operator can continue from raw notes\nThe checklist stays visible in the rail',
-    );
+    fireEvent.change(screen.getByLabelText(/jira key/i), { target: { value: 'MAG-801' } });
+    fireEvent.change(screen.getByLabelText(/summary/i), {
+      target: { value: 'Manual fallback rail coverage' },
+    });
+    fireEvent.change(screen.getByLabelText(/acceptance criteria/i), {
+      target: {
+        value: 'Operator can continue from raw notes\nThe checklist stays visible in the rail',
+      },
+    });
 
     expect(screen.getByRole('button', { name: /start session from manual story/i })).toBeEnabled();
     expect(screen.getByRole('list', { name: /story checklist/i })).toHaveTextContent(

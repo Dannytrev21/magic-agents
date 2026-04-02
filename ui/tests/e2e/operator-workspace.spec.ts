@@ -27,7 +27,8 @@ test.describe('Operator workspace browser flow', () => {
 
     await expect(page.getByText(/jira configuration required/i)).toBeVisible();
 
-    await page.getByRole('tab', { name: /manual entry/i }).click();
+    await page.getByRole('button', { name: /use manual entry/i }).click();
+    await expect(page.getByLabel(/jira key/i)).toBeVisible();
     await page.getByLabel(/jira key/i).fill('MAG-901');
     await page.getByLabel(/summary/i).fill('Browser journey coverage');
     await page
@@ -68,7 +69,8 @@ test.describe('Operator workspace browser flow', () => {
 
     await page.goto('/');
 
-    await page.getByRole('tab', { name: /manual entry/i }).click();
+    await page.getByRole('button', { name: /use manual entry/i }).click();
+    await expect(page.getByLabel(/jira key/i)).toBeVisible();
     await page.getByLabel(/jira key/i).fill('MAG-902');
     await page.getByLabel(/summary/i).fill('Pipeline failure coverage');
     await page

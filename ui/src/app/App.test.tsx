@@ -21,10 +21,10 @@ afterEach(() => {
 });
 
 describe('App shell', () => {
-  it('renders the three-pane operator workspace landmarks', async () => {
+  it('renders the three-pane operator workspace landmarks', () => {
     renderRoute(['/']);
 
-    expect(await screen.findByRole('banner')).toBeInTheDocument();
+    expect(screen.getByRole('banner')).toBeInTheDocument();
     expect(screen.getByRole('complementary', { name: /story intake/i })).toBeInTheDocument();
     expect(screen.getByRole('main')).toBeInTheDocument();
     expect(screen.getByRole('complementary', { name: /evidence inspector/i })).toBeInTheDocument();

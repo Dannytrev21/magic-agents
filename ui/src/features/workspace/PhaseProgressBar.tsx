@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePhaseEvents } from '@/lib/api/eventStore';
-import styles from '@/features/workspace/phase-progress-bar.module.css';
 
 type ProgressState = 'active' | 'complete' | 'error' | 'idle';
 
@@ -23,51 +22,68 @@ export function PhaseProgressBar() {
   const [stepMessage, setStepMessage] = useState('');
   const [state, setState] = useState<ProgressState>('idle');
   const [activePhase, setActivePhase] = useState<string | null>(null);
+  const processedEventCountRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(0);
 
-  // Derive state from the event stream
+  // Apply newly appended events in order so batched start/progress updates are preserved.
   useEffect(() => {
     if (phaseEvents.length === 0) {
+      processedEventCountRef.current = 0;
+      setState('idle');
+      setActivePhase(null);
+      setStepMessage('');
+      setElapsed(0);
+      if (timerRef.current !== null) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
       return;
     }
 
-    const latest = phaseEvents[phaseEvents.length - 1];
+    if (phaseEvents.length < processedEventCountRef.current) {
+      processedEventCountRef.current = 0;
+    }
 
-    if (latest.type === 'phase_start') {
-      const phase = (latest as Record<string, unknown>).phase as string;
-      setState('active');
-      setActivePhase(phase);
-      setStepMessage('');
-      setElapsed(0);
-      startTimeRef.current = Date.now();
+    for (let index = processedEventCountRef.current; index < phaseEvents.length; index += 1) {
+      const nextEvent = phaseEvents[index];
 
-      // Clear any prior timer
-      if (timerRef.current !== null) {
-        clearInterval(timerRef.current);
-      }
-      timerRef.current = setInterval(() => {
-        setElapsed(Math.floor((Date.now() - startTimeRef.current) / 1000));
-      }, 1000);
-    } else if (latest.type === 'phase_complete') {
-      setState('idle');
-      setActivePhase(null);
-      if (timerRef.current !== null) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    } else if (latest.type === 'phase_error') {
-      setState('error');
-      if (timerRef.current !== null) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    } else if (latest.type === 'phase_progress') {
-      const msg = (latest as Record<string, unknown>).message;
-      if (typeof msg === 'string') {
-        setStepMessage(msg);
+      if (nextEvent.type === 'phase_start') {
+        const phase = (nextEvent as Record<string, unknown>).phase as string;
+        setState('active');
+        setActivePhase(phase);
+        setStepMessage('');
+        setElapsed(0);
+        startTimeRef.current = Date.now();
+
+        if (timerRef.current !== null) {
+          clearInterval(timerRef.current);
+        }
+        timerRef.current = setInterval(() => {
+          setElapsed(Math.floor((Date.now() - startTimeRef.current) / 1000));
+        }, 1000);
+      } else if (nextEvent.type === 'phase_complete') {
+        setState('idle');
+        setActivePhase(null);
+        if (timerRef.current !== null) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+      } else if (nextEvent.type === 'phase_error') {
+        setState('error');
+        if (timerRef.current !== null) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+      } else if (nextEvent.type === 'phase_progress') {
+        const msg = (nextEvent as Record<string, unknown>).message;
+        if (typeof msg === 'string') {
+          setStepMessage(msg);
+        }
       }
     }
+
+    processedEventCountRef.current = phaseEvents.length;
   }, [phaseEvents]);
 
   // Cleanup on unmount
@@ -86,14 +102,55 @@ export function PhaseProgressBar() {
   return (
     <div
       aria-label={activePhase ? `Phase ${activePhase} in progress` : 'Phase in progress'}
-      className={styles.container}
       data-state={state}
       role="progressbar"
+      style={{
+        position: 'relative',
+        zIndex: 5,
+        display: 'grid',
+        gap: 'var(--space-2)',
+        padding: 'var(--space-2) var(--space-4)',
+        background: 'color-mix(in srgb, var(--color-surface) 80%, transparent)',
+        borderBottom: '1px solid var(--color-border)',
+      }}
     >
-      <div className={`${styles.bar} ${state === 'error' ? styles.barError : ''}`} />
-      <div className={styles.meta}>
-        <span className={styles.elapsed}>{formatElapsed(elapsed)}</span>
-        {stepMessage ? <span className={styles.step}>{stepMessage}</span> : null}
+      <div
+        style={{
+          height: '3px',
+          borderRadius: 'var(--radius-round)',
+          background: state === 'error' ? 'var(--color-error)' : 'var(--color-signal)',
+          opacity: state === 'error' ? 1 : 0.72,
+        }}
+      />
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--space-3)',
+        }}
+      >
+        <span
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 'var(--text-xs)',
+            color: 'var(--color-text-muted)',
+          }}
+        >
+          {formatElapsed(elapsed)}
+        </span>
+        {stepMessage ? (
+          <span
+            style={{
+              fontSize: 'var(--text-xs)',
+              color: 'var(--color-text-muted)',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {stepMessage}
+          </span>
+        ) : null}
       </div>
     </div>
   );

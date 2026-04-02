@@ -1,8 +1,6 @@
 .shell {
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--color-signal) 10%, transparent), transparent 32%),
-    linear-gradient(180deg, color-mix(in srgb, var(--color-bg-elevated) 82%, var(--color-bg)) 0%, var(--color-bg) 42%);
+  background: var(--color-bg);
   color: var(--color-text);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
@@ -42,23 +40,16 @@
   gap: var(--space-4);
   min-height: 4.5rem;
   padding: var(--space-4) var(--space-6);
-  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
-  backdrop-filter: blur(var(--surface-blur-medium));
+  border-bottom: 1px solid var(--color-border);
   background: var(--color-bg);
-  box-shadow: var(--shadow-soft);
 }
 
 .brandBlock {
-  position: relative;
   display: inline-flex;
   align-items: center;
   justify-self: start;
   min-width: 0;
-  padding: 0.4375rem 0.875rem 0.5625rem 0.5rem;
-  border: 1px solid color-mix(in srgb, white 8%, var(--color-border));
-  border-radius: 1.25rem;
-  background: color-mix(in srgb, var(--color-surface) 84%, var(--color-bg-elevated));
-  box-shadow: inset 0 1px 0 color-mix(in srgb, white 12%, transparent);
+  padding: 0.5rem 0;
 }
 
 .brandMark {
@@ -69,7 +60,7 @@
   letter-spacing: -0.038em;
   line-height: 0.88;
   text-transform: uppercase;
-  color: color-mix(in srgb, white 95%, var(--color-text) 5%);
+  color: var(--color-text);
 }
 
 .contextBlock {
@@ -112,8 +103,7 @@
   padding: 0.55rem 0.8rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-round);
-  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, white 8%, transparent);
+  background: transparent;
 }
 
 .statusDot {
@@ -142,24 +132,6 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-}
-
-.controlButton {
-  min-height: 2.25rem;
-  padding-inline: var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-round);
-  background: color-mix(in srgb, var(--color-surface) 56%, transparent);
-  backdrop-filter: blur(var(--surface-blur-medium));
-  box-shadow: inset 0 1px 0 color-mix(in srgb, white 8%, transparent);
-}
-
-.controlButton:focus-visible {
-  outline: 2px solid var(--color-signal);
-  outline-offset: 2px;
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 8%, transparent),
-    0 0 0 4px var(--focus-ring);
 }
 
 .workspaceFrame {
@@ -193,7 +165,6 @@
   overflow: hidden;
   border-right: 1px solid var(--color-border);
   background: var(--color-surface);
-  box-shadow: inset -1px 0 0 color-mix(in srgb, white 3%, transparent);
 }
 
 .leftPane {
@@ -233,8 +204,6 @@
   width: min(24rem, calc(100vw - 3rem));
   border-left: 1px solid var(--color-border);
   background: var(--color-bg);
-  backdrop-filter: blur(var(--surface-blur-strong));
-  box-shadow: var(--shadow-floating);
 }
 
 .overlayPane {
@@ -254,8 +223,6 @@
   grid-template-columns: repeat(3, 1fr);
   border-top: 1px solid var(--color-border);
   background: var(--color-bg);
-  backdrop-filter: blur(var(--surface-blur-medium));
-  box-shadow: 0 -12px 24px color-mix(in srgb, var(--color-ink) 28%, transparent);
 }
 
 .mobileTab {
@@ -274,7 +241,6 @@
 .mobileTab[aria-selected='true'] {
   border-top-color: var(--color-signal);
   color: var(--color-text);
-  background: color-mix(in srgb, var(--color-surface) 80%, transparent);
 }
 
 .mobileTab:focus-visible {

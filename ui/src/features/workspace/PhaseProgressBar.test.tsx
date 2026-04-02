@@ -102,6 +102,30 @@ describe('PhaseProgressBar', () => {
     expect(screen.getByText('Classifying acceptance criteria')).toBeInTheDocument();
   });
 
+  it('stays active when phase_start and phase_progress arrive in the same batch', () => {
+    const store = createEventStore();
+    render(<PhaseProgressBar />, { wrapper: makeWrapper(store) });
+
+    act(() => {
+      store.dispatch({
+        type: 'phase_start',
+        session_id: 's1',
+        phase: 'phase_1',
+        phase_index: 0,
+      });
+      store.dispatch({
+        type: 'phase_progress',
+        session_id: 's1',
+        phase: 'phase_1',
+        turn: 1,
+        message: 'Formalizing preconditions',
+      });
+    });
+
+    expect(screen.getByRole('progressbar', { name: /phase phase_1 in progress/i })).toBeInTheDocument();
+    expect(screen.getByText('Formalizing preconditions')).toBeInTheDocument();
+  });
+
   it('hides on phase_complete', () => {
     const store = createEventStore();
     const { container } = render(<PhaseProgressBar />, {

@@ -3,16 +3,19 @@ import styles from '@/components/layout/AppShell.module.css';
 import { Button } from '@/components/primitives/Button';
 import { Mono } from '@/components/primitives/Mono';
 import { Text } from '@/components/primitives/Text';
+import { PhaseProgressBar } from '@/features/workspace/PhaseProgressBar';
 import type {
   WorkspaceLayoutMode,
   WorkspacePaneId,
   WorkspaceSessionState,
 } from '@/features/workspace/workspaceModel';
+import type { SSEConnectionStatus } from '@/lib/api/useSSE';
 
 type AppShellProps = {
   announcement?: string | null;
   leftRail: ReactNode;
   centerPane: ReactNode;
+  connectionStatus?: SSEConnectionStatus;
   rightRail: ReactNode;
   layoutMode: WorkspaceLayoutMode;
   leftPaneCollapsed: boolean;
@@ -33,6 +36,7 @@ export function AppShell({
   announcement = null,
   leftRail,
   centerPane,
+  connectionStatus = 'disconnected',
   rightRail,
   layoutMode,
   leftPaneCollapsed,
@@ -67,6 +71,18 @@ export function AppShell({
         ? mobilePane !== 'evidence'
         : true;
   const inspectorOverlayVisible = layoutMode === 'tablet' && !rightPaneCollapsed;
+  const progressRegionStyle = {
+    padding: layoutMode === 'mobile' ? '0 var(--space-4)' : '0 var(--space-6)',
+    pointerEvents: 'none',
+    position: 'sticky',
+    top: layoutMode === 'mobile' ? '8rem' : '4.5rem',
+    zIndex: 9,
+  } as const;
+  const statusStackStyle = {
+    display: 'grid',
+    gap: 'var(--space-2)',
+    justifyItems: layoutMode === 'desktop' ? 'end' : 'stretch',
+  } as const;
 
   return (
     <div className={styles.shell}>
@@ -106,19 +122,35 @@ export function AppShell({
           </div>
         </div>
         <div className={styles.headerMeta}>
-          <div aria-label="Session status" className={styles.statusPill} role="status">
-            <span
-              aria-hidden="true"
-              className={`${styles.statusDot} ${sessionStateClassName(sessionState, styles)}`}
-            />
-            <Text as="span" size="sm" weight="medium">
-              {statusLabel}
-            </Text>
+          <div style={statusStackStyle}>
+            <div aria-label="Session status" className={styles.statusPill} role="status">
+              <span
+                aria-hidden="true"
+                className={`${styles.statusDot} ${sessionStateClassName(sessionState, styles)}`}
+              />
+              <Text as="span" size="sm" weight="medium">
+                {statusLabel}
+              </Text>
+            </div>
+            <div
+              aria-label="Stream status"
+              className={styles.statusPill}
+              data-stream-state={connectionStatus}
+              role="status"
+            >
+              <span
+                aria-hidden="true"
+                className={styles.statusDot}
+                style={{ background: streamStatusColor(connectionStatus) }}
+              />
+              <Text as="span" size="sm" weight="medium">
+                {streamStatusLabel(connectionStatus)}
+              </Text>
+            </div>
           </div>
           <div className={styles.controlGroup}>
             <Button
               aria-expanded={layoutMode === 'mobile' ? mobilePane === 'story' : !leftPaneCollapsed}
-              className={styles.controlButton}
               onClick={onToggleLeftPane}
               variant="ghost"
             >
@@ -132,7 +164,6 @@ export function AppShell({
                     ? inspectorOverlayVisible
                     : mobilePane === 'evidence'
               }
-              className={styles.controlButton}
               onClick={onToggleRightPane}
               variant="ghost"
             >
@@ -141,6 +172,9 @@ export function AppShell({
           </div>
         </div>
       </header>
+      <div style={progressRegionStyle}>
+        <PhaseProgressBar />
+      </div>
       <div
         aria-atomic="true"
         aria-label="Workspace announcements"
@@ -240,6 +274,32 @@ export function AppShell({
       </div>
     </div>
   );
+}
+
+function streamStatusColor(connectionStatus: SSEConnectionStatus): string {
+  switch (connectionStatus) {
+    case 'connected':
+      return 'var(--color-success)';
+    case 'reconnecting':
+      return 'var(--color-warning)';
+    case 'connecting':
+      return 'color-mix(in srgb, var(--color-info) 78%, white 22%)';
+    default:
+      return 'var(--color-text-muted)';
+  }
+}
+
+function streamStatusLabel(connectionStatus: SSEConnectionStatus): string {
+  switch (connectionStatus) {
+    case 'connected':
+      return 'Stream live';
+    case 'reconnecting':
+      return 'Stream reconnecting';
+    case 'connecting':
+      return 'Stream connecting';
+    default:
+      return 'Stream offline';
+  }
 }
 
 function sessionStateClassName(

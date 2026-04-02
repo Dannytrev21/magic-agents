@@ -1,5 +1,4 @@
 import {
-  startTransition,
   useDeferredValue,
   useEffect,
   useId,
@@ -163,17 +162,13 @@ export function SessionBootstrap({
   }
 
   function handleModeChange(nextMode: SessionIntakeMode) {
-    startTransition(() => {
-      setMode(nextMode);
-      setSubmitError(null);
-    });
+    setMode(nextMode);
+    setSubmitError(null);
   }
 
   function applyStory(story: JiraStory) {
-    startTransition(() => {
-      setSelectedStoryKey(story.key);
-      setSubmitError(null);
-    });
+    setSelectedStoryKey(story.key);
+    setSubmitError(null);
   }
 
   async function resolveSelectedStory(): Promise<SessionIntakeStory> {

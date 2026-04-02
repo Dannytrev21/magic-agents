@@ -1,5 +1,5 @@
 import { createRef } from 'react';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { WorkspaceCenterPane } from '@/features/workspace/WorkspaceCenterPane';
@@ -194,7 +194,9 @@ describe('WorkspaceCenterPane', () => {
       />,
     );
 
-    await user.type(screen.getByLabelText(/notes/i), ' Please keep owner checks explicit.');
+    fireEvent.change(screen.getByLabelText(/notes/i), {
+      target: { value: 'Need clearer deleted-user guidance Please keep owner checks explicit.' },
+    });
     await user.click(screen.getByRole('button', { name: /^revise$/i }));
 
     expect(onDraftFeedbackChange).toHaveBeenCalled();

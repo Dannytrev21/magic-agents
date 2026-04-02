@@ -20,6 +20,10 @@ type UseSSEReturn = {
 
 const MAX_BACKOFF_MS = 30_000;
 
+function resolveEventSourceConstructor() {
+  return typeof globalThis.EventSource === 'function' ? globalThis.EventSource : null;
+}
+
 /**
  * React hook that maintains a persistent SSE connection to
  * `GET /api/events/{sessionId}` with automatic exponential-backoff
@@ -49,7 +53,14 @@ export function useSSE(
 
   const connect = useCallback(
     (sid: string) => {
-      const es = new EventSource(`/api/events/${sid}`);
+      const EventSourceConstructor = resolveEventSourceConstructor();
+
+      if (!EventSourceConstructor) {
+        setStatus('disconnected');
+        return;
+      }
+
+      const es = new EventSourceConstructor(`/api/events/${sid}`);
       esRef.current = es;
 
       es.onopen = () => {
@@ -89,6 +100,11 @@ export function useSSE(
 
   useEffect(() => {
     if (!sessionId) {
+      setStatus('disconnected');
+      return;
+    }
+
+    if (!resolveEventSourceConstructor()) {
       setStatus('disconnected');
       return;
     }

@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
@@ -182,12 +182,13 @@ describe('Operator workspace integration', () => {
     expect(await screen.findByText(/jira is unavailable/i)).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /use manual entry/i }));
-    await user.type(screen.getByLabelText(/jira key/i), 'MAG-804');
-    await user.type(screen.getByLabelText(/summary/i), 'Manual story integration');
-    await user.type(
-      screen.getByLabelText(/acceptance criteria/i),
-      'Operator can drive the phase loop from one surface',
-    );
+    fireEvent.change(screen.getByLabelText(/jira key/i), { target: { value: 'MAG-804' } });
+    fireEvent.change(screen.getByLabelText(/summary/i), {
+      target: { value: 'Manual story integration' },
+    });
+    fireEvent.change(screen.getByLabelText(/acceptance criteria/i), {
+      target: { value: 'Operator can drive the phase loop from one surface' },
+    });
     await user.click(screen.getByRole('button', { name: /start session from manual story/i }));
 
     expect(await screen.findByText(/session-u8-manual/i)).toBeInTheDocument();
@@ -197,7 +198,9 @@ describe('Operator workspace integration', () => {
       );
     });
 
-    await user.type(screen.getByLabelText(/^notes$/i), 'Clarify the actor and interface before advancing.');
+    fireEvent.change(screen.getByLabelText(/^notes$/i), {
+      target: { value: 'Clarify the actor and interface before advancing.' },
+    });
     await user.click(screen.getByRole('button', { name: /^revise$/i }));
 
     await waitFor(() => {

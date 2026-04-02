@@ -1,7 +1,6 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSSE } from '@/lib/api/useSSE';
-import type { SSEEvent } from '@/lib/api/useSSE';
 
 /**
  * Minimal EventSource mock that lets tests simulate open, message, and error.

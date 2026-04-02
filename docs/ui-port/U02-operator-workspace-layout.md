@@ -159,11 +159,20 @@ The most visible improvement is structural, not ornamental. The app needs to fee
 - [x] Panel controls are reachable from the top bar.
 - [x] The bar remains stable during independent pane scrolling.
 
+### Implementation Notes
+
+- The top bar now consumes session state and SSE connection state together so operators can see both workflow status and stream health without leaving the workspace.
+- A thin live phase progress strip sits directly under the top bar and reuses the shared event store instead of introducing a second polling or routing model.
+
 ### How to Test
 
 - Add component tests for top bar states with and without an active session.
 - Verify the story ID and phase context update from session state.
 - Manually confirm the top bar does not jitter during independent pane scrolling.
+
+### Verification
+
+- `npm run test:ui -- src/components/layout/AppShell.test.tsx src/features/workspace/OperatorWorkspacePage.test.tsx src/features/workspace/phaseWorkspaceModel.test.tsx`
 
 ---
 

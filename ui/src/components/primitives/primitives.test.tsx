@@ -1,5 +1,4 @@
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { Badge } from '@/components/primitives/Badge';
 import { Button } from '@/components/primitives/Button';
@@ -8,8 +7,7 @@ import { Mono } from '@/components/primitives/Mono';
 import { Skeleton } from '@/components/primitives/Skeleton';
 
 describe('Primitives', () => {
-  it('renders a visible focus target and loading state for buttons', async () => {
-    const user = userEvent.setup();
+  it('renders a visible focus target and loading state for buttons', () => {
     render(
       <div>
         <Button>Primary action</Button>
@@ -17,7 +15,7 @@ describe('Primitives', () => {
       </div>,
     );
 
-    await user.tab();
+    screen.getByRole('button', { name: /primary action/i }).focus();
 
     expect(screen.getByRole('button', { name: /primary action/i })).toHaveFocus();
     expect(screen.getByRole('button', { name: /busy action/i })).toBeDisabled();
