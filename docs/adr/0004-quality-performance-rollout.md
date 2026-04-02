@@ -30,6 +30,7 @@ Make the Playwright browser runtime explicit and environment-selectable. Keep Ch
 - Contributors now have a single non-browser gate that remains valid even when local browser launch is restricted.
 - Browser journeys can be exercised without a live FastAPI or Jira backend because the Playwright suite owns its mocks.
 - Browser coverage is the layer that catches rendered workflow copy and selector drift in the intake-to-verification journey when component and integration tests still pass.
+- Mocked browser journeys now explicitly wait for phase action controls to become actionable between negotiation approvals, which reduces false negatives when the phase chrome updates slightly ahead of the next interactive control.
 - Once the UI-port tracker is fully complete, failing `npm run test:ci`, failing `npm run test:e2e:chromium`, or drift between `progress.json` and the epic markdown files becomes the primary signal that UI work is still unfinished.
 - Browser choice no longer blocks diagnosis when one engine is incompatible with the host sandbox.
 - Restricted hosts can keep using the same Playwright suite by connecting to a separately launched browser runtime.

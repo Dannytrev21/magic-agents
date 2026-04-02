@@ -248,4 +248,37 @@ describe('Operator workspace integration', () => {
     );
     expect(screen.getByText(/1 passed/i)).toBeInTheDocument();
   });
+
+  it('switches into the verification workspace after the final approval marks negotiation done', async () => {
+    const user = userEvent.setup();
+
+    vi.mocked(api.respondToSession).mockResolvedValueOnce({
+      ...completedSession,
+      approved: false,
+      done: true,
+      session_id: 'session-u8-finalize',
+    });
+
+    renderWorkspace({
+      initialEntry: '/?view=negotiation&inspector=evidence&pane=workspace',
+      initialSession: {
+        ...completedSession,
+        done: false,
+        session_id: 'session-u8-finalize',
+      },
+      initialStorySummary: completedSession.jira_summary,
+    });
+
+    await user.click(screen.getByRole('button', { name: /^approve$/i }));
+
+    await waitFor(() => {
+      expect(api.respondToSession).toHaveBeenCalledWith({
+        input: 'approve',
+        session_id: 'session-u8-finalize',
+      });
+    });
+
+    expect(await screen.findByText(/proof artifacts, execution, and jira feedback stay in one surface/i)).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /approve ears/i })).toBeInTheDocument();
+  });
 });

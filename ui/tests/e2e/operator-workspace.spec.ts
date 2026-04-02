@@ -41,12 +41,16 @@ test.describe('Operator workspace browser flow', () => {
     await expect(page.getByText(/browser journey coverage/i)).toBeVisible();
 
     for (let index = 0; index < 6; index += 1) {
-      await page.getByRole('button', { name: approvePhaseButtonName }).click();
+      await approveActivePhase(page);
       await expect(page.locator('header')).toContainText(phaseTitles[index + 1]);
     }
 
-    await page.getByRole('button', { name: approvePhaseButtonName }).click();
-    await expect(page.getByText(/verification console/i)).toBeVisible();
+    await approveActivePhase(page);
+    await expect(page.getByRole('tab', { name: /^verification$/i })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await expect(page.getByRole('button', { name: /approve ears/i })).toBeVisible();
 
     await page.getByRole('button', { name: /approve ears/i }).click();
     await expect(page.getByText(/approved by web_operator/i)).toBeVisible();
@@ -83,6 +87,12 @@ test.describe('Operator workspace browser flow', () => {
     await expect(page.getByText(/pipeline stream failed in mock mode/i)).toBeVisible();
   });
 });
+
+async function approveActivePhase(page: Page) {
+  const approveButton = page.getByRole('button', { name: approvePhaseButtonName });
+  await expect(approveButton).toBeEnabled();
+  await approveButton.click();
+}
 
 async function registerWorkspaceRoutes(page: Page, options: MockWorkspaceOptions = {}) {
   let currentSession = buildSession({

@@ -2,7 +2,7 @@
   "meta": {
     "project": "Magic Agents Operator Workspace UI port",
     "created": "2026-03-31",
-    "last_updated": "2026-04-01T23:04:00Z",
+    "last_updated": "2026-04-02T12:12:00Z",
     "total_epics": 8,
     "total_stories": 36
   },
@@ -120,7 +120,7 @@
       "status": "complete",
       "stories": [
         { "id": "U8.1", "title": "Add component, integration, and contract tests for the new UI", "status": "complete", "tested": true, "notes": "Added direct rail coverage in SessionBootstrap, page-level integration coverage in OperatorWorkspace.integration.test.tsx, and expanded typed client contract coverage in client.test.ts so UI regressions fail at component, integration, and adapter layers." },
-        { "id": "U8.2", "title": "Cover the operator journey with browser-level end-to-end tests", "status": "complete", "tested": true, "notes": "Added an env-selectable Playwright harness plus deterministic specs for the manual-entry negotiation-to-pipeline flow and a mocked pipeline failure path. Direct browser launch in Codex-hosted macOS can still abort before page boot, but the remote-browser path is now first-class and validated: `PW_TEST_CONNECT_WS_ENDPOINT=ws://127.0.0.1:3000/ npm run test:e2e` passes from Codex when the Playwright browser server runs outside the host." },
+        { "id": "U8.2", "title": "Cover the operator journey with browser-level end-to-end tests", "status": "complete", "tested": true, "notes": "Added an env-selectable Playwright harness plus deterministic specs for the manual-entry negotiation-to-pipeline flow and a mocked pipeline failure path. Direct browser launch in Codex-hosted macOS can still abort before page boot, but the remote-browser path is now first-class and validated: `PW_TEST_CONNECT_WS_ENDPOINT=ws://127.0.0.1:3000/ npm run test:e2e` passes from Codex when the Playwright browser server runs outside the host. A 2026-04-02 follow-up tightened the happy-path approval timing by waiting for the phase action control to become enabled before the final click, and added matching page-level integration coverage for the negotiation-to-verification handoff." },
         { "id": "U8.3", "title": "Ship performance budgets and a safe rollout path", "status": "complete", "tested": true, "notes": "Lazy-loaded the verification workspace, added manifest-backed bundle budgets enforced by npm run test:budgets, introduced FastAPI rollout controls via MAGIC_AGENTS_FRONTEND_MODE plus the frontend query parameter, and on 2026-04-01 brought the shipped shell CSS back under the existing budget by trimming decorative chrome instead of raising thresholds." }
       ]
     }
