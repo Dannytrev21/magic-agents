@@ -10,10 +10,12 @@ The new UI should not become a second prototype. Once the workflow is ported, th
 
 ## Implementation Status
 
-- `U8.1` is implemented with new left-rail component coverage, page-level integration coverage, and expanded typed API contract tests. `npm run test:ui` and `npm run test:ci` both pass.
+- `U8.1` is implemented with new left-rail component coverage, page-level integration coverage, expanded typed API contract tests, and a shared Vitest browser-runtime setup in `ui/src/test/setup.ts` that stabilizes observer/media-query/scroll APIs across hosts. On 2026-04-02, `npm run test:ui` and `npm run test:ci` both pass again after restoring that shared test harness contract and capping the jsdom suite to `maxWorkers: 1` in `ui/vitest.config.ts`.
 - `U8.2` is implemented with Playwright specs for the deterministic manual-entry happy path and a mocked pipeline failure path, plus retained traces/screenshots on failure. The harness is environment-selectable, and the remote-browser path is now first-class: `playwright run-server` can host the browser outside Codex while `npm run test:e2e` or `npm run test:e2e:remote` connects to it. Direct browser launch inside Codex-hosted macOS can still fail, but remote-browser execution is now validated.
 - `U8.3` is implemented with a lazy-loaded verification console chunk, manifest-backed bundle budgets, and a reversible FastAPI frontend switch via `MAGIC_AGENTS_FRONTEND_MODE` or the `frontend` query parameter. The 2026-04-01 verification pass restored the shell CSS budget to green by simplifying decorative chrome instead of raising thresholds, and the targeted backend rollout tests pass.
 - A recurring verification run on 2026-04-01 re-checked the UI-port tracker and epic markdown files, found no unfinished stories remaining in U1 through U8, and reconfirmed both `npm run test:ci` and `npm run test:e2e:chromium` as the active gap-detection gates for this completed frontend epic.
+- A follow-up 2026-04-02 verification run again found no unfinished UI-port stories, confirmed the remaining U8.1 gap was harness stability rather than product behavior, serialized the jsdom suite with `maxWorkers: 1` in `ui/vitest.config.ts`, reran `npm run test:ci`, and reran `npm run test:e2e:chromium`; both gates are green on the current branch.
+- A later 2026-04-02 quality pass repaired the typed ESLint gate so local Playwright browser caches no longer break lint, tracked Playwright config/spec files stay in the linted TypeScript project, and `npm run test:ci` now runs lint before Vitest, build, and budget checks.
 
 ---
 
@@ -49,8 +51,10 @@ The new UI should not become a second prototype. Once the workflow is ported, th
 ### How to Test
 
 - Run the frontend unit and integration suite locally and in CI.
+- Run `npm run lint && npm run test:ci` and confirm both remain green.
 - Intentionally break a contract shape in a mock response and confirm tests fail.
 - Re-run backend web tests to ensure the shared workflow still works end to end.
+- Keep shared jsdom fallbacks in `ui/src/test/setup.ts` up to date when component code adopts new browser primitives.
 
 ---
 
@@ -130,3 +134,4 @@ The new UI should not become a second prototype. Once the workflow is ported, th
 - Perform a manual cutover test between legacy and new UI entrypoints.
 - Verify `/?frontend=legacy` still serves [`/Users/dannytrevino/development/magic-agents/static/index.html`](/Users/dannytrevino/development/magic-agents/static/index.html) while the default root continues to prefer the built React bundle when present.
 - Re-run `npm run test:ci` and confirm the budget report keeps the workspace shell under 33.5 kB raw / 7 kB gzip without editing `ui/config/bundle-budgets.json`.
+- Re-run `npm run test:e2e:chromium` after shell or operator-journey copy changes so the browser path stays aligned with the non-browser gate.
