@@ -13,9 +13,9 @@ By the time the React operator workspace covered epics U1 through U7, the featur
 Adopt a three-part rollout and quality model:
 
 - separate frontend verification into `npm run test:ui`, `npm run test:e2e`, and `npm run test:ci` so browser coverage remains optional and independent from the faster component/integration gate
-- treat `npm run test:ci` as the baseline contributor gate for UI-only changes, with lint running before Vitest/build/budgets, while keeping `npm run test:e2e` additive for release validation, regression investigation, and environments that use the remote Playwright server path
+- treat `npm run test:ci` as the baseline contributor gate for UI-only changes, while keeping `npm run test:e2e` additive for release validation, regression investigation, and environments that use the remote Playwright server path
 - cap Vitest worker fan-out at `1` for the shared jsdom-heavy UI suite so the non-browser gate stays deterministic on constrained local and Codex-hosted macOS environments
-- keep the core operator journey deterministic in Playwright by routing all browser tests through mocked API/SSE fixtures with retained traces and screenshots on failure
+- keep the core operator journey deterministic in Playwright by routing all browser tests through mocked API/SSE fixtures with retained screenshots on failure and opt-in traces via `PW_TRACE=1` or CI
 - treat the FastAPI root as a reversible rollout boundary by supporting `MAGIC_AGENTS_FRONTEND_MODE=auto|react|legacy` and `/?frontend=react|legacy` overrides while preserving the legacy HTML entrypoint
 
 Add bundle budgets as part of the shipped contract by generating a Vite manifest and checking the entry shell plus lazy-loaded workspace chunks from [`/Users/dannytrevino/development/magic-agents/ui/config/bundle-budgets.json`](/Users/dannytrevino/development/magic-agents/ui/config/bundle-budgets.json). Keep the verification console behind a lazy import so artifact-heavy proof surfaces do not inflate the initial workspace shell.
@@ -45,6 +45,7 @@ Scope typed linting to tracked source and Playwright config/spec files through [
 
 - The browser suite now depends on local Playwright browser installs, and contributors need to know which engine failed before treating the problem as an app regression.
 - Remote-browser usage adds one more moving part: the browser server endpoint and, optionally, the app server base URL.
+- Local debug runs no longer get Playwright traces automatically; contributors need to opt in with `PW_TRACE=1` when the host can persist trace archives cleanly.
 - The shared test-runtime shim needs to stay lean; adding too many browser fallbacks there can hide a real production/runtime mismatch if contributors stop checking whether the app itself relies on unavailable APIs.
 - The backend root handler now carries a small amount of rollout logic in addition to asset resolution.
 - Build output includes a Vite manifest and another verification script that contributors need to keep aligned with future code-splitting changes.

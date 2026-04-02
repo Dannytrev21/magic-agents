@@ -20,9 +20,11 @@ claw-code's terminal UI processes events inline within the turn loop. For a web 
 
 3. **Connection status**: Exposed as `'connecting' | 'connected' | 'reconnecting' | 'disconnected'`. The top bar status indicator consumes this.
 
-4. **Max retries**: Configurable (default 8). After exhaustion, status transitions to `'disconnected'` and reconnection stops.
+4. **Workspace bridge hook**: `usePhaseWorkspaceModel(sessionId)` is the page-level integration point. It owns the live `EventSource` subscription for the active session, clears stale event-store state when the session changes, and dispatches each parsed SSE payload into the shared client-side event store so the shell status strip and `PhaseProgressBar` stay in sync.
 
-5. **Cleanup**: `EventSource.close()` and timer cleanup run on unmount and session ID change.
+5. **Max retries**: Configurable (default 8). After exhaustion, status transitions to `'disconnected'` and reconnection stops.
+
+6. **Cleanup**: `EventSource.close()` and timer cleanup run on unmount and session ID change.
 
 ### U07.2: Event Store (`createEventStore` + context hooks)
 
@@ -51,3 +53,4 @@ claw-code's terminal UI processes events inline within the turn loop. For a web 
 - No polling overhead. The backend pushes events; the UI reacts.
 - The event store is testable in isolation (no React required for the core).
 - The PhaseProgressBar provides real-time feedback during negotiation without additional API calls.
+- The React provider stack now mounts `EventStoreProvider` in `ui/src/app/AppProviders.tsx`, while `usePhaseWorkspaceModel()` bridges `useSSE()` into the store and feeds the top-bar stream indicator plus the shell-level phase progress strip.

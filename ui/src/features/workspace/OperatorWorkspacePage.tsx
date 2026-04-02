@@ -8,6 +8,7 @@ import {
   type PhaseActionState,
 } from '@/features/workspace/WorkspaceCenterPane';
 import { WorkspaceInspector } from '@/features/workspace/WorkspaceInspector';
+import { usePhaseWorkspaceModel } from '@/features/workspace/phaseWorkspaceModel';
 import {
   centerWorkspaceViews,
   getWorkspaceLayoutMode,
@@ -78,6 +79,7 @@ export function OperatorWorkspacePage({
   const inspectorView = parseInspectorWorkspaceView(searchParams.get('inspector'));
   const mobilePane = parseMobileWorkspacePane(searchParams.get('pane'));
   const statusLabel = getWorkspaceStatusLabel(activeSession);
+  const { connectionStatus } = usePhaseWorkspaceModel(activeSession?.session_id ?? null);
   const workspaceLabel =
     centerWorkspaceViews.find((view) => view.value === centerView)?.label ?? 'Overview';
   const rightPaneCollapsed =
@@ -251,9 +253,17 @@ export function OperatorWorkspacePage({
         session_id: activeSession.session_id,
       });
 
+      if (!nextSession?.session_id) {
+        throw new Error(
+          action === 'approve'
+            ? 'Approval did not return updated session state.'
+            : 'Revision did not return updated session state.',
+        );
+      }
+
       startShellTransition(() => {
         setActiveSession(nextSession);
-        setStorySummary(nextSession.jira_summary ?? storySummary);
+        setStorySummary(nextSession.jira_summary ?? activeStory?.summary ?? storySummary);
         setSelectedPhaseNumber((current) => resolveSelectedPhaseNumber(current, activeSession, nextSession));
         if (action === 'approve' && nextSession.done) {
           const next = new URLSearchParams(searchParams);
@@ -357,6 +367,7 @@ export function OperatorWorkspacePage({
           storySummary={activeStory?.summary ?? storySummary}
         />
       }
+      connectionStatus={connectionStatus}
       layoutMode={layoutMode}
       leftPaneCollapsed={panelPreferences.leftCollapsed}
       leftRail={
@@ -382,6 +393,7 @@ export function OperatorWorkspacePage({
           activeSession={activeSession}
           activeView={inspectorView}
           focusRef={inspectorFocusRef}
+          key={activeSession?.session_id ?? 'idle'}
           onAcceptanceCriterionSelect={handleAcceptanceCriterionSelect}
           onViewChange={handleInspectorViewChange}
           selectedAcceptanceCriterionIndex={selectedAcceptanceCriterionIndex}

@@ -11,6 +11,34 @@ import type { StartNegotiationResponse } from '@/lib/api/types';
 
 const mockRespondMutation = vi.fn();
 
+class MockEventSource {
+  static instances: MockEventSource[] = [];
+
+  onerror: (() => void) | null = null;
+  onmessage: ((event: MessageEvent) => void) | null = null;
+  onopen: (() => void) | null = null;
+  closed = false;
+  readyState = 0;
+
+  constructor(public readonly url: string) {
+    MockEventSource.instances.push(this);
+  }
+
+  close() {
+    this.closed = true;
+    this.readyState = 2;
+  }
+
+  simulateMessage(data: Record<string, unknown>) {
+    this.onmessage?.(new MessageEvent('message', { data: JSON.stringify(data) }));
+  }
+
+  simulateOpen() {
+    this.readyState = 1;
+    this.onopen?.();
+  }
+}
+
 vi.mock('@/lib/query/sessionHooks', () => ({
   useRespondMutation: () => ({
     mutateAsync: mockRespondMutation,
@@ -340,6 +368,8 @@ describe('Operator workspace layout', () => {
   beforeEach(() => {
     setViewport(1440);
     installStorage();
+    MockEventSource.instances = [];
+    vi.stubGlobal('EventSource', MockEventSource);
   });
 
   it('renders top-bar session context and the wired workspace shell for active sessions', () => {
@@ -550,5 +580,27 @@ describe('Operator workspace layout', () => {
     expect(screen.getAllByDisplayValue('Need tighter error handling')).toHaveLength(2);
     expect(screen.getByText(/center action status: error/i)).toBeInTheDocument();
     expect(screen.getByText(/revision request failed/i)).toBeInTheDocument();
+  });
+
+  it('connects the active session to SSE and surfaces live stream state in the shell', async () => {
+    renderWorkspace();
+
+    expect(MockEventSource.instances).toHaveLength(1);
+    expect(MockEventSource.instances[0].url).toBe('/api/events/session-123');
+
+    act(() => {
+      MockEventSource.instances[0].simulateOpen();
+    });
+
+    expect(screen.getByRole('status', { name: /stream status/i })).toHaveTextContent(/stream live/i);
+
+    act(() => {
+      MockEventSource.instances[0].simulateMessage({
+        type: 'phase_start',
+        session_id: 'session-123',
+        phase: 'phase_3',
+        phase_index: 2,
+      });
+    });
   });
 });

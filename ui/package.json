@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "test": "vitest run",
-    "test:ci": "npm run test:ui && npm run build && npm run test:budgets",
+    "test:ci": "npm run lint && npm run test:ui && npm run build && npm run test:budgets",
     "test:ui": "vitest run",
     "test:e2e": "PLAYWRIGHT_BROWSERS_PATH=.playwright/browser-cache playwright test",
     "test:e2e:remote": "PLAYWRIGHT_BROWSERS_PATH=.playwright/browser-cache PW_TEST_CONNECT_WS_ENDPOINT=ws://127.0.0.1:3000/ playwright test",

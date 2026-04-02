@@ -1,8 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SessionBootstrap } from '@/features/session/SessionBootstrap';
 import * as api from '@/lib/api/client';
 import type { StartNegotiationResponse } from '@/lib/api/types';
@@ -19,6 +19,10 @@ function createWrapper() {
     return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
   };
 }
+
+beforeEach(() => {
+  vi.spyOn(api, 'fetchSessionInfo').mockResolvedValue({ has_checkpoint: false });
+});
 
 afterEach(() => {
   cleanup();
@@ -225,15 +229,15 @@ describe('Session bootstrap query layer', () => {
     });
 
     await user.click(await screen.findByRole('tab', { name: /manual entry/i }));
-    await user.clear(screen.getByLabelText(/jira key/i));
-    await user.type(screen.getByLabelText(/jira key/i), 'OPS-44');
-    await user.clear(screen.getByLabelText(/summary/i));
-    await user.type(screen.getByLabelText(/summary/i), 'Capture manual intake');
-    await user.clear(screen.getByLabelText(/acceptance criteria/i));
-    await user.type(
-      screen.getByLabelText(/acceptance criteria/i),
-      'Operator can enter a story{enter}Operator can keep working without Jira',
-    );
+    fireEvent.change(screen.getByLabelText(/jira key/i), { target: { value: 'OPS-44' } });
+    fireEvent.change(screen.getByLabelText(/summary/i), {
+      target: { value: 'Capture manual intake' },
+    });
+    fireEvent.change(screen.getByLabelText(/acceptance criteria/i), {
+      target: {
+        value: 'Operator can enter a story\nOperator can keep working without Jira',
+      },
+    });
 
     await user.click(screen.getByRole('button', { name: /start session from manual story/i }));
 

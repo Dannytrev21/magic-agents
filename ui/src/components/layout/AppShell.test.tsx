@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { AppProviders } from '@/app/AppProviders';
 import { AppShell } from '@/components/layout/AppShell';
 
 function renderShell() {
@@ -9,24 +10,27 @@ function renderShell() {
   const onToggleRightPane = vi.fn();
 
   render(
-    <AppShell
-      centerPane={<div>Center workspace</div>}
-      layoutMode="desktop"
-      leftPaneCollapsed={false}
-      leftRail={<div>Story intake</div>}
-      mobilePane="workspace"
-      onMobilePaneChange={onMobilePaneChange}
-      onToggleLeftPane={onToggleLeftPane}
-      onToggleRightPane={onToggleRightPane}
-      phaseLabel="Phase 2: Happy Path Contract"
-      rightPaneCollapsed={false}
-      rightRail={<div>Evidence inspector</div>}
-      sessionState="active"
-      statusLabel="Awaiting operator input"
-      storyKey="MAG-22"
-      storySummary="Port the operator workspace layout"
-      workspaceLabel="Negotiation surface"
-    />,
+    <AppProviders>
+      <AppShell
+        centerPane={<div>Center workspace</div>}
+        layoutMode="desktop"
+        leftPaneCollapsed={false}
+        leftRail={<div>Story intake</div>}
+        mobilePane="workspace"
+        onMobilePaneChange={onMobilePaneChange}
+        onToggleLeftPane={onToggleLeftPane}
+        onToggleRightPane={onToggleRightPane}
+        phaseLabel="Phase 2: Happy Path Contract"
+        rightPaneCollapsed={false}
+        rightRail={<div>Evidence inspector</div>}
+        connectionStatus="connected"
+        sessionState="active"
+        statusLabel="Awaiting operator input"
+        storyKey="MAG-22"
+        storySummary="Port the operator workspace layout"
+        workspaceLabel="Negotiation surface"
+      />
+    </AppProviders>,
   );
 
   return {
@@ -78,6 +82,7 @@ describe('AppShell', () => {
     expect(screen.getByRole('status', { name: /session status/i })).toHaveTextContent(
       /awaiting operator input/i,
     );
+    expect(screen.getByRole('status', { name: /stream status/i })).toHaveTextContent(/stream live/i);
   });
 
   it('supports collapsed panel state and mobile panel switching controls', async () => {
@@ -87,23 +92,26 @@ describe('AppShell', () => {
     const onToggleRightPane = vi.fn();
 
     render(
-      <AppShell
-        centerPane={<div>Center workspace</div>}
-        layoutMode="mobile"
-        leftPaneCollapsed
-        leftRail={<div>Story intake</div>}
-        mobilePane="workspace"
-        onMobilePaneChange={onMobilePaneChange}
-        onToggleLeftPane={onToggleLeftPane}
-        onToggleRightPane={onToggleRightPane}
-        phaseLabel="Phase 2: Happy Path Contract"
-        rightPaneCollapsed
-        rightRail={<div>Evidence inspector</div>}
-        sessionState="idle"
-        statusLabel="No active session"
-        storyKey={null}
-        workspaceLabel="Workspace overview"
-      />,
+      <AppProviders>
+        <AppShell
+          centerPane={<div>Center workspace</div>}
+          layoutMode="mobile"
+          leftPaneCollapsed
+          leftRail={<div>Story intake</div>}
+          mobilePane="workspace"
+          onMobilePaneChange={onMobilePaneChange}
+          onToggleLeftPane={onToggleLeftPane}
+          onToggleRightPane={onToggleRightPane}
+          phaseLabel="Phase 2: Happy Path Contract"
+          rightPaneCollapsed
+          rightRail={<div>Evidence inspector</div>}
+          connectionStatus="disconnected"
+          sessionState="idle"
+          statusLabel="No active session"
+          storyKey={null}
+          workspaceLabel="Workspace overview"
+        />
+      </AppProviders>,
     );
 
     expect(screen.getByTestId('workspace-grid')).toHaveAttribute('data-layout-mode', 'mobile');
@@ -121,23 +129,26 @@ describe('AppShell', () => {
 
   it('keeps fixed pane slots when the desktop story rail is collapsed', () => {
     render(
-      <AppShell
-        centerPane={<div>Center workspace</div>}
-        layoutMode="desktop"
-        leftPaneCollapsed
-        leftRail={<div>Story intake</div>}
-        mobilePane="workspace"
-        onMobilePaneChange={vi.fn()}
-        onToggleLeftPane={vi.fn()}
-        onToggleRightPane={vi.fn()}
-        phaseLabel="Phase 2: Happy Path Contract"
-        rightPaneCollapsed={false}
-        rightRail={<div>Evidence inspector</div>}
-        sessionState="idle"
-        statusLabel="No active session"
-        storyKey={null}
-        workspaceLabel="Workspace overview"
-      />,
+      <AppProviders>
+        <AppShell
+          centerPane={<div>Center workspace</div>}
+          layoutMode="desktop"
+          leftPaneCollapsed
+          leftRail={<div>Story intake</div>}
+          mobilePane="workspace"
+          onMobilePaneChange={vi.fn()}
+          onToggleLeftPane={vi.fn()}
+          onToggleRightPane={vi.fn()}
+          phaseLabel="Phase 2: Happy Path Contract"
+          rightPaneCollapsed={false}
+          rightRail={<div>Evidence inspector</div>}
+          connectionStatus="disconnected"
+          sessionState="idle"
+          statusLabel="No active session"
+          storyKey={null}
+          workspaceLabel="Workspace overview"
+        />
+      </AppProviders>,
     );
 
     const main = screen.getByRole('main');

@@ -1,7 +1,6 @@
-import { Suspense, lazy, useEffect, useState, type RefObject } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState, type RefObject } from 'react';
 import { Button } from '@/components/primitives/Button';
 import { Badge } from '@/components/primitives/Badge';
-import { Divider } from '@/components/primitives/Divider';
 import { EmptyState } from '@/components/primitives/EmptyState';
 import { Mono } from '@/components/primitives/Mono';
 import { SectionHeader } from '@/components/primitives/SectionHeader';
@@ -25,8 +24,12 @@ import {
 import type { StartNegotiationResponse } from '@/lib/api/types';
 import styles from '@/features/workspace/workspace.module.css';
 
+// Start fetching the verification workspace chunk as soon as the center pane module loads so
+// switching into verification does not sit in Suspense longer than necessary.
+const workspaceVerificationConsoleModule = import('@/features/workspace/WorkspaceVerificationConsole');
+
 const WorkspaceVerificationConsole = lazy(async () => {
-  const module = await import('@/features/workspace/WorkspaceVerificationConsole');
+  const module = await workspaceVerificationConsoleModule;
   return { default: module.WorkspaceVerificationConsole };
 });
 
@@ -82,6 +85,7 @@ export function WorkspaceCenterPane({
   const [verificationState, setVerificationState] = useState<VerificationWorkspaceState>(() =>
     buildInitialVerificationState(activeSession),
   );
+  const initializedVerificationSessionIdRef = useRef(activeSession?.session_id ?? null);
 
   useEffect(() => {
     if (!activeSession || activeView !== 'negotiation') {
@@ -95,7 +99,7 @@ export function WorkspaceCenterPane({
         return;
       }
 
-      if (isTextInputTarget(event.target)) {
+      if (isTextInputTarget(event.target) || isTextInputTarget(document.activeElement)) {
         return;
       }
 
@@ -115,8 +119,15 @@ export function WorkspaceCenterPane({
   }, [activeSession, activeView, onPhaseSelect]);
 
   useEffect(() => {
+    const nextSessionId = activeSession?.session_id ?? null;
+
+    if (initializedVerificationSessionIdRef.current === nextSessionId) {
+      return;
+    }
+
+    initializedVerificationSessionIdRef.current = nextSessionId;
     setVerificationState(buildInitialVerificationState(activeSession));
-  }, [activeSession?.session_id]);
+  }, [activeSession]);
 
   if (!activeSession) {
     return (
