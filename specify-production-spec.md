@@ -3,7 +3,7 @@
 
 **Version:** 1.0
 **Status:** Design Complete
-**Last Updated:** 2026-03-23
+**Last Updated:** 2026-04-02
 
 ---
 
@@ -129,12 +129,13 @@ CI re-runs evaluation → checkboxes ticked → ticket Done
 ┌─────────────────────────────────────────────────────────────┐
 │  Browser: localhost:8000                                     │
 │                                                              │
-│  Single-page app (Alpine.js + Prism.js)                      │
-│  ├── View 1: Negotiation (split-pane: chat + spec preview)   │
-│  ├── View 2: Execution (pipeline log + streaming verdicts)   │
-│  └── View 3: Results (evidence breakdown + Jira link)        │
+│  Single-page app (React + TypeScript + Vite)                 │
+│  ├── Left rail: story intake, AC checklist, phase timeline   │
+│  ├── Center pane: phase workspace, transcript, verification  │
+│  └── Right rail: evidence, traceability, analyst tools       │
 │                                                              │
-│  Communicates via 5 REST endpoints + SSE stream              │
+│  Built assets served by FastAPI with legacy HTML fallback    │
+│  Communicates via REST endpoints + SSE streams               │
 └──────────────────┬──────────────────────────────────────────┘
                    │ HTTP (localhost)
                    ▼
@@ -1368,38 +1369,52 @@ Layer 4: AI amendment → "here's what needs updating in the spec"
 | Component | Technology |
 |-----------|-----------|
 | Backend | FastAPI (Python) |
-| Frontend | HTML + Alpine.js (8kb, zero build) + Prism.js (YAML highlighting) |
-| Streaming | Server-Sent Events (SSE) |
-| State | File system (no database) |
+| Frontend | React 19 + TypeScript + Vite, served by FastAPI from `static/ui` with legacy HTML fallback |
+| Server state | TanStack Query + typed fetch adapters |
+| Streaming | Server-Sent Events (pipeline + negotiation event streams) |
+| State | File-system-backed backend state plus session-scoped React workspace state |
 
 ### 13.2 REST Endpoints
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| POST | /api/start | Fetch Jira ticket, start session |
-| POST | /api/message | Send developer response, get AI output |
-| POST | /api/approve | Approve spec, trigger generation |
-| POST | /api/execute | Run pipeline (streamed via SSE) |
-| GET | /api/spec/{id} | Get current spec YAML |
+| GET | /api/jira/configured | Report whether Jira-backed intake is available |
+| GET | /api/jira/stories | Load candidate Jira stories for the intake rail |
+| GET | /api/jira/ticket/{key} | Hydrate one Jira story into the typed intake model |
+| GET | /api/session/{key} | Read checkpoint/session status for a Jira story |
+| POST | /api/session/{key}/resume | Resume a checkpointed negotiation session |
+| POST | /api/start | Start a negotiation session from Jira or manual intake |
+| POST | /api/respond | Approve or revise the active phase inline |
+| POST | /api/ears-approve | Persist EARS approval before verification runs |
+| POST | /api/compile | Compile the current negotiated session into spec YAML |
+| POST | /api/generate-tests | Generate verification artifacts from the compiled spec |
+| POST | /api/pipeline/stream | Stream verification execution for the center-pane console |
+| POST | /api/jira/update | Publish Jira feedback after verification |
+| GET | /api/scan/status | Rehydrate codebase scan status in the inspector |
+| POST | /api/scan | Run or rerun the codebase scan |
+| POST | /api/plan | Load planner output in the inspector |
+| POST | /api/evaluate-phase | Load phase critique output in the inspector |
+| POST | /api/spec-diff | Load historical spec diff output in the inspector |
+| GET | /api/skills | Expose verification skill metadata to the workspace |
 
 ### 13.3 SSE Event Types
 
-| Stage | Payload |
-|-------|---------|
-| generating | skill, output, status |
-| running_tests | runner, progress, status |
-| evaluating | ac_checkbox, passed, summary |
-| updating_jira | action (checkbox_ticked, comment_posted, transitioned) |
-| complete | all_passed, verdicts_path, jira_comment_url, duration_ms |
-| error | error, phase, details |
+| Stream | Path | Payload |
+|--------|------|---------|
+| Pipeline execution | `POST /api/pipeline/stream` | compile/generate/run/evaluate updates plus final verdict summaries for the verification console |
+| Negotiation events | `GET /api/events/{session_id}?types=` | `phase_start`, `phase_complete`, `phase_error`, `validation_result`, `budget_warning`, `budget_exceeded`, and `session_checkpoint` events for real-time workspace status |
+
+The React workspace appends negotiation events into a session-scoped event store as they arrive so phase-start and phase-progress updates remain ordered even when the browser batches renders. The shell consumes that store for both the top-bar stream status and the thin live phase-progress strip.
 
 ### 13.4 UI Views
 
-**View 1: Negotiation** — Split-pane: chat conversation (left) + live YAML spec preview (right). Phase progress bar top. Input box bottom with Send and Approve buttons.
+**Story Intake Rail** — Left rail for Jira/manual intake, resumable session state, acceptance-criterion selection, phase progress, and compact session telemetry.
 
-**View 2: Execution** — Pipeline log streaming (left) + spec with verification entries lighting up green (right). SSE events update in real-time.
+**Active Workspace** — Center pane for the current negotiation phase, clarifying questions, transcript, phase mini-rail, artifact viewers, and the verification console. The app shell keeps stream health and phase-progress visible above this workspace without forcing route changes or duplicate subscriptions.
 
-**View 3: Results** — Evidence breakdown by AC checkbox. Each ref shows verification type, pass/fail, details. Link to Jira ticket.
+**Inspector Surfaces** — Right rail for evidence, codebase scan output, per-AC traceability, planner/critique tools, spec diff, and a structured spec contract viewer.
+
+**Rollout Mode** — FastAPI can still serve the legacy HTML entrypoint through `/?frontend=legacy` or `MAGIC_AGENTS_FRONTEND_MODE=legacy` while the React workspace remains the default shipped surface.
 
 ---
 

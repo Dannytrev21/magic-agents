@@ -1,7 +1,7 @@
 # Epic P7: Session Cost Accounting
 
 **Priority:** 7 (Medium)
-**Status:** Not Started
+**Status:** Done
 **Ported From:** `claw-code/src/session_store.py` (StoredSession with input/output token tracking), `claw-code/src/query_engine.py` (UsageSummary, total_usage tracking)
 **Integration Target:** `src/verify/negotiation/checkpoint.py`, `src/verify/runtime.py`
 
@@ -34,10 +34,10 @@ magic-agents persists sessions via checkpoints but does not track token usage or
 
 ### Acceptance Criteria
 
-- [ ] `save_checkpoint()` serializes usage data from `BackPressureController`.
-- [ ] `load_checkpoint()` restores usage data back to a controller.
-- [ ] Old checkpoints backward-compatible.
-- [ ] Round-trip: save → load → save produces identical usage data.
+- [x]`save_checkpoint()` serializes usage data from `BackPressureController`.
+- [x]`load_checkpoint()` restores usage data back to a controller.
+- [x]Old checkpoints backward-compatible.
+- [x]Round-trip: save → load → save produces identical usage data.
 
 ### How to Test
 
@@ -81,10 +81,10 @@ def test_old_checkpoint_backward_compat(tmp_path):
 
 ### Acceptance Criteria
 
-- [ ] `GET /api/session/{id}/cost` returns 200 with cost summary.
-- [ ] Per-phase breakdowns match `PhaseCostReport` entries from P1.
-- [ ] `estimated_cost_usd` calculated correctly.
-- [ ] `budget_utilization_pct` between 0 and 100+ (if over budget).
+- [x]`GET /api/session/{id}/cost` returns 200 with cost summary.
+- [x]Per-phase breakdowns match `PhaseCostReport` entries from P1.
+- [x]`estimated_cost_usd` calculated correctly.
+- [x]`budget_utilization_pct` between 0 and 100+ (if over budget).
 
 ### How to Test
 
@@ -123,10 +123,10 @@ def test_cost_endpoint(client):
 
 ### Acceptance Criteria
 
-- [ ] `budget_warning` emitted when soft limits crossed.
-- [ ] `budget_exceeded` emitted when hard limits crossed.
-- [ ] Events include usage summary and specific limit crossed.
-- [ ] Deduplication prevents repeated events for same threshold.
+- [x]`budget_warning` emitted when soft limits crossed.
+- [x]`budget_exceeded` emitted when hard limits crossed.
+- [x]Events include usage summary and specific limit crossed.
+- [x]Deduplication prevents repeated events for same threshold.
 
 ### How to Test
 

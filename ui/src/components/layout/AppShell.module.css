@@ -1,11 +1,20 @@
 .shell {
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--color-signal) 12%, transparent), transparent 28%),
-    linear-gradient(180deg, var(--color-bg-elevated) 0%, var(--color-bg) 38%);
+  background: var(--color-bg);
   color: var(--color-text);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .skipLink {
@@ -13,7 +22,7 @@
   left: var(--space-4);
   top: var(--space-4);
   transform: translateY(-200%);
-  transition: transform var(--motion-fast) var(--easing-standard);
+  transition: transform var(--motion-normal) var(--easing-standard);
   z-index: 20;
 }
 
@@ -26,31 +35,32 @@
   top: 0;
   z-index: 10;
   display: grid;
-  grid-template-columns: minmax(0, 18rem) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 22rem) minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-4);
   min-height: 4.5rem;
   padding: var(--space-4) var(--space-6);
   border-bottom: 1px solid var(--color-border);
-  backdrop-filter: blur(18px);
-  background: color-mix(in srgb, var(--color-bg) 88%, transparent);
+  background: var(--color-bg);
 }
 
 .brandBlock {
-  display: grid;
-  gap: var(--space-1);
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
   min-width: 0;
+  padding: 0.5rem 0;
 }
 
-.kicker {
-  color: var(--color-text-muted);
-  letter-spacing: 0.16em;
+.brandMark {
+  display: block;
+  margin: 0;
+  font-size: clamp(1.78rem, 0.74vw + 1.34rem, 2.22rem);
+  font-weight: 700;
+  letter-spacing: -0.038em;
+  line-height: 0.88;
   text-transform: uppercase;
-}
-
-.brandName {
-  display: grid;
-  gap: 0;
+  color: var(--color-text);
 }
 
 .contextBlock {
@@ -93,7 +103,7 @@
   padding: 0.55rem 0.8rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-round);
-  background: color-mix(in srgb, var(--color-surface) 82%, transparent);
+  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
 }
 
 .statusDot {
@@ -124,14 +134,6 @@
   gap: var(--space-2);
 }
 
-.controlButton {
-  min-height: 2.25rem;
-  padding-inline: var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-round);
-  background: color-mix(in srgb, var(--color-surface) 64%, transparent);
-}
-
 .workspaceFrame {
   position: relative;
   min-height: 0;
@@ -160,8 +162,13 @@
 .pane {
   min-width: 0;
   min-height: 0;
+  overflow: hidden;
   border-right: 1px solid var(--color-border);
-  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
+  background: var(--color-surface);
+}
+
+.leftPane {
+  grid-column: 1;
 }
 
 .pane:last-child {
@@ -169,15 +176,24 @@
 }
 
 .mainPane {
-  background: color-mix(in srgb, var(--color-bg-elevated) 74%, transparent);
+  grid-column: 2;
+  background: var(--color-bg-elevated);
 }
 
-.inspectorPane {}
+.inspectorPane {
+  grid-column: 3;
+}
+
+.workspaceGrid[data-layout-mode='mobile'] .leftPane,
+.workspaceGrid[data-layout-mode='mobile'] .mainPane,
+.workspaceGrid[data-layout-mode='mobile'] .inspectorPane {
+  grid-column: 1;
+}
 
 .paneSurface {
   height: calc(100vh - 4.5rem);
   overflow-y: auto;
-  padding: var(--space-5);
+  padding: clamp(var(--space-4), 1.8vw, var(--space-6));
 }
 
 .overlayFrame {
@@ -187,8 +203,7 @@
   bottom: 0;
   width: min(24rem, calc(100vw - 3rem));
   border-left: 1px solid var(--color-border);
-  background: color-mix(in srgb, var(--color-bg) 92%, transparent);
-  box-shadow: -18px 0 32px color-mix(in srgb, var(--color-ink) 28%, transparent);
+  background: var(--color-bg);
 }
 
 .overlayPane {
@@ -207,8 +222,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   border-top: 1px solid var(--color-border);
-  background: color-mix(in srgb, var(--color-bg) 92%, transparent);
-  backdrop-filter: blur(18px);
+  background: var(--color-bg);
 }
 
 .mobileTab {
@@ -227,7 +241,11 @@
 .mobileTab[aria-selected='true'] {
   border-top-color: var(--color-signal);
   color: var(--color-text);
-  background: color-mix(in srgb, var(--color-surface) 80%, transparent);
+}
+
+.mobileTab:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: -2px;
 }
 
 @media (max-width: 1180px) {

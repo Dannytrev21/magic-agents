@@ -97,7 +97,7 @@ def test_checkpoint_round_trip_preserves_compaction_summary(monkeypatch, tmp_pat
         harness.add_to_log("phase_0", "ai", f"message-{index}")
 
     save_checkpoint(context, "phase_0")
-    loaded_context, _ = load_checkpoint(context.jira_key)
+    loaded_context, _, _controller = load_checkpoint(context.jira_key)
 
     assert loaded_context.negotiation_log[0]["kind"] == "compaction_summary"
     assert loaded_context.negotiation_log[-1]["content"] == "message-6"

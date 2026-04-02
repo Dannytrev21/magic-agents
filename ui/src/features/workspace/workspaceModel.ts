@@ -13,14 +13,15 @@ export const negotiationPhases = [
 export const centerWorkspaceViews = [
   { value: 'overview', label: 'Overview' },
   { value: 'negotiation', label: 'Negotiation' },
+  { value: 'verification', label: 'Verification' },
   { value: 'traceability', label: 'Traceability' },
 ] as const;
 
 export const inspectorViews = [
   { value: 'evidence', label: 'Evidence' },
-  { value: 'scan', label: 'Scan output' },
-  { value: 'traceability', label: 'Traceability' },
-  { value: 'analysis', label: 'Planning & critique' },
+  { value: 'scan', label: 'Scan' },
+  { value: 'traceability', label: 'Links' },
+  { value: 'analysis', label: 'Tools' },
 ] as const;
 
 export const mobileWorkspacePanes = [

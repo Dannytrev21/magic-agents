@@ -1,6 +1,5 @@
 import type {
   AcceptanceCriterionClassification,
-  AcceptanceCriterionInput,
   AcceptanceCriterionVerdict,
   SessionCheckpointSummary,
   SessionUsageSummary,

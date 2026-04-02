@@ -1,8 +1,13 @@
-import { createRef } from 'react';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { createRef, type ReactElement, type ReactNode } from 'react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { WorkspaceCenterPane } from '@/features/workspace/WorkspaceCenterPane';
+import {
+  createEventStore,
+  EventStoreProvider,
+  type EventStore,
+} from '@/lib/api/eventStore';
 import type { StartNegotiationResponse } from '@/lib/api/types';
 
 const activeSession: StartNegotiationResponse = {
@@ -97,10 +102,23 @@ afterEach(() => {
   cleanup();
 });
 
+function makeWrapper(store: EventStore) {
+  return function Wrapper({ children }: { children: ReactNode }) {
+    return EventStoreProvider({ store, children });
+  };
+}
+
+function renderPane(ui: ReactElement, store = createEventStore()) {
+  return {
+    store,
+    ...render(ui, { wrapper: makeWrapper(store) }),
+  };
+}
+
 describe('WorkspaceCenterPane', () => {
   it('renders a sticky mini-rail with completed, active, and pending phase states', () => {
     const focusRef = createRef<HTMLElement>();
-    const { container } = render(
+    const { container } = renderPane(
       <WorkspaceCenterPane
         activeSession={activeSession}
         activeView="negotiation"
@@ -133,8 +151,10 @@ describe('WorkspaceCenterPane', () => {
     expect(phaseButtons[4]).toHaveAttribute('data-state', 'pending');
   });
 
-  it('renders a structured review surface with a summary-first hierarchy, clarifying questions, and raw payload fallback', () => {
-    render(
+  it('renders a structured review surface with quieter copy and collapsible detail areas', async () => {
+    const user = userEvent.setup();
+
+    renderPane(
       <WorkspaceCenterPane
         activeSession={activeSession}
         activeView="negotiation"
@@ -156,18 +176,23 @@ describe('WorkspaceCenterPane', () => {
 
     expect(screen.getByText(/primary decision/i)).toBeInTheDocument();
     expect(screen.getByText(/failure responses are mapped/i)).toBeInTheDocument();
-    expect(screen.getByText(/clarifying questions/i)).toBeInTheDocument();
+    expect(screen.getByText(/^questions$/i)).toBeInTheDocument();
     expect(screen.getByText(/404 or 410/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /approve phase/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /request revision/i })).toBeInTheDocument();
-    expect(screen.getByText(/raw payload/i)).toBeInTheDocument();
-    expect(screen.getByRole('log', { name: /phase transcript/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^approve$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^revise$/i })).toBeInTheDocument();
+    expect(screen.getByText(/raw data/i)).toBeInTheDocument();
+    expect(screen.getByText(/^log$/i).closest('details')).not.toHaveAttribute('open');
+
+    await user.click(screen.getByText(/^log$/i));
+
+    expect(screen.getByText(/^log$/i).closest('details')).toHaveAttribute('open');
   });
 
   it('routes revise feedback inline and disables duplicate submissions while an action is pending', async () => {
     const user = userEvent.setup();
     const onRevisePhase = vi.fn();
     const onDraftFeedbackChange = vi.fn();
+    const store = createEventStore();
     const { rerender } = render(
       <WorkspaceCenterPane
         activeSession={activeSession}
@@ -186,10 +211,13 @@ describe('WorkspaceCenterPane', () => {
         statusLabel="Awaiting operator input"
         storySummary="Port the active phase workspace"
       />,
+      { wrapper: makeWrapper(store) },
     );
 
-    await user.type(screen.getByLabelText(/revision feedback/i), ' Please keep owner checks explicit.');
-    await user.click(screen.getByRole('button', { name: /request revision/i }));
+    fireEvent.change(screen.getByLabelText(/notes/i), {
+      target: { value: 'Need clearer deleted-user guidance Please keep owner checks explicit.' },
+    });
+    await user.click(screen.getByRole('button', { name: /^revise$/i }));
 
     expect(onDraftFeedbackChange).toHaveBeenCalled();
     expect(onRevisePhase).toHaveBeenCalledTimes(1);
@@ -219,15 +247,15 @@ describe('WorkspaceCenterPane', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: /approve phase/i })).toBeDisabled();
-    expect(screen.getByRole('button', { name: /request revision/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^approve$/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^revise$/i })).toBeDisabled();
   });
 
   it('supports completed-phase reopening and suppresses quick jumps while the feedback field is focused', async () => {
     const user = userEvent.setup();
     const onPhaseSelect = vi.fn();
 
-    render(
+    renderPane(
       <WorkspaceCenterPane
         activeSession={activeSession}
         activeView="negotiation"
@@ -253,12 +281,91 @@ describe('WorkspaceCenterPane', () => {
     await user.keyboard('3');
     expect(onPhaseSelect).toHaveBeenCalledWith(3);
 
-    const feedback = screen.getByLabelText(/revision feedback/i);
+    const feedback = screen.getByLabelText(/notes/i);
     await user.click(feedback);
     await user.keyboard('2');
 
     await waitFor(() => {
       expect(onPhaseSelect).toHaveBeenCalledTimes(2);
     });
+  });
+
+  it('marks the active workspace region busy during in-place transitions', () => {
+    renderPane(
+      <WorkspaceCenterPane
+        activeSession={activeSession}
+        activeView="negotiation"
+        draftFeedback=""
+        focusRef={createRef<HTMLElement>()}
+        isTransitionPending
+        onApprovePhase={vi.fn()}
+        onDraftFeedbackChange={vi.fn()}
+        onPhaseSelect={vi.fn()}
+        onRevisePhase={vi.fn()}
+        onViewChange={vi.fn()}
+        phaseActionState={{ activeAction: null, isPending: false, message: null, status: 'idle' }}
+        selectedAcceptanceCriterionIndex={null}
+        selectedPhaseNumber={4}
+        statusLabel="Awaiting operator input"
+        storySummary="Port the active phase workspace"
+      />,
+    );
+
+    expect(screen.getByRole('region', { name: /active workspace region/i })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+  });
+
+  it('surfaces live phase progress in both the mini-rail and workspace header', () => {
+    const store = createEventStore();
+
+    renderPane(
+      <WorkspaceCenterPane
+        activeSession={activeSession}
+        activeView="negotiation"
+        draftFeedback=""
+        focusRef={createRef<HTMLElement>()}
+        isTransitionPending={false}
+        onApprovePhase={vi.fn()}
+        onDraftFeedbackChange={vi.fn()}
+        onPhaseSelect={vi.fn()}
+        onRevisePhase={vi.fn()}
+        onViewChange={vi.fn()}
+        phaseActionState={{ activeAction: null, isPending: false, message: null, status: 'idle' }}
+        selectedAcceptanceCriterionIndex={null}
+        selectedPhaseNumber={4}
+        statusLabel="Awaiting operator input"
+        storySummary="Port the active phase workspace"
+      />,
+      store,
+    );
+
+    act(() => {
+      store.dispatch({
+        type: 'phase_start',
+        session_id: 'session-u4',
+        phase: 'phase_4',
+        phase_index: 3,
+      });
+    });
+
+    expect(
+      screen.getByRole('progressbar', { name: /phase progress in the phase rail/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('progressbar', { name: /phase progress in the workspace header/i }),
+    ).toBeInTheDocument();
+
+    act(() => {
+      store.dispatch({
+        type: 'phase_progress',
+        session_id: 'session-u4',
+        phase: 'phase_4',
+        message: 'Enumerating deleted-user failures',
+      });
+    });
+
+    expect(screen.getAllByText(/enumerating deleted-user failures/i)).toHaveLength(2);
   });
 });

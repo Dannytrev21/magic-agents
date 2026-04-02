@@ -11,6 +11,34 @@ import type { StartNegotiationResponse } from '@/lib/api/types';
 
 const mockRespondMutation = vi.fn();
 
+class MockEventSource {
+  static instances: MockEventSource[] = [];
+
+  onerror: (() => void) | null = null;
+  onmessage: ((event: MessageEvent) => void) | null = null;
+  onopen: (() => void) | null = null;
+  closed = false;
+  readyState = 0;
+
+  constructor(public readonly url: string) {
+    MockEventSource.instances.push(this);
+  }
+
+  close() {
+    this.closed = true;
+    this.readyState = 2;
+  }
+
+  simulateMessage(data: Record<string, unknown>) {
+    this.onmessage?.(new MessageEvent('message', { data: JSON.stringify(data) }));
+  }
+
+  simulateOpen() {
+    this.readyState = 1;
+    this.onopen?.();
+  }
+}
+
 vi.mock('@/lib/query/sessionHooks', () => ({
   useRespondMutation: () => ({
     mutateAsync: mockRespondMutation,
@@ -340,12 +368,16 @@ describe('Operator workspace layout', () => {
   beforeEach(() => {
     setViewport(1440);
     installStorage();
+    MockEventSource.instances = [];
+    vi.stubGlobal('EventSource', MockEventSource);
   });
 
   it('renders top-bar session context and the wired workspace shell for active sessions', () => {
     renderWorkspace();
 
-    expect(screen.getAllByRole('status')[0]).toHaveTextContent(/awaiting operator input/i);
+    expect(screen.getByRole('status', { name: /session status/i })).toHaveTextContent(
+      /awaiting operator input/i,
+    );
     expect(screen.getByText(/bootstrap session: session-123/i)).toBeInTheDocument();
     expect(screen.getByText(/phase 3: precondition formalization/i)).toBeInTheDocument();
     expect(screen.getByText('Center view: overview')).toBeInTheDocument();
@@ -417,6 +449,66 @@ describe('Operator workspace layout', () => {
     expect(await screen.findByText('MAG-222')).toBeInTheDocument();
     expect(screen.getAllByText(/recovered story summary/i)).toHaveLength(2);
     expect(screen.getByText('Center view: negotiation')).toBeInTheDocument();
+  });
+
+  it('switches the live-update indicator from idle to connecting when a session starts', async () => {
+    const user = userEvent.setup();
+
+    setViewport(1440);
+    installStorage();
+    renderPage({
+      initialEntry: '/',
+      initialSessionValue: null,
+      initialStorySummary: null,
+    });
+
+    expect(screen.getByRole('status', { name: /connection status/i })).toHaveTextContent(
+      /live updates idle/i,
+    );
+
+    await user.click(screen.getByRole('button', { name: /start mock session/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('status', { name: /connection status/i })).toHaveTextContent(
+        /connecting live updates/i,
+      );
+    });
+  });
+
+  it('announces session and phase transitions while keeping focus on the active workspace flow', async () => {
+    const user = userEvent.setup();
+
+    mockRespondMutation.mockResolvedValue({
+      ...initialSession,
+      phase_number: 4,
+      phase_title: 'Failure Mode Enumeration',
+      session_id: 'session-started',
+    });
+
+    setViewport(1440);
+    installStorage();
+    renderPage({
+      initialEntry: '/',
+      initialSessionValue: null,
+      initialStorySummary: null,
+    });
+
+    await user.click(screen.getByRole('button', { name: /start mock session/i }));
+
+    const announcement = screen.getByRole('status', { name: /workspace announcements/i });
+
+    await waitFor(() => {
+      expect(announcement).toHaveTextContent(/session started for mag-222/i);
+      expect(screen.getByText('Center view: negotiation').closest('section')).toHaveFocus();
+    });
+
+    await user.click(screen.getByRole('button', { name: /approve phase/i }));
+
+    await waitFor(() => {
+      expect(announcement).toHaveTextContent(/phase approved/i);
+      expect(announcement).toHaveTextContent(/failure mode enumeration/i);
+      expect(screen.getByText('Center view: negotiation').closest('section')).toHaveFocus();
+    });
   });
 
   it('preserves draft feedback across view switches and confirmed session refreshes', async () => {
@@ -512,5 +604,29 @@ describe('Operator workspace layout', () => {
     expect(screen.getAllByDisplayValue('Need tighter error handling')).toHaveLength(2);
     expect(screen.getByText(/center action status: error/i)).toBeInTheDocument();
     expect(screen.getByText(/revision request failed/i)).toBeInTheDocument();
+  });
+
+  it('connects the active session to SSE and surfaces live stream state in the shell', async () => {
+    renderWorkspace();
+
+    expect(MockEventSource.instances).toHaveLength(1);
+    expect(MockEventSource.instances[0].url).toBe('/api/events/session-123');
+
+    act(() => {
+      MockEventSource.instances[0].simulateOpen();
+    });
+
+    expect(screen.getByRole('status', { name: /connection status/i })).toHaveTextContent(
+      /live updates connected/i,
+    );
+
+    act(() => {
+      MockEventSource.instances[0].simulateMessage({
+        type: 'phase_start',
+        session_id: 'session-123',
+        phase: 'phase_3',
+        phase_index: 2,
+      });
+    });
   });
 });

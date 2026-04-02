@@ -8,6 +8,16 @@
 
 The workspace only works if operators can reliably enter it. Jira story selection, manual entry, checkpoint resume, and stateful session feedback are the top-of-funnel actions that determine whether the UI feels operational or merely decorative.
 
+## Implementation Status
+
+- Implemented in the React workspace and reflected in `progress.json` on 2026-04-01.
+- `U3.1` shipped a two-mode left-rail intake flow with explicit Jira loading, empty, and fallback states plus shared manual and Jira normalization.
+- `U3.2` shipped checkpoint lookup, resume and fresh-start actions, and controlled resume-failure handling.
+- `U3.3` shipped backend-confirmed session state modeling that preserves draft feedback and tightens query invalidation.
+- `U3.4` shipped a compact phase-aware acceptance-criteria rail with selection, classification, verdict state, and truncation behavior.
+- `U3.5` shipped a seven-phase left-rail timeline with pending, active, complete, and failed state handling.
+- `U3.6` shipped compact session health telemetry with available, warning, and unavailable states from backend usage metadata.
+
 ---
 
 ## Story U3.1: Unify Jira intake and manual entry in the left rail
@@ -34,10 +44,10 @@ The workspace only works if operators can reliably enter it. Jira story selectio
 
 ### Acceptance Criteria
 
-- [ ] Jira story intake and manual entry share one left-rail surface.
-- [ ] Jira loading, empty, and misconfiguration states are explicitly designed.
-- [ ] Story filtering uses a responsive input experience for larger lists.
-- [ ] Manual entry produces the same normalized state shape as Jira intake.
+- [x] Jira story intake and manual entry share one left-rail surface.
+- [x] Jira loading, empty, and misconfiguration states are explicitly designed.
+- [x] Story filtering uses a responsive input experience for larger lists.
+- [x] Manual entry produces the same normalized state shape as Jira intake.
 
 ### How to Test
 
@@ -71,10 +81,10 @@ The workspace only works if operators can reliably enter it. Jira story selectio
 
 ### Acceptance Criteria
 
-- [ ] The left rail shows resume affordances when checkpoint data exists.
-- [ ] Resume loads phase number, summary metadata, and current session context.
-- [ ] Failed resume actions do not leave the workspace in a broken intermediate state.
-- [ ] Operators can intentionally start a fresh session when a checkpoint exists.
+- [x] The left rail shows resume affordances when checkpoint data exists.
+- [x] Resume loads phase number, summary metadata, and current session context.
+- [x] Failed resume actions do not leave the workspace in a broken intermediate state.
+- [x] Operators can intentionally start a fresh session when a checkpoint exists.
 
 ### How to Test
 
@@ -108,10 +118,10 @@ The workspace only works if operators can reliably enter it. Jira story selectio
 
 ### Acceptance Criteria
 
-- [ ] Session identity, phase number, and status are derived from backend-confirmed state.
-- [ ] Draft user feedback survives inspector switches and non-destructive refreshes.
-- [ ] Mutations invalidate or refresh only the required queries.
-- [ ] The UI does not show a completed phase before the backend confirms it.
+- [x] Session identity, phase number, and status are derived from backend-confirmed state.
+- [x] Draft user feedback survives inspector switches and non-destructive refreshes.
+- [x] Mutations invalidate or refresh only the required queries.
+- [x] The UI does not show a completed phase before the backend confirms it.
 
 ### How to Test
 
@@ -145,10 +155,10 @@ The workspace only works if operators can reliably enter it. Jira story selectio
 
 ### Acceptance Criteria
 
-- [ ] AC rows show index and text for the selected story.
-- [ ] Classification badges and verdict indicators appear when data exists.
-- [ ] Selecting an AC updates related workspace context.
-- [ ] Long AC text is truncated responsibly with access to full text.
+- [x] AC rows show index and text for the selected story.
+- [x] Classification badges and verdict indicators appear when data exists.
+- [x] Selecting an AC updates related workspace context.
+- [x] Long AC text is truncated responsibly with access to full text.
 
 ### How to Test
 
@@ -182,10 +192,10 @@ The workspace only works if operators can reliably enter it. Jira story selectio
 
 ### Acceptance Criteria
 
-- [ ] The timeline renders all seven phases in order.
-- [ ] Active, complete, pending, and failed states are distinct.
-- [ ] Completed phases can be revisited from the timeline where supported.
-- [ ] The active phase remains easy to locate in long left-rail sessions.
+- [x] The timeline renders all seven phases in order.
+- [x] Active, complete, pending, and failed states are distinct.
+- [x] Completed phases can be revisited from the timeline where supported.
+- [x] The active phase remains easy to locate in long left-rail sessions.
 
 ### How to Test
 
@@ -219,10 +229,10 @@ The workspace only works if operators can reliably enter it. Jira story selectio
 
 ### Acceptance Criteria
 
-- [ ] Available telemetry is rendered in a compact health section.
-- [ ] Warning states are visible and understandable.
-- [ ] Unsupported or unavailable telemetry renders a clear fallback state.
-- [ ] Health data updates without forcing a full workspace reload.
+- [x] Available telemetry is rendered in a compact health section.
+- [x] Warning states are visible and understandable.
+- [x] Unsupported or unavailable telemetry renders a clear fallback state.
+- [x] Health data updates without forcing a full workspace reload.
 
 ### How to Test
 

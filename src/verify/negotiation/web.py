@@ -5,10 +5,12 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 import yaml
 
+from verify.backpressure import BackPressureController, PhaseCostReport
+from verify.bootstrap import BootstrapReport, build_bootstrap_graph
 from verify.context import VerificationContext
 from verify.llm_client import LLMClient
 from verify.negotiation.checkpoint import get_session_info
@@ -20,17 +22,33 @@ from verify.negotiation.phase5 import run_phase5
 from verify.negotiation.phase6 import run_phase6
 from verify.negotiation.phase7 import run_phase7
 from verify.negotiation.synthesis import run_synthesis
-from verify.runtime import SessionState, SessionStore
+from verify.runtime import RuntimeEvent, SessionState, SessionStore
 
 app = FastAPI(title="Negotiation UI")
 
 STATIC_DIR = Path(__file__).parent.parent.parent.parent / "static"
+FRONTEND_MODE_ENV = "MAGIC_AGENTS_FRONTEND_MODE"
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 SESSION_STORE = SessionStore()
 
 # Legacy alias kept for tests that clear the in-memory session dictionary directly.
 _session = SESSION_STORE.sessions
+
+# P8: Run bootstrap graph at module load to populate health report
+_BOOTSTRAP_REPORT: BootstrapReport | None = None
+
+
+def _run_bootstrap() -> BootstrapReport:
+    graph = build_bootstrap_graph()
+    return graph.execute({})
+
+
+try:
+    _BOOTSTRAP_REPORT = _run_bootstrap()
+except Exception:
+    _BOOTSTRAP_REPORT = BootstrapReport(ready=False, total_bootstrap_ms=0.0, stages={})
+
 
 SCAN_STATE: dict[str, Any] = {
     "project_root": "",
@@ -73,20 +91,136 @@ async def explore_endpoint(request: Request):
 
 
 # ------------------------------------------------------------------
+# P6.3: SSE Event Streaming Endpoint
+# ------------------------------------------------------------------
+
+
+@app.get("/api/events/{session_id}")
+async def events_endpoint(session_id: str, request: Request):
+    """Stream typed SSE events for a session, with optional type filtering."""
+    state = SESSION_STORE.get(session_id)
+    if state is None:
+        return JSONResponse({"error": "Session not found"}, status_code=404)
+
+    types_param = request.query_params.get("types", "")
+    allowed_types: set[str] | None = None
+    if types_param:
+        allowed_types = {t.strip() for t in types_param.split(",") if t.strip()}
+
+    def stream():
+        for event in list(state.event_buffer):
+            if allowed_types and event.type not in allowed_types:
+                continue
+            yield event.as_sse()
+
+    return StreamingResponse(
+        stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+# ------------------------------------------------------------------
+# P7.2: Session Cost Summary Endpoint
+# ------------------------------------------------------------------
+
+# Default per-token pricing (USD per million tokens)
+_DEFAULT_INPUT_RATE = 3.0   # $3/M input tokens
+_DEFAULT_OUTPUT_RATE = 15.0  # $15/M output tokens
+
+
+@app.get("/api/session/{session_id}/cost")
+async def session_cost_endpoint(session_id: str):
+    """Return cumulative token usage, per-phase breakdowns, and estimated cost."""
+    state = SESSION_STORE.get(session_id)
+    if state is None:
+        return JSONResponse({"error": "Session not found"}, status_code=404)
+
+    controller = getattr(state, "backpressure", None) or BackPressureController()
+    reports: list[PhaseCostReport] = getattr(state, "phase_cost_reports", [])
+
+    total_in = sum(r.tokens_in for r in reports)
+    total_out = sum(r.tokens_out for r in reports)
+
+    estimated_cost = (
+        total_in / 1_000_000 * _DEFAULT_INPUT_RATE
+        + total_out / 1_000_000 * _DEFAULT_OUTPUT_RATE
+    )
+
+    max_tokens = controller.max_tokens
+    budget_pct = (controller.tokens_used / max_tokens * 100) if max_tokens > 0 else 0.0
+
+    return JSONResponse({
+        "total_input_tokens": total_in,
+        "total_output_tokens": total_out,
+        "total_api_calls": controller.api_calls,
+        "estimated_cost_usd": round(estimated_cost, 6),
+        "budget_utilization_pct": round(budget_pct, 2),
+        "phases": [
+            {
+                "phase_name": r.phase_name,
+                "api_calls": r.api_calls,
+                "tokens_in": r.tokens_in,
+                "tokens_out": r.tokens_out,
+                "wall_clock_seconds": r.wall_clock_seconds,
+                "retries": r.retries,
+                "status": r.status,
+            }
+            for r in reports
+        ],
+    })
+
+
+# ------------------------------------------------------------------
+# P8.3: Health Check Endpoint
+# ------------------------------------------------------------------
+
+
+@app.get("/api/health")
+async def health_endpoint():
+    """Return bootstrap readiness and per-stage status."""
+    if _BOOTSTRAP_REPORT is None:
+        return JSONResponse(
+            {"ready": False, "total_bootstrap_ms": 0, "stages": {}},
+            status_code=200,
+        )
+    return JSONResponse(_BOOTSTRAP_REPORT.to_dict())
+
+
+# ------------------------------------------------------------------
 # Pages
 # ------------------------------------------------------------------
 
 
 @app.get("/", response_class=HTMLResponse)
-async def index():
-    return _resolve_frontend_index().read_text()
+async def index(request: Request):
+    return _resolve_frontend_index(request).read_text()
 
 
-def _resolve_frontend_index() -> Path:
+def _resolve_frontend_index(request: Request | None = None) -> Path:
     built_index = STATIC_DIR / "ui" / "index.html"
+    legacy_index = STATIC_DIR / "index.html"
+    frontend_mode = _resolve_frontend_mode(request)
+
+    if frontend_mode == "legacy":
+        return legacy_index
+
     if built_index.exists():
         return built_index
-    return STATIC_DIR / "index.html"
+
+    return legacy_index
+
+
+def _resolve_frontend_mode(request: Request | None = None) -> str:
+    query_mode = request.query_params.get("frontend") if request else None
+    if query_mode in {"legacy", "react"}:
+        return query_mode
+
+    env_mode = os.environ.get(FRONTEND_MODE_ENV, "auto").strip().lower()
+    if env_mode in {"legacy", "react"}:
+        return env_mode
+
+    return "auto"
 
 
 # ------------------------------------------------------------------
@@ -254,15 +388,20 @@ async def respond(request: Request):
 
 
 @app.post("/api/compile")
-async def compile_spec_endpoint():
+async def compile_spec_endpoint(request: Request):
     """Compile the negotiated context into a YAML spec file."""
     from verify.compiler import compile_and_write
 
-    resolved = _resolve_session_response()
+    body = await _read_request_body(request)
+    resolved = _resolve_session_response(_extract_session_id(body))
     if isinstance(resolved, JSONResponse):
         return resolved
 
     ctx = resolved.context
+    approval_response = _require_approval(ctx, action="compile the spec")
+    if approval_response is not None:
+        return approval_response
+
     try:
         spec_path = compile_and_write(ctx, output_dir="specs")
         with open(spec_path) as f:
@@ -279,18 +418,23 @@ async def compile_spec_endpoint():
 
 
 @app.post("/api/generate-tests")
-async def generate_tests_endpoint():
+async def generate_tests_endpoint(request: Request):
     """Generate tests from the compiled spec, run them, and evaluate."""
     from verify.evaluator import evaluate_spec
     from verify.generator import generate_and_write
     from verify.runner import run_and_parse
 
-    resolved = _resolve_session_response()
+    body = await _read_request_body(request)
+    resolved = _resolve_session_response(_extract_session_id(body))
     if isinstance(resolved, JSONResponse):
         return resolved
 
     state = resolved
     ctx = state.context
+    approval_response = _require_approval(ctx, action="generate verification artifacts")
+    if approval_response is not None:
+        return approval_response
+
     if not ctx.spec_path:
         return JSONResponse({"error": "No spec compiled yet. Call /api/compile first."}, status_code=400)
 
@@ -334,11 +478,12 @@ async def generate_tests_endpoint():
 
 
 @app.post("/api/jira/update")
-async def jira_update():
+async def jira_update(request: Request):
     """Update Jira ticket with verdicts — tick checkboxes and post evidence."""
     from verify.pipeline import update_jira
 
-    resolved = _resolve_session_response()
+    body = await _read_request_body(request)
+    resolved = _resolve_session_response(_extract_session_id(body))
     if isinstance(resolved, JSONResponse):
         return resolved
 
@@ -369,11 +514,11 @@ async def ears_approve_endpoint(request: Request):
     """Approve EARS statements and set context.approved."""
     from datetime import datetime, timezone
 
-    resolved = _resolve_session_response()
+    body = await _read_request_body(request)
+    resolved = _resolve_session_response(_extract_session_id(body))
     if isinstance(resolved, JSONResponse):
         return resolved
 
-    body = await request.json()
     ctx = resolved.context
     ctx.approved = True
     ctx.approved_by = body.get("approved_by", "web_operator")
@@ -393,22 +538,169 @@ async def ears_approve_endpoint(request: Request):
 
 
 @app.post("/api/pipeline/stream")
-async def stream_pipeline_endpoint():
+async def stream_pipeline_endpoint(request: Request):
     """SSE streaming pipeline execution (compile → test → evaluate)."""
-    resolved = _resolve_session_response()
+    from verify.compiler import compile_and_write
+    from verify.evaluator import evaluate_spec
+    from verify.generator import generate_and_write
+    from verify.runner import run_and_parse
+
+    body = await _read_request_body(request)
+    resolved = _resolve_session_response(_extract_session_id(body))
     if isinstance(resolved, JSONResponse):
         return resolved
-    return JSONResponse({"error": "Streaming not yet implemented"}, status_code=501)
+
+    state = resolved
+    ctx = state.context
+    approval_response = _require_approval(ctx, action="run the verification pipeline")
+    if approval_response is not None:
+        return approval_response
+
+    def stream() -> Any:
+        try:
+            parsed_spec: dict[str, Any] = {}
+
+            if ctx.spec_path and os.path.exists(ctx.spec_path):
+                spec_path = ctx.spec_path
+                with open(spec_path) as handle:
+                    spec_content = handle.read()
+                parsed_spec = yaml.safe_load(spec_content) or {}
+                yield RuntimeEvent(
+                    type="step",
+                    session_id=state.session_id,
+                    step="compile",
+                    status="skipped",
+                    message="Reusing compiled spec",
+                    data={"spec_path": spec_path},
+                ).as_sse()
+            else:
+                yield RuntimeEvent(
+                    type="step",
+                    session_id=state.session_id,
+                    step="compile",
+                    status="running",
+                    message="Compiling spec...",
+                ).as_sse()
+                spec_path = compile_and_write(ctx, output_dir="specs")
+                with open(spec_path) as handle:
+                    spec_content = handle.read()
+                parsed_spec = yaml.safe_load(spec_content) or {}
+                yield RuntimeEvent(
+                    type="step",
+                    session_id=state.session_id,
+                    step="compile",
+                    status="done",
+                    message="Compiled spec",
+                    data={"spec_path": spec_path},
+                ).as_sse()
+
+            yield RuntimeEvent(
+                type="step",
+                session_id=state.session_id,
+                step="generate",
+                status="running",
+                message="Generating tests...",
+            ).as_sse()
+            test_path = generate_and_write(ctx.spec_path)
+            with open(test_path) as handle:
+                test_content = handle.read()
+            yield RuntimeEvent(
+                type="step",
+                session_id=state.session_id,
+                step="generate",
+                status="done",
+                message="Generated tests",
+                data={"test_path": test_path},
+            ).as_sse()
+
+            yield RuntimeEvent(
+                type="step",
+                session_id=state.session_id,
+                step="run",
+                status="running",
+                message="Running generated tests...",
+            ).as_sse()
+            results = run_and_parse(test_path, ".verify/results")
+            cases = results.get("test_cases", [])
+            passed = sum(1 for case in cases if case.get("status") == "passed")
+            yield RuntimeEvent(
+                type="step",
+                session_id=state.session_id,
+                step="run",
+                status="done",
+                message="Completed generated tests",
+                data={"passed": passed, "total": len(cases)},
+            ).as_sse()
+
+            yield RuntimeEvent(
+                type="step",
+                session_id=state.session_id,
+                step="evaluate",
+                status="running",
+                message="Evaluating verdicts...",
+            ).as_sse()
+            verdicts = evaluate_spec(ctx.spec_path, results)
+            ctx.verdicts = verdicts
+            all_passed = all(verdict.get("passed") for verdict in verdicts)
+            yield RuntimeEvent(
+                type="step",
+                session_id=state.session_id,
+                step="evaluate",
+                status="done",
+                message="Evaluated verdicts",
+                data={"all_passed": all_passed},
+            ).as_sse()
+
+            done_event = RuntimeEvent(
+                type="done",
+                session_id=state.session_id,
+                status="done",
+                message="Pipeline complete",
+                data={
+                    "all_passed": all_passed,
+                    "requirements": parsed_spec.get("requirements", []),
+                    "spec_content": spec_content,
+                    "spec_path": ctx.spec_path,
+                    "success": True,
+                    "test_content": test_content,
+                    "test_path": test_path,
+                    "traceability": parsed_spec.get("traceability", {}),
+                    "verdicts": verdicts,
+                },
+            )
+            state.latest_pipeline = done_event.payload()
+            yield done_event.as_sse()
+        except Exception as exc:
+            error_event = RuntimeEvent(
+                type="error",
+                session_id=state.session_id,
+                step="pipeline",
+                status="failed",
+                message=str(exc),
+            )
+            state.latest_pipeline = error_event.payload()
+            yield error_event.as_sse()
+
+    return StreamingResponse(
+        stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @app.post("/api/run-tests")
-async def run_tests_endpoint():
+async def run_tests_endpoint(request: Request):
     """Run generated tests."""
-    resolved = _resolve_session_response()
+    body = await _read_request_body(request)
+    resolved = _resolve_session_response(_extract_session_id(body))
     if isinstance(resolved, JSONResponse):
         return resolved
 
     ctx = resolved.context
+    approval_response = _require_approval(ctx, action="run generated tests")
+    if approval_response is not None:
+        return approval_response
+
     if not ctx.spec_path:
         return JSONResponse({"error": "No spec compiled yet."}, status_code=400)
 
@@ -431,13 +723,18 @@ async def run_tests_endpoint():
 
 
 @app.post("/api/evaluate")
-async def evaluate_endpoint():
+async def evaluate_endpoint(request: Request):
     """Evaluate test results against spec traceability."""
-    resolved = _resolve_session_response()
+    body = await _read_request_body(request)
+    resolved = _resolve_session_response(_extract_session_id(body))
     if isinstance(resolved, JSONResponse):
         return resolved
 
     ctx = resolved.context
+    approval_response = _require_approval(ctx, action="evaluate verification results")
+    if approval_response is not None:
+        return approval_response
+
     if not ctx.spec_path:
         return JSONResponse({"error": "No spec compiled yet."}, status_code=400)
 
@@ -460,11 +757,12 @@ async def evaluate_endpoint():
 
 
 @app.post("/api/jira-update")
-async def jira_update_endpoint():
+async def jira_update_endpoint(request: Request):
     """Update Jira ticket with verdicts."""
     from verify.pipeline import update_jira
 
-    resolved = _resolve_session_response()
+    body = await _read_request_body(request)
+    resolved = _resolve_session_response(_extract_session_id(body))
     if isinstance(resolved, JSONResponse):
         return resolved
 
@@ -853,6 +1151,8 @@ def _build_session_payload(
     payload: dict[str, Any] = {
         "acceptance_criteria": ctx.raw_acceptance_criteria,
         "approved": ctx.approved,
+        "approved_at": ctx.approved_at,
+        "approved_by": ctx.approved_by,
         "classifications": ctx.classifications,
         "current_phase": ctx.current_phase,
         "done": done,
@@ -886,6 +1186,29 @@ def _build_session_payload(
     if summary is not None:
         payload["summary"] = summary
     return payload
+
+
+async def _read_request_body(request: Request) -> dict[str, Any]:
+    try:
+        body = await request.json()
+    except Exception:
+        return {}
+
+    return body if isinstance(body, dict) else {}
+
+
+def _require_approval(
+    ctx: VerificationContext,
+    *,
+    action: str,
+) -> JSONResponse | None:
+    if ctx.approved:
+        return None
+
+    return JSONResponse(
+        {"error": f"Approve EARS before attempting to {action}."},
+        status_code=400,
+    )
 
 
 def _resolve_session_response(

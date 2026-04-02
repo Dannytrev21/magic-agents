@@ -202,15 +202,14 @@ describe('WorkspaceInspector', () => {
     const { onViewChange } = renderInspector();
 
     const tablist = screen.getByRole('tablist', { name: /inspector views/i });
+    const evidenceTab = within(tablist).getByRole('tab', { name: /evidence/i });
 
-    expect(within(tablist).getByRole('tab', { name: /evidence/i })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
-    expect(within(tablist).getByRole('tab', { name: /scan output/i })).toBeInTheDocument();
-    expect(within(tablist).getByRole('tab', { name: /traceability/i })).toBeInTheDocument();
+    expect(evidenceTab).toHaveAttribute('aria-selected', 'true');
+    expect(evidenceTab).not.toHaveClass('undefined');
+    expect(within(tablist).getByRole('tab', { name: /^scan$/i })).toBeInTheDocument();
+    expect(within(tablist).getByRole('tab', { name: /^links$/i })).toBeInTheDocument();
 
-    const analysisTab = within(tablist).getByRole('tab', { name: /planning & critique/i });
+    const analysisTab = within(tablist).getByRole('tab', { name: /^tools$/i });
     expect(analysisTab).toHaveAttribute('aria-selected', 'false');
 
     await user.click(analysisTab);
@@ -245,9 +244,9 @@ describe('WorkspaceInspector', () => {
       />,
     );
 
-    expect(await screen.findByRole('heading', { name: 'Planner output' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Phase critique' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Spec diff' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Plan' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Critique' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Diff' })).toBeInTheDocument();
   });
 
   it('rehydrates scan output and preserves the previous summary when a rerun fails', async () => {
@@ -268,7 +267,7 @@ describe('WorkspaceInspector', () => {
     expect(await screen.findByText(/language: java/i)).toBeInTheDocument();
     expect(screen.getByDisplayValue('dog-service')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /run codebase scan/i }));
+    await user.click(screen.getByRole('button', { name: /run scan/i }));
 
     expect(await screen.findByText(/scanner offline/i)).toBeInTheDocument();
     expect(screen.getByText(/controllers: 4/i)).toBeInTheDocument();
@@ -283,13 +282,16 @@ describe('WorkspaceInspector', () => {
 
     expect(await screen.findByRole('heading', { name: 'REQ-002' })).toBeInTheDocument();
     expect(screen.getByText(/Workspace shows the 401 failure path clearly/i)).toBeInTheDocument();
-    expect(screen.getByText(/Preconditions/i)).toBeInTheDocument();
-    expect(screen.getByText(/Failure modes/i)).toBeInTheDocument();
+    expect(screen.getByText(/^before$/i)).toBeInTheDocument();
+    expect(screen.getByText(/^failures$/i)).toBeInTheDocument();
+
+    await user.click(screen.getByText(/^refs$/i));
+
     expect(screen.getByText(/REQ-002.FAIL-001/i)).toBeInTheDocument();
 
-    await user.click(screen.getByRole('tab', { name: /matrix view/i }));
+    await user.click(screen.getByRole('tab', { name: /^table$/i }));
 
-    expect(screen.getByText(/Classification & requirement/i)).toBeInTheDocument();
+    expect(screen.getByText(/Type \/ Req/i)).toBeInTheDocument();
     expect(screen.getByText(/api_behavior \/ REQ-001/i)).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /AC 1: User can review planner output/i }));
@@ -317,9 +319,9 @@ describe('WorkspaceInspector', () => {
 
     renderInspector({ activeView: 'analysis' });
 
-    await user.click(await screen.findByRole('button', { name: /load planner output/i }));
-    await user.click(screen.getByRole('button', { name: /run phase critique/i }));
-    await user.click(screen.getByRole('button', { name: /compare historical specs/i }));
+    await user.click(await screen.findByRole('button', { name: /load plan/i }));
+    await user.click(screen.getByRole('button', { name: /run critique/i }));
+    await user.click(screen.getByRole('button', { name: /compare specs/i }));
 
     expect(await screen.findByText(/Estimated complexity/i)).toBeInTheDocument();
     expect(screen.getByText('/api/v1/review')).toBeInTheDocument();
@@ -338,23 +340,44 @@ describe('WorkspaceInspector', () => {
       selectedAcceptanceCriterionIndex: 0,
     });
 
-    expect(screen.getByText(/Spec not yet compiled/i)).toBeInTheDocument();
+    expect(screen.getByText(/No spec yet/i)).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /load compiled spec/i }));
+    await user.click(screen.getByRole('button', { name: /load spec/i }));
 
     expect(await screen.findByRole('tab', { name: 'REQ-001' })).toBeInTheDocument();
     expect(screen.getByText(/Planner review surface/i)).toBeInTheDocument();
-    expect(screen.getByText(/Verification routing/i)).toBeInTheDocument();
+    expect(screen.getByText(/^checks$/i)).toBeInTheDocument();
     expect(screen.getByText(/pytest_unit_test/i)).toBeInTheDocument();
 
     await user.click(screen.getByRole('tab', { name: 'REQ-002' }));
 
     expect(onAcceptanceCriterionSelect).toHaveBeenCalledWith(1);
 
-    await user.click(screen.getByRole('tab', { name: /raw yaml/i }));
+    await user.click(screen.getByRole('tab', { name: /^yaml$/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/requirements:/i)).toBeInTheDocument();
     });
+  });
+
+  it('keeps the evidence rail compact when no session is loaded', () => {
+    render(
+      <WorkspaceInspector
+        activeSession={null}
+        activeView="evidence"
+        focusRef={createRef<HTMLElement>()}
+        onAcceptanceCriterionSelect={vi.fn()}
+        onViewChange={vi.fn()}
+        selectedAcceptanceCriterionIndex={null}
+      />,
+      { wrapper: createWrapper() },
+    );
+
+    expect(screen.getByText(/Pick a story/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Choose a story on the left to load evidence and spec details here\./i),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/No session yet/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Session$/i)).not.toBeInTheDocument();
   });
 });

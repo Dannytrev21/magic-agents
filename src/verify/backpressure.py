@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 
 class BackPressureLimitExceeded(Exception):
@@ -71,6 +71,12 @@ class BackPressureController:
     tokens_used: int = field(default=0)
     start_time: float = field(default_factory=time.time)
     retries_by_phase: dict[str, int] = field(default_factory=dict)
+
+    # P7.3: Deduplication flags for budget events
+    _warned_tokens: bool = field(default=False, init=False, repr=False)
+    _warned_api_calls: bool = field(default=False, init=False, repr=False)
+    _exceeded_tokens: bool = field(default=False, init=False, repr=False)
+    _exceeded_api_calls: bool = field(default=False, init=False, repr=False)
 
     # Known budget fields that can be overridden via constitution
     _BUDGET_FIELDS = {
@@ -196,6 +202,152 @@ class BackPressureController:
         if self.retries_by_phase[phase] > self.max_retries_per_phase:
             raise BackPressureLimitExceeded(
                 f"Max retries ({self.max_retries_per_phase}) exceeded for {phase}"
+            )
+
+    # ---- P7.1: Serialization for checkpoint persistence ----
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize controller state for checkpoint persistence."""
+        elapsed = time.time() - self.start_time
+        return {
+            "api_calls": self.api_calls,
+            "tokens_used": self.tokens_used,
+            "wall_clock_seconds": elapsed,
+            "retries_by_phase": dict(self.retries_by_phase),
+            "max_api_calls": self.max_api_calls,
+            "max_tokens": self.max_tokens,
+            "max_wall_clock_seconds": self.max_wall_clock_seconds,
+            "max_retries_per_phase": self.max_retries_per_phase,
+            "warn_api_calls": self.warn_api_calls,
+            "warn_tokens": self.warn_tokens,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> BackPressureController:
+        """Restore a controller from checkpoint data.
+
+        Missing fields default to the dataclass defaults, making this
+        backward-compatible with old checkpoints that lack usage data.
+        """
+        controller = cls(
+            max_api_calls=data.get("max_api_calls", 50),
+            max_tokens=data.get("max_tokens", 500_000),
+            max_wall_clock_seconds=data.get("max_wall_clock_seconds", 600),
+            max_retries_per_phase=data.get("max_retries_per_phase", 3),
+            warn_api_calls=data.get("warn_api_calls", 40),
+            warn_tokens=data.get("warn_tokens", 400_000),
+        )
+        controller.api_calls = data.get("api_calls", 0)
+        controller.tokens_used = data.get("tokens_used", 0)
+        controller.retries_by_phase = dict(data.get("retries_by_phase", {}))
+        # Reset start_time so elapsed time begins from restoration.
+        # The stored wall_clock_seconds is informational for cost summaries.
+        return controller
+
+    # ---- P7.3: Budget alert event emission ----
+
+    def emit_budget_events(self, emit: Callable[..., Any]) -> None:
+        """Emit budget_warning / budget_exceeded RuntimeEvents.
+
+        Each threshold fires at most once (deduplicated via internal flags).
+        """
+        from verify.runtime import RuntimeEvent
+
+        # --- soft-limit warnings (tokens) ---
+        if (
+            self.tokens_used > self.warn_tokens
+            and self.tokens_used <= self.max_tokens
+            and not self._warned_tokens
+        ):
+            self._warned_tokens = True
+            emit(
+                RuntimeEvent(
+                    type="budget_warning",
+                    session_id="",
+                    data={
+                        "limit_type": "tokens",
+                        "tokens_used": self.tokens_used,
+                        "budget_limit": self.max_tokens,
+                    },
+                )
+            )
+
+        # --- soft-limit warnings (api_calls) ---
+        if (
+            self.api_calls > self.warn_api_calls
+            and self.api_calls <= self.max_api_calls
+            and not self._warned_api_calls
+        ):
+            self._warned_api_calls = True
+            emit(
+                RuntimeEvent(
+                    type="budget_warning",
+                    session_id="",
+                    data={
+                        "limit_type": "api_calls",
+                        "api_calls": self.api_calls,
+                        "budget_limit": self.max_api_calls,
+                    },
+                )
+            )
+
+        # --- hard-limit exceeded (tokens) ---
+        if self.tokens_used > self.max_tokens and not self._exceeded_tokens:
+            # Ensure warning fires first if it hasn't yet
+            if not self._warned_tokens:
+                self._warned_tokens = True
+                emit(
+                    RuntimeEvent(
+                        type="budget_warning",
+                        session_id="",
+                        data={
+                            "limit_type": "tokens",
+                            "tokens_used": self.tokens_used,
+                            "budget_limit": self.max_tokens,
+                        },
+                    )
+                )
+            self._exceeded_tokens = True
+            emit(
+                RuntimeEvent(
+                    type="budget_exceeded",
+                    session_id="",
+                    data={
+                        "limit_type": "tokens",
+                        "tokens_used": self.tokens_used,
+                        "budget_limit": self.max_tokens,
+                        "usage_summary": self.get_usage_summary(),
+                    },
+                )
+            )
+
+        # --- hard-limit exceeded (api_calls) ---
+        if self.api_calls > self.max_api_calls and not self._exceeded_api_calls:
+            if not self._warned_api_calls:
+                self._warned_api_calls = True
+                emit(
+                    RuntimeEvent(
+                        type="budget_warning",
+                        session_id="",
+                        data={
+                            "limit_type": "api_calls",
+                            "api_calls": self.api_calls,
+                            "budget_limit": self.max_api_calls,
+                        },
+                    )
+                )
+            self._exceeded_api_calls = True
+            emit(
+                RuntimeEvent(
+                    type="budget_exceeded",
+                    session_id="",
+                    data={
+                        "limit_type": "api_calls",
+                        "api_calls": self.api_calls,
+                        "budget_limit": self.max_api_calls,
+                        "usage_summary": self.get_usage_summary(),
+                    },
+                )
             )
 
     def get_usage_summary(self) -> dict:

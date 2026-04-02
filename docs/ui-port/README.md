@@ -65,10 +65,22 @@
 
 ## Current Status
 
-- U1 through U5 are now complete in the React workspace.
-- The right inspector now owns the evidence, scan, traceability, planning/critique, and structured spec-contract surfaces.
-- Inspector actions stay session-scoped and keep the center-pane negotiation flow stable while scan, critique, planning, and spec-compare requests run.
-- The next delivery slice is Epic U6: verification console and pipeline execution.
+- As of 2026-04-01, `progress.json` reports all 36 UI-port stories complete and the U1 through U8 epic markdown acceptance checklists are synchronized to that shipped state.
+- A recurring verification run on 2026-04-02 re-checked `progress.json` plus the epic markdown files, found no unfinished UI-port stories, and reconfirmed `npm run lint`, `npm run test:ci`, and `npm run test:e2e:chromium` on the current branch.
+- A follow-up verification run on 2026-04-02 again found no unfinished UI-port stories, but it did catch two non-browser regressions: suite-level Vitest instability under worker contention and a fragile SSE workspace path that dropped batched phase events or crashed when `EventSource` was unavailable. The fix was to serialize Vitest in [`/Users/dannytrevino/development/magic-agents/ui/vitest.config.ts`](/Users/dannytrevino/development/magic-agents/ui/vitest.config.ts) with `maxWorkers: 1` plus `fileParallelism: false`, then harden [`/Users/dannytrevino/development/magic-agents/ui/src/lib/api/useSSE.ts`](/Users/dannytrevino/development/magic-agents/ui/src/lib/api/useSSE.ts) and [`/Users/dannytrevino/development/magic-agents/ui/src/features/workspace/phaseWorkspaceModel.ts`](/Users/dannytrevino/development/magic-agents/ui/src/features/workspace/phaseWorkspaceModel.ts) so the workspace records every streamed event and degrades cleanly in unsupported runtimes.
+- This verification pass re-ran `npm test`, `npm run build`, and `npm run test:ci` in [`/Users/dannytrevino/development/magic-agents/ui`](/Users/dannytrevino/development/magic-agents/ui). The non-browser frontend gate is green again with 19 files / 113 tests passing, and the shipped shell CSS now lands at 31.43 kB raw / 5.82 kB gzip against the existing 33.5 kB raw / 7 kB gzip budget.
+- A follow-up browser rerun on 2026-04-02 confirmed `npm run test:e2e:chromium` still passes for the mocked operator journey after the Vitest harness stabilization, so the detected gap was in the non-browser test runner rather than the shipped workspace flow.
+- A later 2026-04-02 browser-harness fix kept U8.2 green by making Playwright trace capture opt-in through `PW_TRACE=1`; failed runs still retain screenshots by default, and the normal `npm run test:e2e:chromium` path no longer depends on local trace-archive support.
+- U8.2 browser coverage remains implemented; when Codex-hosted macOS cannot launch Playwright locally, the supported path is `npm run test:e2e:server` outside Codex plus `npm run test:e2e:remote` or `PW_TEST_CONNECT_WS_ENDPOINT=... npm run test:e2e` inside Codex.
+- The shell, rails, workspace, and verification console now consume a typed graphite/bone/signal design system mirrored into CSS tokens.
+- The shell now mounts the shared SSE event store through the app provider stack, surfaces connection state in the top bar, and keeps the phase progress strip integrated into the workspace chrome without regressing the existing CSS budget.
+- The phase-workspace bridge now dispatches negotiation SSE payloads into the shared event store from the `useSSE` callback path, which preserves same-batch `phase_start` plus `phase_progress` updates instead of letting React collapse them into one derived snapshot.
+- The evidence inspector now keeps its idle state to a single compact prompt until a story/session exists, which preserves a calmer right rail without hiding the tab structure.
+- Workspace announcements, pane focus handoff, busy states, and the pipeline log now support keyboard and screen-reader operation without pointer-only assumptions.
+- Reduced-motion fallbacks and shared timing tokens now govern pane transitions, live console behavior, and responsive shell refinements.
+- A 2026-04-02 follow-up on the `feat/u07-realtime-streaming-events` continuation wired live SSE status into the top bar, kept the shared event store in the app provider stack, and surfaced phase progress in both the sticky mini-rail and the center workspace header.
+- The frontend now ships explicit quality gates: `npm run test:ci` for lint + Vitest + build + bundle budgets, `npm run test:e2e` for deterministic mock-mode browser journeys, and a FastAPI rollout switch that can force either React or legacy HTML at request or process scope.
+- ESLint now uses a dedicated typed project file for tracked source plus Playwright config/spec files and ignores generated browser caches, which keeps the completed UI-port epic focused on product-code regressions instead of local tool output.
 
 ## Success Criteria
 

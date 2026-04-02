@@ -1,12 +1,17 @@
-import { useEffect, type RefObject } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState, type RefObject } from 'react';
 import { Button } from '@/components/primitives/Button';
 import { Badge } from '@/components/primitives/Badge';
-import { Divider } from '@/components/primitives/Divider';
 import { EmptyState } from '@/components/primitives/EmptyState';
 import { Mono } from '@/components/primitives/Mono';
+import { PhaseProgressBar } from '@/features/workspace/PhaseProgressBar';
 import { SectionHeader } from '@/components/primitives/SectionHeader';
 import { Text } from '@/components/primitives/Text';
 import { PhaseTranscript } from '@/features/workspace/PhaseTranscript';
+import { WorkspaceDisclosure } from '@/features/workspace/WorkspaceDisclosure';
+import {
+  buildInitialVerificationState,
+  type VerificationWorkspaceState,
+} from '@/features/workspace/workspaceVerificationModel';
 import {
   buildPhaseReview,
   buildTranscriptEntries,
@@ -19,6 +24,15 @@ import {
 } from '@/features/workspace/workspaceModel';
 import type { StartNegotiationResponse } from '@/lib/api/types';
 import styles from '@/features/workspace/workspace.module.css';
+
+// Start fetching the verification workspace chunk as soon as the center pane module loads so
+// switching into verification does not sit in Suspense longer than necessary.
+const workspaceVerificationConsoleModule = import('@/features/workspace/WorkspaceVerificationConsole');
+
+const WorkspaceVerificationConsole = lazy(async () => {
+  const module = await workspaceVerificationConsoleModule;
+  return { default: module.WorkspaceVerificationConsole };
+});
 
 export type PhaseActionState = {
   activeAction: 'approve' | 'revise' | null;
@@ -69,6 +83,11 @@ export function WorkspaceCenterPane({
   statusLabel,
   storySummary = null,
 }: WorkspaceCenterPaneProps) {
+  const [verificationState, setVerificationState] = useState<VerificationWorkspaceState>(() =>
+    buildInitialVerificationState(activeSession),
+  );
+  const initializedVerificationSessionIdRef = useRef(activeSession?.session_id ?? null);
+
   useEffect(() => {
     if (!activeSession || activeView !== 'negotiation') {
       return;
@@ -81,7 +100,7 @@ export function WorkspaceCenterPane({
         return;
       }
 
-      if (isTextInputTarget(event.target)) {
+      if (isTextInputTarget(event.target) || isTextInputTarget(document.activeElement)) {
         return;
       }
 
@@ -100,16 +119,27 @@ export function WorkspaceCenterPane({
     };
   }, [activeSession, activeView, onPhaseSelect]);
 
+  useEffect(() => {
+    const nextSessionId = activeSession?.session_id ?? null;
+
+    if (initializedVerificationSessionIdRef.current === nextSessionId) {
+      return;
+    }
+
+    initializedVerificationSessionIdRef.current = nextSessionId;
+    setVerificationState(buildInitialVerificationState(activeSession));
+  }, [activeSession]);
+
   if (!activeSession) {
     return (
       <div className={styles.stack}>
         <SectionHeader
-          title="Operator workspace"
-          description="The center pane is ready for a stable three-pane workflow before deeper feature surfaces land."
+          title="Workspace"
+          description="Start a story on the left to open the main work area."
         />
         <EmptyState
-          title="No session in flight"
-          description="Use the left rail to start a negotiation session and bind the shell to real phase data."
+          title="No session yet"
+          description="Start a story on the left."
         />
       </div>
     );
@@ -121,7 +151,7 @@ export function WorkspaceCenterPane({
   const workspaceLabel =
     centerWorkspaceViews.find((view) => view.value === activeView)?.label ?? 'Overview';
   const selectedCriterionLabel =
-    selectedAcceptanceCriterionIndex !== null ? `AC ${selectedAcceptanceCriterionIndex + 1}` : 'Story-wide';
+    selectedAcceptanceCriterionIndex !== null ? `AC ${selectedAcceptanceCriterionIndex + 1}` : 'Story';
 
   return (
     <div className={styles.stack}>
@@ -144,7 +174,7 @@ export function WorkspaceCenterPane({
         <div className={styles.statusStrip}>
           <div className={styles.statusMeta}>
             <Text as="p" size="xs" tone="muted">
-              Session status
+              Status
             </Text>
             <Text as="p" size="sm" weight="medium">
               {statusLabel}
@@ -152,14 +182,15 @@ export function WorkspaceCenterPane({
           </div>
           <div className={styles.statusMeta}>
             <Text as="p" size="xs" tone="muted">
-              Session ref
+              Ref
             </Text>
             <Mono>{activeSession.session_id}</Mono>
           </div>
           <Badge tone={isTransitionPending ? 'warning' : 'success'}>
-            {isTransitionPending ? 'Updating in place' : 'In-place workspace'}
+            {isTransitionPending ? 'Updating' : 'Live'}
           </Badge>
         </div>
+        <PhaseProgressBar surface="rail" />
         <ol aria-label="Negotiation phases" className={styles.phaseRail}>
           {negotiationPhases.map((phase, index) => {
             const phaseNumber = index + 1;
@@ -211,11 +242,13 @@ export function WorkspaceCenterPane({
 
       <section
         aria-label="Active workspace region"
+        aria-busy={isTransitionPending}
         className={styles.focusRegion}
         ref={focusRef}
         role="region"
         tabIndex={-1}
       >
+        <PhaseProgressBar surface="workspace" />
         {activeView === 'overview' ? (
           <OverviewContent
             activeSession={activeSession}
@@ -243,6 +276,22 @@ export function WorkspaceCenterPane({
             selectedAcceptanceCriterionIndex={selectedAcceptanceCriterionIndex}
           />
         ) : null}
+        {activeView === 'verification' ? (
+          activeSession.done ? (
+            <Suspense fallback={<Text size="sm">Loading verification workspace</Text>}>
+              <WorkspaceVerificationConsole
+                activeSession={activeSession}
+                onStateChange={setVerificationState}
+                state={verificationState}
+              />
+            </Suspense>
+          ) : (
+            <EmptyState
+              title="Verification unlocks after negotiation"
+              description="Finish the negotiation loop to approve EARS, inspect proof artifacts, and run the verification pipeline."
+            />
+          )
+        ) : null}
       </section>
     </div>
   );
@@ -262,8 +311,7 @@ function OverviewContent({
   return (
     <div className={styles.sectionStack}>
       <SectionHeader
-        title="Active workspace"
-        description="The center pane stays dominant while story intake and evidence remain available on either side."
+        title="Summary"
         action={<Badge tone="info">Phase {activeSession.phase_number} of 7</Badge>}
       />
       <div className={styles.detailList}>
@@ -276,17 +324,17 @@ function OverviewContent({
           </Text>
         </div>
         <div className={styles.detailRow}>
-          <Text as="p" size="xs" tone="muted">
-            Current phase
-          </Text>
+            <Text as="p" size="xs" tone="muted">
+            Phase
+            </Text>
           <Text as="p" size="sm" weight="medium">
             {activeSession.phase_title}
           </Text>
         </div>
         <div className={styles.detailRow}>
-          <Text as="p" size="xs" tone="muted">
-            Working focus
-          </Text>
+            <Text as="p" size="xs" tone="muted">
+            Focus
+            </Text>
           <Text as="p" size="sm">
             {selectedAcceptanceCriterionIndex !== null
               ? `Centered on AC ${selectedAcceptanceCriterionIndex + 1}`
@@ -294,9 +342,9 @@ function OverviewContent({
           </Text>
         </div>
         <div className={styles.detailRow}>
-          <Text as="p" size="xs" tone="muted">
-            Selected phase
-          </Text>
+            <Text as="p" size="xs" tone="muted">
+            Open
+            </Text>
           <Text as="p" size="sm">
             Phase {selectedPhaseNumber}
           </Text>
@@ -352,11 +400,12 @@ function NegotiationContent({
       </section>
 
       {phaseReview.questions.length ? (
-        <section className={styles.questionRegion}>
-          <SectionHeader
-            title="Clarifying questions"
-            description="Human follow-ups stay distinct from backend-confirmed phase output."
-          />
+        <WorkspaceDisclosure
+          className={styles.questionRegion}
+          defaultOpen
+          meta={`${phaseReview.questions.length} open`}
+          title="Questions"
+        >
           <ul className={styles.questionList}>
             {phaseReview.questions.map((question) => (
               <li key={question}>
@@ -366,12 +415,21 @@ function NegotiationContent({
               </li>
             ))}
           </ul>
-        </section>
+        </WorkspaceDisclosure>
       ) : null}
 
-      {phaseReview.groups.map((group) => (
-        <section className={styles.reviewGroup} key={group.title}>
-          <SectionHeader title={group.title} />
+      {phaseReview.groups.map((group, index) => (
+        <WorkspaceDisclosure
+          className={styles.reviewGroup}
+          defaultOpen={index === 0}
+          key={group.title}
+          meta={
+            group.items.length
+              ? `${group.items.length} item${group.items.length === 1 ? '' : 's'}`
+              : 'Pending'
+          }
+          title={group.title}
+        >
           {group.items.length ? (
             <div className={styles.reviewList}>
               {group.items.map((item) => (
@@ -390,7 +448,7 @@ function NegotiationContent({
                   ) : null}
                   {item.extra ? (
                     <details className={styles.inlineDisclosure}>
-                      <summary className={styles.inlineDisclosureSummary}>Additional fields</summary>
+                      <summary className={styles.inlineDisclosureSummary}>More</summary>
                       <pre className={styles.rawPayloadPre}>{JSON.stringify(item.extra, null, 2)}</pre>
                     </details>
                   ) : null}
@@ -399,26 +457,27 @@ function NegotiationContent({
             </div>
           ) : (
             <EmptyState
-              title="Awaiting backend confirmation"
-              description="This phase will populate once the operator advances the session."
+              title="Waiting on backend"
+              description="This section fills in after the next phase update."
             />
           )}
-        </section>
+        </WorkspaceDisclosure>
       ))}
 
       <details className={styles.rawPayloadDisclosure}>
-        <summary className={styles.rawPayloadSummary}>Raw payload</summary>
+        <summary className={styles.rawPayloadSummary}>Raw data</summary>
         <pre className={styles.rawPayloadPre}>{JSON.stringify(phaseReview.rawPayload, null, 2)}</pre>
       </details>
 
-      <section className={styles.actionSurface}>
-        <SectionHeader
-          title="Phase actions"
-          description="Approve or revise the active phase without leaving the center workspace."
-        />
+      <WorkspaceDisclosure
+        className={styles.actionSurface}
+        defaultOpen
+        meta={canActOnPhase ? 'Ready' : 'Locked'}
+        title="Actions"
+      >
         <div className={styles.field}>
           <Text as="label" htmlFor="phase-feedback" size="xs" tone="muted">
-            Revision feedback
+            Notes
           </Text>
           <textarea
             className={styles.feedbackTextarea}
@@ -435,7 +494,7 @@ function NegotiationContent({
             onClick={onApprovePhase}
             type="button"
           >
-            Approve phase
+            Approve
           </Button>
           <Button
             disabled={!canActOnPhase || phaseActionState.isPending}
@@ -444,7 +503,7 @@ function NegotiationContent({
             type="button"
             variant="secondary"
           >
-            Request revision
+            Revise
           </Button>
         </div>
         {phaseActionState.message ? (
@@ -457,15 +516,11 @@ function NegotiationContent({
             {phaseActionState.message}
           </Text>
         ) : null}
-      </section>
+      </WorkspaceDisclosure>
 
-      <section className={styles.sectionStack}>
-        <SectionHeader
-          title="Transcript"
-          description="System activity, operator feedback, and model output stay readable in chronological order."
-        />
+      <WorkspaceDisclosure defaultOpen={false} meta={`${transcriptEntries.length} entries`} title="Log">
         <PhaseTranscript entries={transcriptEntries} />
-      </section>
+      </WorkspaceDisclosure>
     </div>
   );
 }

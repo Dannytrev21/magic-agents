@@ -1,7 +1,7 @@
 # Epic P6: Structured Streaming Events
 
 **Priority:** 6 (Medium)
-**Status:** Not Started
+**Status:** Done
 **Ported From:** `claw-code/src/query_engine.py` (`stream_submit_message` — typed SSE yields with `message_start`, `command_match`, `tool_match`, `permission_denial`, `message_delta`, `message_stop`)
 **Integration Target:** `src/verify/runtime.py` (RuntimeEvent), `src/verify/negotiation/web.py` (SSE endpoints)
 
@@ -33,10 +33,10 @@ magic-agents has SSE streaming in `web.py` and a `RuntimeEvent` dataclass, but t
 
 ### Acceptance Criteria
 
-- [ ] `NegotiationEvent` enum is defined with all listed types.
-- [ ] Each type has a documented payload schema.
-- [ ] `RuntimeEvent` validates type against the enum.
-- [ ] `EVENT_SCHEMAS` constant maps each type to expected fields.
+- [x] `NegotiationEvent` enum is defined with all listed types.
+- [x] Each type has a documented payload schema.
+- [x] `RuntimeEvent` validates type against the enum.
+- [x] `EVENT_SCHEMAS` constant maps each type to expected fields.
 
 ### How to Test
 
@@ -79,10 +79,10 @@ def test_invalid_event_type():
 
 ### Acceptance Criteria
 
-- [ ] `NegotiationHarness.__init__` accepts optional `event_emitter`.
-- [ ] All six event types emitted at correct lifecycle points.
-- [ ] Callback exceptions caught and logged.
-- [ ] No-op default when no emitter registered.
+- [x] `NegotiationHarness.__init__` accepts optional `event_emitter`.
+- [x] All six event types emitted at correct lifecycle points.
+- [x] Callback exceptions caught and logged.
+- [x] No-op default when no emitter registered.
 
 ### How to Test
 
@@ -127,10 +127,10 @@ def test_callback_error_graceful():
 
 ### Acceptance Criteria
 
-- [ ] `GET /api/events/{session_id}` returns `text/event-stream`.
-- [ ] Events include both `event:` and `data:` SSE fields.
-- [ ] `?types=` query parameter filters event types.
-- [ ] Disconnected clients cleaned up without blocking harness.
+- [x] `GET /api/events/{session_id}` returns `text/event-stream`.
+- [x] Events include both `event:` and `data:` SSE fields.
+- [x] `?types=` query parameter filters event types.
+- [x] Disconnected clients cleaned up without blocking harness.
 
 ### How to Test
 

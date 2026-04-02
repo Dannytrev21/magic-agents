@@ -1,0 +1,33 @@
+{
+  "index.html": {
+    "file": "assets/index-DmWxieeI.js",
+    "name": "index",
+    "src": "index.html",
+    "isEntry": true,
+    "dynamicImports": [
+      "src/features/workspace/WorkspaceVerificationConsole.tsx",
+      "src/features/workspace/WorkspaceInspectorAnalysisView.tsx"
+    ],
+    "css": [
+      "assets/index-bKIYYm9X.css"
+    ]
+  },
+  "src/features/workspace/WorkspaceInspectorAnalysisView.tsx": {
+    "file": "assets/WorkspaceInspectorAnalysisView-2ozVVH7t.js",
+    "name": "WorkspaceInspectorAnalysisView",
+    "src": "src/features/workspace/WorkspaceInspectorAnalysisView.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html"
+    ]
+  },
+  "src/features/workspace/WorkspaceVerificationConsole.tsx": {
+    "file": "assets/WorkspaceVerificationConsole-BwcJWw9O.js",
+    "name": "WorkspaceVerificationConsole",
+    "src": "src/features/workspace/WorkspaceVerificationConsole.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html"
+    ]
+  }
+}

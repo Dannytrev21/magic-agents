@@ -1,11 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  compileSpec,
   fetchJiraConfigured,
   fetchJiraStories,
   fetchJiraTicket,
-  respondToSession,
   fetchSessionInfo,
+  generateTests,
+  postJiraUpdate,
+  respondToSession,
   startNegotiation,
+  streamPipelineEvents,
 } from '@/lib/api/client';
 import { parseSseChunk } from '@/lib/api/sse';
 
@@ -151,6 +155,85 @@ describe('API client', () => {
       }),
     );
   });
+
+  it('pins the compiled spec contract shape used by the verification workspace', async () => {
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          requirements: [{ ac_checkbox: 0, id: 'REQ-001', title: 'Approval gate' }],
+          spec_content: 'requirements:\n  - id: REQ-001\n',
+          spec_path: 'specs/MAG-10.yaml',
+          traceability: { ac_mappings: [{ ac_checkbox: 0, ac_text: 'Approve the contract' }] },
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(compileSpec({ session_id: 'session-1' })).resolves.toEqual({
+      requirements: [{ ac_checkbox: 0, id: 'REQ-001', title: 'Approval gate' }],
+      spec_content: 'requirements:\n  - id: REQ-001\n',
+      spec_path: 'specs/MAG-10.yaml',
+      traceability: { ac_mappings: [{ ac_checkbox: 0, ac_text: 'Approve the contract' }] },
+    });
+  });
+
+  it('pins the generated test contract shape used by artifact viewers and verdict summaries', async () => {
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          all_passed: false,
+          steps: [{ step: 'generate', status: 'ok', path: 'tests/test_mag_10.py' }],
+          test_content: 'def test_req_001_success():\n    assert True\n',
+          test_path: 'tests/test_mag_10.py',
+          verdicts: [{ ac_checkbox: 0, ac_text: 'Approve the contract', passed: false }],
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(generateTests({ session_id: 'session-1' })).resolves.toEqual({
+      all_passed: false,
+      steps: [{ step: 'generate', status: 'ok', path: 'tests/test_mag_10.py' }],
+      test_content: 'def test_req_001_success():\n    assert True\n',
+      test_path: 'tests/test_mag_10.py',
+      verdicts: [{ ac_checkbox: 0, ac_text: 'Approve the contract', passed: false }],
+    });
+  });
+
+  it('pins the jira feedback contract shape used by the post-run workspace surface', async () => {
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          comment_id: 'jira-comment-1',
+          issue_key: 'MAG-10',
+          message: 'Updated Jira with verification evidence',
+          transitioned: false,
+          updated: true,
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(postJiraUpdate({ session_id: 'session-1' })).resolves.toEqual({
+      comment_id: 'jira-comment-1',
+      issue_key: 'MAG-10',
+      message: 'Updated Jira with verification evidence',
+      transitioned: false,
+      updated: true,
+    });
+  });
 });
 
 describe('SSE adapter', () => {
@@ -163,6 +246,45 @@ describe('SSE adapter', () => {
     expect(events).toEqual([
       { type: 'step', step: 'compile', status: 'running' },
       { type: 'done', success: true },
+    ]);
+  });
+
+  it('streams pipeline events through the typed API helper', async () => {
+    const events: Array<Record<string, unknown>> = [];
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(
+          new TextEncoder().encode(
+            'data: {"type":"step","step":"compile","status":"running"}\n\n' +
+              'data: {"type":"done","success":true,"message":"Pipeline complete"}\n\n',
+          ),
+        );
+        controller.close();
+      },
+    });
+
+    fetchMock.mockResolvedValue(
+      new Response(stream, {
+        status: 200,
+        headers: { 'Content-Type': 'text/event-stream' },
+      }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await streamPipelineEvents('session-1', (event) => {
+      events.push(event as Record<string, unknown>);
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/pipeline/stream',
+      expect.objectContaining({
+        body: JSON.stringify({ session_id: 'session-1' }),
+        method: 'POST',
+      }),
+    );
+    expect(events).toEqual([
+      { type: 'step', step: 'compile', status: 'running' },
+      { message: 'Pipeline complete', success: true, type: 'done' },
     ]);
   });
 });

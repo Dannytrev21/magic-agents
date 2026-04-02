@@ -1,0 +1,22 @@
+.bar {
+  height: 3px;
+  border-radius: var(--radius-round);
+  background-size: 200% 100%;
+  animation: slide var(--motion-slow) linear infinite;
+}
+
+@keyframes slide {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar {
+    animation: none;
+    opacity: 0.6;
+  }
+}

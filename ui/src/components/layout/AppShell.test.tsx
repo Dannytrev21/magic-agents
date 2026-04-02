@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { AppProviders } from '@/app/AppProviders';
 import { AppShell } from '@/components/layout/AppShell';
 
 function renderShell() {
@@ -9,24 +10,28 @@ function renderShell() {
   const onToggleRightPane = vi.fn();
 
   render(
-    <AppShell
-      centerPane={<div>Center workspace</div>}
-      layoutMode="desktop"
-      leftPaneCollapsed={false}
-      leftRail={<div>Story intake</div>}
-      mobilePane="workspace"
-      onMobilePaneChange={onMobilePaneChange}
-      onToggleLeftPane={onToggleLeftPane}
-      onToggleRightPane={onToggleRightPane}
-      phaseLabel="Phase 2: Happy Path Contract"
-      rightPaneCollapsed={false}
-      rightRail={<div>Evidence inspector</div>}
-      sessionState="active"
-      statusLabel="Awaiting operator input"
-      storyKey="MAG-22"
-      storySummary="Port the operator workspace layout"
-      workspaceLabel="Negotiation surface"
-    />,
+    <AppProviders>
+      <AppShell
+        centerPane={<div>Center workspace</div>}
+        connectionLabel="Live updates connected"
+        connectionStatus="connected"
+        layoutMode="desktop"
+        leftPaneCollapsed={false}
+        leftRail={<div>Story intake</div>}
+        mobilePane="workspace"
+        onMobilePaneChange={onMobilePaneChange}
+        onToggleLeftPane={onToggleLeftPane}
+        onToggleRightPane={onToggleRightPane}
+        phaseLabel="Phase 2: Happy Path Contract"
+        rightPaneCollapsed={false}
+        rightRail={<div>Evidence inspector</div>}
+        sessionState="active"
+        statusLabel="Awaiting operator input"
+        storyKey="MAG-22"
+        storySummary="Port the operator workspace layout"
+        workspaceLabel="Negotiation surface"
+      />
+    </AppProviders>,
   );
 
   return {
@@ -51,7 +56,7 @@ describe('AppShell', () => {
     expect(screen.getByRole('banner')).toHaveAttribute('data-sticky', 'true');
     expect(grid).toHaveAttribute('data-layout-mode', 'desktop');
     expect(grid).toHaveStyle({
-      '--workspace-left-width': '18rem',
+      '--workspace-left-width': '22rem',
       '--workspace-right-width': '20rem',
     });
     expect(main).toHaveAttribute('data-pane-priority', 'primary');
@@ -69,12 +74,18 @@ describe('AppShell', () => {
   it('shows top-bar story context and workspace controls', () => {
     renderShell();
 
-    expect(screen.getByRole('heading', { name: /magic agents/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /specifi/i })).toBeInTheDocument();
+    expect(screen.queryByText(/magic agents/i)).not.toBeInTheDocument();
     expect(screen.getByText('MAG-22')).toBeInTheDocument();
     expect(screen.getByText(/negotiation surface/i)).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: /connection status/i })).toHaveTextContent(
+      /live updates connected/i,
+    );
     expect(screen.getByRole('button', { name: /toggle story intake panel/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /toggle evidence panel/i })).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent(/awaiting operator input/i);
+    expect(screen.getByRole('status', { name: /session status/i })).toHaveTextContent(
+      /awaiting operator input/i,
+    );
   });
 
   it('supports collapsed panel state and mobile panel switching controls', async () => {
@@ -84,23 +95,27 @@ describe('AppShell', () => {
     const onToggleRightPane = vi.fn();
 
     render(
-      <AppShell
-        centerPane={<div>Center workspace</div>}
-        layoutMode="mobile"
-        leftPaneCollapsed
-        leftRail={<div>Story intake</div>}
-        mobilePane="workspace"
-        onMobilePaneChange={onMobilePaneChange}
-        onToggleLeftPane={onToggleLeftPane}
-        onToggleRightPane={onToggleRightPane}
-        phaseLabel="Phase 2: Happy Path Contract"
-        rightPaneCollapsed
-        rightRail={<div>Evidence inspector</div>}
-        sessionState="idle"
-        statusLabel="No active session"
-        storyKey={null}
-        workspaceLabel="Workspace overview"
-      />,
+      <AppProviders>
+        <AppShell
+          centerPane={<div>Center workspace</div>}
+          connectionLabel="Live updates idle"
+          connectionStatus="disconnected"
+          layoutMode="mobile"
+          leftPaneCollapsed
+          leftRail={<div>Story intake</div>}
+          mobilePane="workspace"
+          onMobilePaneChange={onMobilePaneChange}
+          onToggleLeftPane={onToggleLeftPane}
+          onToggleRightPane={onToggleRightPane}
+          phaseLabel="Phase 2: Happy Path Contract"
+          rightPaneCollapsed
+          rightRail={<div>Evidence inspector</div>}
+          sessionState="idle"
+          statusLabel="No active session"
+          storyKey={null}
+          workspaceLabel="Workspace overview"
+        />
+      </AppProviders>,
     );
 
     expect(screen.getByTestId('workspace-grid')).toHaveAttribute('data-layout-mode', 'mobile');
@@ -114,5 +129,38 @@ describe('AppShell', () => {
 
     await user.click(screen.getByRole('button', { name: /toggle evidence panel/i }));
     expect(onToggleRightPane).toHaveBeenCalled();
+  });
+
+  it('keeps fixed pane slots when the desktop story rail is collapsed', () => {
+    render(
+      <AppProviders>
+        <AppShell
+          centerPane={<div>Center workspace</div>}
+          connectionLabel="Live updates idle"
+          connectionStatus="disconnected"
+          layoutMode="desktop"
+          leftPaneCollapsed
+          leftRail={<div>Story intake</div>}
+          mobilePane="workspace"
+          onMobilePaneChange={vi.fn()}
+          onToggleLeftPane={vi.fn()}
+          onToggleRightPane={vi.fn()}
+          phaseLabel="Phase 2: Happy Path Contract"
+          rightPaneCollapsed={false}
+          rightRail={<div>Evidence inspector</div>}
+          sessionState="idle"
+          statusLabel="No active session"
+          storyKey={null}
+          workspaceLabel="Workspace overview"
+        />
+      </AppProviders>,
+    );
+
+    const main = screen.getByRole('main');
+    const inspector = screen.getByRole('complementary', { name: /evidence inspector/i });
+
+    expect(screen.queryByRole('complementary', { name: /story intake/i })).not.toBeInTheDocument();
+    expect(main).toHaveAttribute('data-pane-slot', 'main');
+    expect(inspector).toHaveAttribute('data-pane-slot', 'right');
   });
 });

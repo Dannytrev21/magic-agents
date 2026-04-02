@@ -9,8 +9,9 @@ Implements Feature 2.8: Checkpoint & Resume
 import json
 import logging
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
+from verify.backpressure import BackPressureController
 from verify.context import VerificationContext
 
 logger = logging.getLogger(__name__)
@@ -27,12 +28,20 @@ PHASE_TITLES = {
 }
 
 
-def save_checkpoint(context: VerificationContext, phase: str) -> Path:
+def save_checkpoint(
+    context: VerificationContext,
+    phase: str,
+    backpressure: Optional[BackPressureController] = None,
+) -> Path:
     """Save a checkpoint of the VerificationContext to disk.
 
     Args:
         context: The VerificationContext to save
         phase: The phase that was just completed (e.g., "phase_1")
+        backpressure: Optional controller whose state is persisted in the
+                      checkpoint's ``usage`` field.  When provided, the
+                      controller's serialized state takes precedence over
+                      ``context.usage``.
 
     Returns:
         Path to the saved checkpoint file
@@ -42,6 +51,9 @@ def save_checkpoint(context: VerificationContext, phase: str) -> Path:
     """
     session_dir = SESSIONS_DIR / context.jira_key
     session_dir.mkdir(parents=True, exist_ok=True)
+
+    # Determine usage: controller state wins when provided
+    usage = backpressure.to_dict() if backpressure is not None else context.usage
 
     # Convert context to dict for JSON serialization
     checkpoint_data = {
@@ -67,7 +79,7 @@ def save_checkpoint(context: VerificationContext, phase: str) -> Path:
         "all_passed": context.all_passed,
         "negotiation_log": context.negotiation_log,
         "session_id": context.session_id,
-        "usage": context.usage,
+        "usage": usage,
     }
 
     checkpoint_path = session_dir / f"checkpoint_{phase}.json"
@@ -78,15 +90,19 @@ def save_checkpoint(context: VerificationContext, phase: str) -> Path:
     return checkpoint_path
 
 
-def load_checkpoint(jira_key: str) -> Optional[Tuple[VerificationContext, int]]:
+def load_checkpoint(
+    jira_key: str,
+) -> Optional[Union[Tuple[VerificationContext, int, BackPressureController], Tuple[VerificationContext, int]]]:
     """Load the most recent checkpoint for a given Jira key.
 
     Args:
         jira_key: The Jira ticket key to load a checkpoint for
 
     Returns:
-        A tuple of (VerificationContext, phase_index) if a checkpoint exists,
-        None otherwise
+        A tuple of ``(VerificationContext, phase_index, BackPressureController)``
+        if a checkpoint exists, ``None`` otherwise.  The controller is restored
+        from the checkpoint's ``usage`` field (or defaults to zeros for old
+        checkpoints without usage data).
 
     Raises:
         json.JSONDecodeError: If the checkpoint file is corrupted
@@ -138,6 +154,9 @@ def load_checkpoint(jira_key: str) -> Optional[Tuple[VerificationContext, int]]:
     context.session_id = checkpoint_data.get("session_id", "")
     context.usage = checkpoint_data.get("usage", {})
 
+    # Restore BackPressureController from usage data
+    controller = BackPressureController.from_dict(context.usage)
+
     # Extract phase index from phase name (e.g., "phase_1" -> 0, "phase_2" -> 1)
     phase_name = context.current_phase
     from verify.negotiation.harness import PHASES
@@ -149,7 +168,7 @@ def load_checkpoint(jira_key: str) -> Optional[Tuple[VerificationContext, int]]:
         phase_index = 0
 
     logger.info(f"Restored context for {jira_key} at {phase_name} (index {phase_index})")
-    return (context, phase_index)
+    return (context, phase_index, controller)
 
 
 def has_checkpoint(jira_key: str) -> bool:

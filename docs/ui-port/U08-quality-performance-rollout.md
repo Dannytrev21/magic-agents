@@ -8,6 +8,16 @@
 
 The new UI should not become a second prototype. Once the workflow is ported, the team needs confidence that the app is performant, tested, and shippable without breaking the backend or losing the ability to compare with the legacy interface during rollout.
 
+## Implementation Status
+
+- `U8.1` is implemented with new left-rail component coverage, page-level integration coverage, expanded typed API contract tests, and a shared Vitest browser-runtime setup in `ui/src/test/setup.ts` that stabilizes observer/media-query/scroll APIs across hosts. On 2026-04-02, `npm run test:ui` and `npm run test:ci` both pass again after restoring that shared test harness contract and capping the jsdom suite to `maxWorkers: 1` in `ui/vitest.config.ts`.
+- `U8.2` is implemented with Playwright specs for the deterministic manual-entry happy path and a mocked pipeline failure path, plus failure screenshots by default and opt-in trace capture through `PW_TRACE=1`. The harness is environment-selectable, and the remote-browser path is now first-class: `playwright run-server` can host the browser outside Codex while `npm run test:e2e` or `npm run test:e2e:remote` connects to it. Direct browser launch inside Codex-hosted macOS can still fail, but remote-browser execution is now validated.
+- `U8.3` is implemented with a lazy-loaded verification console chunk, manifest-backed bundle budgets, and a reversible FastAPI frontend switch via `MAGIC_AGENTS_FRONTEND_MODE` or the `frontend` query parameter. The 2026-04-02 verification pass kept the existing 33.5 kB raw / 7 kB gzip shell CSS budget green by trimming decorative chrome instead of raising thresholds.
+- A recurring verification run on 2026-04-01 re-checked the UI-port tracker and epic markdown files, found no unfinished stories remaining in U1 through U8, and reconfirmed both `npm run test:ci` and `npm run test:e2e:chromium` as the active gap-detection gates for this completed frontend epic.
+- A follow-up 2026-04-02 verification run again found no unfinished UI-port stories, confirmed the remaining U8.1 gap was harness stability rather than product behavior, serialized the jsdom suite with `maxWorkers: 1` in `ui/vitest.config.ts`, reran `npm run test:ci`, and reran `npm run test:e2e:chromium`; both gates are green on the current branch.
+- A later 2026-04-02 quality pass repaired the typed ESLint gate so local Playwright browser caches no longer break lint, tracked Playwright config/spec files stay in the linted TypeScript project, and `npm run test:ci` now runs lint before Vitest, build, and budget checks.
+- A follow-up proof pass also closed a live-stream correctness gap in `ui/src/features/workspace/phaseWorkspaceModel.ts`: the workspace now dispatches each negotiation SSE from the `useSSE` `onEvent` callback so `phase_start` and immediate `phase_progress` events survive the same React batch instead of collapsing to the last payload only.
+
 ---
 
 ## Story U8.1: Add component, integration, and contract tests for the new UI
@@ -34,16 +44,18 @@ The new UI should not become a second prototype. Once the workflow is ported, th
 
 ### Acceptance Criteria
 
-- [ ] Component tests exist for shell, rails, phase surfaces, inspector tabs, and artifact viewers.
-- [ ] Integration tests cover story selection, phase approval, revision, and pipeline launch.
-- [ ] API contract tests validate the typed frontend adapters against representative backend payloads.
-- [ ] CI can run frontend tests independently of browser e2e tests.
+- [x] Component tests exist for shell, rails, phase surfaces, inspector tabs, and artifact viewers.
+- [x] Integration tests cover story selection, phase approval, revision, and pipeline launch.
+- [x] API contract tests validate the typed frontend adapters against representative backend payloads.
+- [x] CI can run frontend tests independently of browser e2e tests.
 
 ### How to Test
 
 - Run the frontend unit and integration suite locally and in CI.
+- Run `npm run lint && npm run test:ci` and confirm both remain green.
 - Intentionally break a contract shape in a mock response and confirm tests fail.
 - Re-run backend web tests to ensure the shared workflow still works end to end.
+- Keep shared jsdom fallbacks in `ui/src/test/setup.ts` up to date when component code adopts new browser primitives.
 
 ---
 
@@ -71,16 +83,19 @@ The new UI should not become a second prototype. Once the workflow is ported, th
 
 ### Acceptance Criteria
 
-- [ ] Browser tests cover manual entry, Jira intake fallback, negotiation progress, approval, and pipeline execution.
-- [ ] Browser tests cover at least one failure mode such as stream error or mutation failure.
-- [ ] Tests run in deterministic mock mode.
-- [ ] Screenshots or traces are retained for failed runs.
+- [x] Browser tests cover manual entry, Jira intake fallback, negotiation progress, approval, and pipeline execution.
+- [x] Browser tests cover at least one failure mode such as stream error or mutation failure.
+- [x] Tests run in deterministic mock mode.
+- [x] Screenshots or traces are retained for failed runs.
 
 ### How to Test
 
 - Run the browser suite locally against mock mode.
 - Intentionally inject one failing API response and confirm the failure path is asserted.
-- Review captured traces or screenshots from a failed test run.
+- Review captured screenshots from a failed test run, or rerun with `PW_TRACE=1` when you need Playwright trace archives.
+- Use `npm run test:e2e` for the default Chromium path in this repo, or `npm run test:e2e:chromium`, `npm run test:e2e:firefox`, and `npm run test:e2e:webkit` when isolating host-specific browser failures.
+- For Codex-hosted runs, start `npm run test:e2e:server` outside Codex and then run `npm run test:e2e:remote` or `PW_TEST_CONNECT_WS_ENDPOINT=ws://127.0.0.1:3000/ npm run test:e2e` from Codex.
+- If the app under test is already running elsewhere, set `PW_SKIP_WEBSERVER=1` and point Playwright at it with `PW_BASE_URL=http://host:port`.
 
 ---
 
@@ -108,13 +123,16 @@ The new UI should not become a second prototype. Once the workflow is ported, th
 
 ### Acceptance Criteria
 
-- [ ] Bundle-size budgets are defined for the shell and major lazy-loaded surfaces.
-- [ ] Heavy surfaces such as artifact viewers and analyst tools are code-split.
-- [ ] A feature flag, route split, or reversible deployment path exists for rollout.
-- [ ] The legacy UI remains available until the new workspace is accepted.
+- [x] Bundle-size budgets are defined for the shell and major lazy-loaded surfaces.
+- [x] Heavy surfaces such as artifact viewers and analyst tools are code-split.
+- [x] A feature flag, route split, or reversible deployment path exists for rollout.
+- [x] The legacy UI remains available until the new workspace is accepted.
 
 ### How to Test
 
 - Run bundle analysis on production builds and compare against budgets.
 - Verify lazy-loaded surfaces are not present in the initial shell chunk.
 - Perform a manual cutover test between legacy and new UI entrypoints.
+- Verify `/?frontend=legacy` still serves [`/Users/dannytrevino/development/magic-agents/static/index.html`](/Users/dannytrevino/development/magic-agents/static/index.html) while the default root continues to prefer the built React bundle when present.
+- Re-run `npm run test:ci` and confirm the budget report keeps the workspace shell under 33.5 kB raw / 7 kB gzip without editing `ui/config/bundle-budgets.json`.
+- Re-run `npm run test:e2e:chromium` after shell or operator-journey copy changes so the browser path stays aligned with the non-browser gate.

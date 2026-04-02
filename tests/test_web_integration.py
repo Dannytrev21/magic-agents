@@ -223,6 +223,12 @@ class TestCompileEndpoint:
         assert "spec_content" in data
         assert "TEST-WEB" in data["spec_content"]
 
+    def test_compile_requires_ears_approval(self, client, negotiated_session):
+        response = client.post("/api/compile")
+
+        assert response.status_code == 400
+        assert "Approve EARS" in response.json()["error"]
+
     def test_compile_no_session(self, client):
         response = client.post("/api/compile")
         assert response.status_code == 400
@@ -253,6 +259,101 @@ class TestSSEStreamingPipeline:
         """Streaming without a session should return error."""
         response = client.post("/api/pipeline/stream")
         assert response.status_code == 400
+
+    def test_stream_pipeline_requires_ears_approval(self, client, negotiated_session):
+        response = client.post("/api/pipeline/stream")
+
+        assert response.status_code == 400
+        assert "Approve EARS" in response.json()["error"]
+
+    def test_stream_pipeline_emits_step_events_after_approval(
+        self, client, negotiated_session, monkeypatch, tmp_path
+    ):
+        client.post("/api/ears-approve", json={"approved_by": "test_developer"})
+
+        spec_path = tmp_path / "TEST-WEB.yaml"
+        spec_path.write_text(
+            "requirements:\n"
+            "  - id: REQ-001\n"
+            "    verification:\n"
+            "      - output: tests/test_generated.py\n"
+            "traceability:\n"
+            "  ac_mappings:\n"
+            "    - ac_checkbox: 0\n"
+            "      ac_text: User can view their profile via GET /api/v1/users/me\n"
+            "      pass_condition: ALL_PASS\n"
+            "      required_verifications:\n"
+            "        - ref: REQ-001.success\n"
+            "          verification_type: test_result\n"
+        )
+        test_path = tmp_path / "test_generated.py"
+        test_path.write_text("def test_generated():\n    assert True\n")
+
+        monkeypatch.setattr(
+            "verify.compiler.compile_and_write",
+            lambda ctx, output_dir="specs": str(spec_path),
+        )
+        monkeypatch.setattr(
+            "verify.generator.generate_and_write",
+            lambda compiled_spec_path: str(test_path),
+        )
+        monkeypatch.setattr(
+            "verify.runner.run_and_parse",
+            lambda generated_test_path, results_dir: {
+                "test_cases": [
+                    {
+                        "name": "test_generated",
+                        "status": "passed",
+                        "tags": ["REQ-001.success"],
+                    }
+                ]
+            },
+        )
+        monkeypatch.setattr(
+            "verify.evaluator.evaluate_spec",
+            lambda compiled_spec_path, results: [
+                {
+                    "ac_checkbox": 0,
+                    "ac_text": "User can view their profile via GET /api/v1/users/me",
+                    "passed": True,
+                    "summary": "1/1 verifications passed",
+                    "evidence": [
+                        {
+                            "ref": "REQ-001.success",
+                            "verification_type": "test_result",
+                            "passed": True,
+                            "details": "Test 'test_generated' passed",
+                        }
+                    ],
+                }
+            ],
+        )
+
+        response = client.post("/api/pipeline/stream")
+
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith("text/event-stream")
+
+        events = [
+            json.loads(line[6:])
+            for line in response.text.splitlines()
+            if line.startswith("data: ")
+        ]
+
+        assert any(
+            event.get("type") == "step"
+            and event.get("step") == "compile"
+            and event.get("status") in {"done", "skipped"}
+            for event in events
+        )
+        assert any(
+            event.get("type") == "step"
+            and event.get("step") == "generate"
+            and event.get("status") == "done"
+            for event in events
+        )
+        assert events[-1]["type"] == "done"
+        assert events[-1]["all_passed"] is True
 
 
 class TestScanEndpoint:

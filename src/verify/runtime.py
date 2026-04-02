@@ -10,6 +10,7 @@ modules themselves:
 
 from __future__ import annotations
 
+import enum
 import json
 import logging
 from dataclasses import dataclass, field
@@ -17,6 +18,7 @@ from datetime import datetime, timezone
 from typing import Any, Callable
 from uuid import uuid4
 
+from verify.backpressure import BackPressureController, PhaseCostReport
 from verify.context import VerificationContext
 from verify.llm_client import LLMClient
 from verify.negotiation.checkpoint import load_checkpoint
@@ -30,6 +32,44 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+# ------------------------------------------------------------------
+# P6.1: Typed Event Schema
+# ------------------------------------------------------------------
+
+class NegotiationEvent(enum.Enum):
+    """Closed set of SSE event types for structured streaming."""
+
+    PHASE_START = "phase_start"
+    PHASE_PROGRESS = "phase_progress"
+    PHASE_COMPLETE = "phase_complete"
+    PHASE_ERROR = "phase_error"
+    VALIDATION_RESULT = "validation_result"
+    BUDGET_WARNING = "budget_warning"
+    BUDGET_EXCEEDED = "budget_exceeded"
+    SKILL_DISPATCH = "skill_dispatch"
+    SKILL_COMPLETE = "skill_complete"
+    SESSION_CHECKPOINT = "session_checkpoint"
+
+
+EVENT_SCHEMAS: dict[str, set[str]] = {
+    "phase_start": {"phase", "phase_index"},
+    "phase_progress": {"phase", "turn", "message"},
+    "phase_complete": {"phase", "result_count", "phase_index"},
+    "phase_error": {"phase", "error", "phase_index"},
+    "validation_result": {"phase", "valid", "errors"},
+    "budget_warning": {"phase", "tokens_used", "budget_limit"},
+    "budget_exceeded": {"phase", "usage_summary"},
+    "skill_dispatch": {"skill_name", "phase"},
+    "skill_complete": {"skill_name", "phase", "result_count"},
+    "session_checkpoint": {"phase", "checkpoint_path"},
+}
+
+# Legacy event types from pre-P6 pipeline streaming (step, done, error).
+_LEGACY_EVENT_TYPES = frozenset({"step", "done", "error"})
+
+_VALID_EVENT_TYPES = frozenset(e.value for e in NegotiationEvent) | _LEGACY_EVENT_TYPES
+
+
 @dataclass
 class RuntimeEvent:
     """Normalized event payload used by runtime history and SSE streaming."""
@@ -40,6 +80,13 @@ class RuntimeEvent:
     status: str = ""
     message: str = ""
     data: dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if self.type not in _VALID_EVENT_TYPES:
+            raise ValueError(
+                f"Invalid event type '{self.type}'. "
+                f"Must be one of: {sorted(_VALID_EVENT_TYPES)}"
+            )
 
     def payload(self) -> dict[str, Any]:
         payload: dict[str, Any] = {
@@ -56,7 +103,9 @@ class RuntimeEvent:
         return payload
 
     def as_sse(self) -> str:
-        return f"data: {json.dumps(self.payload())}\n\n"
+        if self.type in _LEGACY_EVENT_TYPES:
+            return f"data: {json.dumps(self.payload())}\n\n"
+        return f"event: {self.type}\ndata: {json.dumps(self.payload())}\n\n"
 
 
 @dataclass
@@ -72,6 +121,9 @@ class SessionState:
     history: list[dict[str, Any]] = field(default_factory=list)
     latest_questions: list[dict[str, str]] = field(default_factory=list)
     latest_pipeline: dict[str, Any] = field(default_factory=dict)
+    event_buffer: list = field(default_factory=list)
+    backpressure: BackPressureController = field(default_factory=BackPressureController)
+    phase_cost_reports: list[PhaseCostReport] = field(default_factory=list)
     compaction_threshold: int = 30
     keep_recent: int = 15
     history_compaction_threshold: int = 60
@@ -269,7 +321,7 @@ class SessionStore:
         if loaded is None:
             return None
 
-        context, _ = loaded
+        context, _, _controller = loaded
         session_id = getattr(context, "session_id", None) or None
 
         if session_id and session_id in self.sessions:

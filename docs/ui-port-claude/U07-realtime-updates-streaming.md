@@ -36,10 +36,16 @@ The UI subscribes to the backend SSE stream and dispatches typed events to a lig
 
 ### Acceptance Criteria
 
-- [ ] SSE connection establishes on session start.
-- [ ] Connection status is reflected in the top bar indicator.
-- [ ] Auto-reconnection uses exponential backoff.
-- [ ] Cleanup occurs on unmount.
+- [x] SSE connection establishes on session start.
+- [x] Connection status is reflected in the top bar indicator.
+- [x] Auto-reconnection uses exponential backoff.
+- [x] Cleanup occurs on unmount.
+
+### Implementation Notes
+
+- `usePhaseWorkspaceModel()` now owns the session-scoped `useSSE()` lifecycle and maps connection state into quiet top-bar copy.
+- The shipped shell exposes a dedicated connection-status pill so stream health is visible without overriding the existing session-status language.
+- Browser tests use a lightweight `EventSource` stub in Vitest while `useSSE.test.ts` keeps the full reconnect behavior under direct hook coverage.
 
 ### How to Test
 
@@ -85,10 +91,16 @@ test("SSE client reconnects on drop", async () => {
 
 ### Acceptance Criteria
 
-- [ ] Selector hooks return correctly filtered events.
-- [ ] Components only re-render when their subscribed event type arrives.
-- [ ] Store clears on session change.
-- [ ] FIFO overflow at 100 events.
+- [x] Selector hooks return correctly filtered events.
+- [x] Components only re-render when their subscribed event type arrives.
+- [x] Store clears on session change.
+- [x] FIFO overflow at 100 events.
+
+### Implementation Notes
+
+- `EventStoreProvider` is mounted in the shared app provider stack so all live workspace surfaces subscribe to one store.
+- `usePhaseWorkspaceModel()` clears the store whenever the confirmed session changes, preventing stale phase events from leaking into the next story.
+- FIFO retention and selector behavior remain covered in `eventStore.test.ts`, while `phaseWorkspaceModel.test.tsx` verifies the session handoff wiring and connection-label mapping.
 
 ### How to Test
 
@@ -131,11 +143,17 @@ test("usePhaseEvents filters correctly", () => {
 
 ### Acceptance Criteria
 
-- [ ] Progress bar appears on `phase_start`.
-- [ ] Elapsed time counts up in real-time.
-- [ ] Step description updates from `phase_progress` events.
-- [ ] Bar fills and fades on `phase_complete`.
-- [ ] Bar turns red on `phase_error`.
+- [x] Progress bar appears on `phase_start`.
+- [x] Elapsed time counts up in real-time.
+- [x] Step description updates from `phase_progress` events.
+- [x] Bar fills and fades on `phase_complete`.
+- [x] Bar turns red on `phase_error`.
+
+### Implementation Notes
+
+- `PhaseProgressBar` now ships in two quiet surfaces: a compact rail variant and a fuller workspace-header variant.
+- Completion switches the bar into a terminal success state before it leaves the screen, while error events keep the indicator visible in the error tone.
+- `WorkspaceCenterPane.test.tsx` covers the dual-surface rendering and `PhaseProgressBar.test.tsx` covers the timer, message, completion, and error states.
 
 ### How to Test
 

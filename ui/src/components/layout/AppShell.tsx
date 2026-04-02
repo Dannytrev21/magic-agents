@@ -8,10 +8,14 @@ import type {
   WorkspacePaneId,
   WorkspaceSessionState,
 } from '@/features/workspace/workspaceModel';
+import type { SSEConnectionStatus } from '@/lib/api/useSSE';
 
 type AppShellProps = {
+  announcement?: string | null;
   leftRail: ReactNode;
   centerPane: ReactNode;
+  connectionLabel: string;
+  connectionStatus: SSEConnectionStatus;
   rightRail: ReactNode;
   layoutMode: WorkspaceLayoutMode;
   leftPaneCollapsed: boolean;
@@ -29,8 +33,11 @@ type AppShellProps = {
 };
 
 export function AppShell({
+  announcement = null,
   leftRail,
   centerPane,
+  connectionLabel,
+  connectionStatus,
   rightRail,
   layoutMode,
   leftPaneCollapsed,
@@ -49,7 +56,7 @@ export function AppShell({
   const gridStyle = {
     '--workspace-left-width':
       layoutMode === 'desktop' && !leftPaneCollapsed
-        ? '18rem'
+        ? '22rem'
         : layoutMode === 'tablet' && !leftPaneCollapsed
           ? '18rem'
           : '0rem',
@@ -65,6 +72,11 @@ export function AppShell({
         ? mobilePane !== 'evidence'
         : true;
   const inspectorOverlayVisible = layoutMode === 'tablet' && !rightPaneCollapsed;
+  const statusStackStyle = {
+    display: 'grid',
+    gap: 'var(--space-2)',
+    justifyItems: layoutMode === 'desktop' ? 'end' : 'stretch',
+  } as const;
 
   return (
     <div className={styles.shell}>
@@ -73,17 +85,9 @@ export function AppShell({
       </a>
       <header className={styles.topBar} data-sticky="true">
         <div className={styles.brandBlock}>
-          <Text as="p" size="xs" tone="muted" className={styles.kicker}>
-            Acceptance criteria to proof
+          <Text as="h1" className={styles.brandMark} size="xl" weight="semibold">
+            SPECIFI
           </Text>
-          <div className={styles.brandName}>
-            <Text as="h1" size="lg" weight="semibold">
-              Magic Agents
-            </Text>
-            <Text as="p" size="sm" tone="muted">
-              Operator workspace
-            </Text>
-          </div>
         </div>
         <div className={styles.contextBlock}>
           <div className={styles.metaColumn}>
@@ -112,19 +116,30 @@ export function AppShell({
           </div>
         </div>
         <div className={styles.headerMeta}>
-          <div className={styles.statusPill} role="status">
-            <span
-              aria-hidden="true"
-              className={`${styles.statusDot} ${sessionStateClassName(sessionState, styles)}`}
-            />
-            <Text as="span" size="sm" weight="medium">
-              {statusLabel}
-            </Text>
+          <div style={statusStackStyle}>
+            <div aria-label="Connection status" className={styles.statusPill} role="status">
+              <span
+                aria-hidden="true"
+                className={styles.statusDot}
+                style={connectionDotStyle(connectionStatus)}
+              />
+              <Text as="span" size="sm" weight="medium">
+                {connectionLabel}
+              </Text>
+            </div>
+            <div aria-label="Session status" className={styles.statusPill} role="status">
+              <span
+                aria-hidden="true"
+                className={`${styles.statusDot} ${sessionStateClassName(sessionState, styles)}`}
+              />
+              <Text as="span" size="sm" weight="medium">
+                {statusLabel}
+              </Text>
+            </div>
           </div>
           <div className={styles.controlGroup}>
             <Button
               aria-expanded={layoutMode === 'mobile' ? mobilePane === 'story' : !leftPaneCollapsed}
-              className={styles.controlButton}
               onClick={onToggleLeftPane}
               variant="ghost"
             >
@@ -138,7 +153,6 @@ export function AppShell({
                     ? inspectorOverlayVisible
                     : mobilePane === 'evidence'
               }
-              className={styles.controlButton}
               onClick={onToggleRightPane}
               variant="ghost"
             >
@@ -147,6 +161,15 @@ export function AppShell({
           </div>
         </div>
       </header>
+      <div
+        aria-atomic="true"
+        aria-label="Workspace announcements"
+        aria-live="polite"
+        className={styles.visuallyHidden}
+        role="status"
+      >
+        {announcement}
+      </div>
       <div className={styles.workspaceFrame}>
         <div
           className={styles.workspaceGrid}
@@ -157,7 +180,8 @@ export function AppShell({
           <aside
             aria-hidden={leftPaneHidden}
             aria-label="Story intake"
-            className={styles.pane}
+            className={`${styles.pane} ${styles.leftPane}`}
+            data-pane-slot="left"
             data-pane-state={leftPaneHidden ? 'collapsed' : 'expanded'}
             data-scroll-region="independent"
             hidden={leftPaneHidden}
@@ -169,6 +193,7 @@ export function AppShell({
             aria-hidden={centerPaneHidden}
             className={`${styles.pane} ${styles.mainPane}`}
             data-pane-priority="primary"
+            data-pane-slot="main"
             data-scroll-region="independent"
             hidden={centerPaneHidden}
             id="workspace-main"
@@ -179,6 +204,7 @@ export function AppShell({
             aria-hidden={rightPaneHidden}
             aria-label="Evidence inspector"
             className={`${styles.pane} ${styles.inspectorPane}`}
+            data-pane-slot="right"
             data-pane-state={rightPaneHidden ? 'collapsed' : 'expanded'}
             data-scroll-region="independent"
             hidden={rightPaneHidden}
@@ -249,5 +275,18 @@ function sessionStateClassName(
       return css.statusComplete;
     default:
       return css.statusIdle;
+  }
+}
+
+function connectionDotStyle(connectionStatus: SSEConnectionStatus): CSSProperties {
+  switch (connectionStatus) {
+    case 'connected':
+      return { backgroundColor: 'var(--color-success)' };
+    case 'reconnecting':
+      return { backgroundColor: 'var(--color-warning)' };
+    case 'disconnected':
+      return { backgroundColor: 'var(--color-text-muted)' };
+    default:
+      return { backgroundColor: 'var(--color-signal)' };
   }
 }

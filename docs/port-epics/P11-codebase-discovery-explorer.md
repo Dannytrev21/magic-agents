@@ -1,6 +1,7 @@
 # Epic P11: Codebase Discovery & Explore Agent
 
 **Priority:** 2.5 (High — slotted between P2 and P3; foundational for all negotiation quality)
+**Status:** Done
 **Ported From:** `claw-code/src/port_manifest.py` (workspace introspection), `claw-code/src/context.py` (PortContext build), `claw-code/src/setup.py` (environment detection), Claude Code "Explore" agent pattern (scan → understand → index)
 **Integration Target:** `magic-agents/src/verify/scanner.py` (currently Java-only), `magic-agents/constitution.yaml` (currently hand-written)
 
@@ -45,11 +46,11 @@ This epic creates a **general-purpose codebase explorer** that auto-detects lang
 
 ### Acceptance Criteria
 
-- [ ] `StackProfile` dataclass is defined with all listed fields.
-- [ ] `detect_stack(path: str) -> StackProfile` function is implemented.
-- [ ] Detects at minimum: Java/Spring Boot, Python/FastAPI, Python/Django, TypeScript/Next.js, TypeScript/Express, Go/stdlib, Rust/Actix.
-- [ ] Returns `confidence < 0.5` when framework cannot be determined.
-- [ ] Handles monorepos by detecting the primary stack at root and per-subdirectory.
+- [x]`StackProfile` dataclass is defined with all listed fields.
+- [x]`detect_stack(path: str) -> StackProfile` function is implemented.
+- [x]Detects at minimum: Java/Spring Boot, Python/FastAPI, Python/Django, TypeScript/Next.js, TypeScript/Express, Go/stdlib, Rust/Actix.
+- [x]Returns `confidence < 0.5` when framework cannot be determined.
+- [x]Handles monorepos by detecting the primary stack at root and per-subdirectory.
 
 ### How to Test
 
@@ -120,11 +121,11 @@ def test_detect_performance(large_repo_path):
 
 ### Acceptance Criteria
 
-- [ ] `build_codebase_index(profile: StackProfile, path: str) -> CodebaseIndex` is implemented.
-- [ ] Java scanner extracts: `@RestController` endpoints, `@Entity` models, DTOs by naming convention, `@WebMvcTest`/`@SpringBootTest` patterns.
-- [ ] Python scanner extracts: FastAPI/Flask route decorators, Pydantic models, SQLAlchemy models, pytest fixtures/markers.
-- [ ] TypeScript scanner extracts: Express/Next.js routes, TypeScript interfaces/types, Jest/Vitest test files.
-- [ ] Unparseable files are logged at DEBUG and counted in `coverage_report`.
+- [x]`build_codebase_index(profile: StackProfile, path: str) -> CodebaseIndex` is implemented.
+- [x]Java scanner extracts: `@RestController` endpoints, `@Entity` models, DTOs by naming convention, `@WebMvcTest`/`@SpringBootTest` patterns.
+- [x]Python scanner extracts: FastAPI/Flask route decorators, Pydantic models, SQLAlchemy models, pytest fixtures/markers.
+- [x]TypeScript scanner extracts: Express/Next.js routes, TypeScript interfaces/types, Jest/Vitest test files.
+- [x]Unparseable files are logged at DEBUG and counted in `coverage_report`.
 
 ### How to Test
 
@@ -185,11 +186,11 @@ def test_scanner_dispatch():
 
 ### Acceptance Criteria
 
-- [ ] `generate_constitution(profile, index, output_path=None) -> ConstitutionDraft` is implemented.
-- [ ] `ConstitutionDraft` contains `yaml_content` (string), `todo_count` (int), `sections_populated` (list of section names).
-- [ ] Generated YAML matches the schema of the existing `constitution.yaml`.
-- [ ] Unknown fields get `# TODO: verify` comments.
-- [ ] Existing constitution files are never silently overwritten.
+- [x]`generate_constitution(profile, index, output_path=None) -> ConstitutionDraft` is implemented.
+- [x]`ConstitutionDraft` contains `yaml_content` (string), `todo_count` (int), `sections_populated` (list of section names).
+- [x]Generated YAML matches the schema of the existing `constitution.yaml`.
+- [x]Unknown fields get `# TODO: verify` comments.
+- [x]Existing constitution files are never silently overwritten.
 
 ### How to Test
 
@@ -260,11 +261,11 @@ def test_roundtrip_dog_service():
 
 ### Acceptance Criteria
 
-- [ ] `python -m verify.explorer dog-service` prints stack, index summary, and draft constitution.
-- [ ] `POST /api/explore {"path": "dog-service"}` returns 200 with full JSON result.
-- [ ] `POST /api/explore {"path": "/nonexistent"}` returns 400 with a clear error.
-- [ ] CLI output includes color formatting for readability.
-- [ ] Web response includes `duration_seconds` for performance monitoring.
+- [x]`python -m verify.explorer dog-service` prints stack, index summary, and draft constitution.
+- [x]`POST /api/explore {"path": "dog-service"}` returns 200 with full JSON result.
+- [x]`POST /api/explore {"path": "/nonexistent"}` returns 400 with a clear error.
+- [x]CLI output includes color formatting for readability.
+- [x]Web response includes `duration_seconds` for performance monitoring.
 
 ### How to Test
 
@@ -329,11 +330,11 @@ def test_cli_web_equivalence(client):
 
 ### Acceptance Criteria
 
-- [ ] `VerificationContext` has an optional `codebase_index: dict` field.
-- [ ] Phase system prompts include `## Codebase Context` when index is available.
-- [ ] Context is truncated to 2,000 tokens with a `[truncated — N items omitted]` note.
-- [ ] Phases work normally when no index is provided.
-- [ ] The web UI session creation endpoint accepts an optional `explore_path` that triggers auto-scan.
+- [x]`VerificationContext` has an optional `codebase_index: dict` field.
+- [x]Phase system prompts include `## Codebase Context` when index is available.
+- [x]Context is truncated to 2,000 tokens with a `[truncated — N items omitted]` note.
+- [x]Phases work normally when no index is provided.
+- [x]The web UI session creation endpoint accepts an optional `explore_path` that triggers auto-scan.
 
 ### How to Test
 

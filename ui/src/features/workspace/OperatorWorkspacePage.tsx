@@ -8,6 +8,7 @@ import {
   type PhaseActionState,
 } from '@/features/workspace/WorkspaceCenterPane';
 import { WorkspaceInspector } from '@/features/workspace/WorkspaceInspector';
+import { usePhaseWorkspaceModel } from '@/features/workspace/phaseWorkspaceModel';
 import {
   centerWorkspaceViews,
   getWorkspaceLayoutMode,
@@ -57,16 +58,25 @@ export function OperatorWorkspacePage({
     initialSession?.phase_number ?? null,
   );
   const [phaseActionState, setPhaseActionState] = useState<PhaseActionState>(defaultPhaseActionState);
+  const [workspaceAnnouncement, setWorkspaceAnnouncement] = useState<string | null>(null);
   const [layoutMode, setLayoutMode] = useState(() => getWorkspaceLayoutMode(window.innerWidth));
   const [panelPreferences, setPanelPreferences] = useState<PanelPreferences>(readPanelPreferences);
   const [tabletInspectorOpen, setTabletInspectorOpen] = useState(false);
   const [isTransitionPending, startShellTransition] = useTransition();
   const [searchParams, setSearchParams] = useSearchParams();
   const respondMutation = useRespondMutation();
+  const { connectionLabel, connectionStatus } = usePhaseWorkspaceModel(
+    activeSession?.session_id ?? null,
+  );
   const centerFocusRef = useRef<HTMLElement | null>(null);
   const inspectorFocusRef = useRef<HTMLElement | null>(null);
   const hasRenderedCenterView = useRef(false);
   const hasRenderedInspectorView = useRef(false);
+  const sessionFocusSnapshotRef = useRef<{
+    done: boolean;
+    phaseNumber: number;
+    sessionId: string;
+  } | null>(null);
 
   const centerView = parseCenterWorkspaceView(searchParams.get('view'));
   const inspectorView = parseInspectorWorkspaceView(searchParams.get('inspector'));
@@ -113,6 +123,28 @@ export function OperatorWorkspacePage({
     inspectorFocusRef.current?.focus();
   }, [inspectorView]);
 
+  useEffect(() => {
+    if (!activeSession) {
+      sessionFocusSnapshotRef.current = null;
+      return;
+    }
+
+    const previous = sessionFocusSnapshotRef.current;
+    sessionFocusSnapshotRef.current = {
+      done: activeSession.done,
+      phaseNumber: activeSession.phase_number,
+      sessionId: activeSession.session_id,
+    };
+
+    if (!previous || previous.sessionId !== activeSession.session_id) {
+      return;
+    }
+
+    if (previous.phaseNumber !== activeSession.phase_number || previous.done !== activeSession.done) {
+      centerFocusRef.current?.focus();
+    }
+  }, [activeSession]);
+
   function updatePanelPreferences(next: PanelPreferences) {
     setPanelPreferences(next);
     writePanelPreferences(next);
@@ -147,6 +179,7 @@ export function OperatorWorkspacePage({
       setActiveSession(session);
       setActiveStory(story);
       setStorySummary(session.jira_summary ?? story.summary);
+      setWorkspaceAnnouncement(`Session started for ${story.key}. Negotiation workspace ready.`);
       setSelectedAcceptanceCriterionIndex((current) =>
         story.acceptanceCriteria.some((criterion) => criterion.index === current) ? current : null,
       );
@@ -177,21 +210,30 @@ export function OperatorWorkspacePage({
 
   function handleAcceptanceCriterionSelect(index: number) {
     setSelectedAcceptanceCriterionIndex(index);
+    setWorkspaceAnnouncement(`Acceptance criterion ${index + 1} selected.`);
   }
 
   function handlePhaseSelect(phaseNumber: number) {
     setSelectedPhaseNumber(phaseNumber);
+    setWorkspaceAnnouncement(`Phase ${phaseNumber} selected.`);
   }
 
   function handleCenterViewChange(view: string) {
+    const nextLabel =
+      centerWorkspaceViews.find((candidate) => candidate.value === view)?.label ?? 'Workspace';
+    setWorkspaceAnnouncement(`${nextLabel} view open in the center workspace.`);
     updateWorkspaceRoute({ view });
   }
 
   function handleInspectorViewChange(view: string) {
+    const nextLabel =
+      parseInspectorWorkspaceView(view)?.replace(/^\w/, (value) => value.toUpperCase()) ?? 'Inspector';
+    setWorkspaceAnnouncement(`${nextLabel} inspector view open.`);
     updateWorkspaceRoute({ inspector: view });
   }
 
   function handleMobilePaneChange(pane: WorkspacePaneId) {
+    setWorkspaceAnnouncement(`${paneLabel(pane)} panel open.`);
     updateWorkspaceRoute({ pane });
   }
 
@@ -213,24 +255,40 @@ export function OperatorWorkspacePage({
         session_id: activeSession.session_id,
       });
 
+      if (!nextSession?.session_id) {
+        throw new Error(
+          action === 'approve'
+            ? 'Approval did not return updated session state.'
+            : 'Revision did not return updated session state.',
+        );
+      }
+
       startShellTransition(() => {
         setActiveSession(nextSession);
-        setStorySummary(nextSession.jira_summary ?? storySummary);
+        setStorySummary(nextSession.jira_summary ?? activeStory?.summary ?? storySummary);
         setSelectedPhaseNumber((current) => resolveSelectedPhaseNumber(current, activeSession, nextSession));
+        if (action === 'approve' && nextSession.done) {
+          const next = new URLSearchParams(searchParams);
+          next.set('view', 'verification');
+          setSearchParams(next, { replace: true });
+        }
         setPhaseActionState({
           activeAction: action,
           isPending: false,
           message: buildPhaseActionMessage(action, nextSession),
           status: 'success',
         });
+        setWorkspaceAnnouncement(buildPhaseActionAnnouncement(action, nextSession));
       });
     } catch (error) {
+      const message = resolvePhaseActionError(error, action);
       setPhaseActionState({
         activeAction: action,
         isPending: false,
-        message: resolvePhaseActionError(error, action),
+        message,
         status: 'error',
       });
+      setWorkspaceAnnouncement(`Phase response failed. ${action === 'approve' ? 'Review the approval error.' : 'Review the revision error.'}`);
     }
   }
 
@@ -291,6 +349,7 @@ export function OperatorWorkspacePage({
 
   return (
     <AppShell
+      announcement={workspaceAnnouncement}
       centerPane={
         <WorkspaceCenterPane
           activeSession={activeSession}
@@ -310,6 +369,8 @@ export function OperatorWorkspacePage({
           storySummary={activeStory?.summary ?? storySummary}
         />
       }
+      connectionLabel={connectionLabel}
+      connectionStatus={connectionStatus}
       layoutMode={layoutMode}
       leftPaneCollapsed={panelPreferences.leftCollapsed}
       leftRail={
@@ -335,6 +396,7 @@ export function OperatorWorkspacePage({
           activeSession={activeSession}
           activeView={inspectorView}
           focusRef={inspectorFocusRef}
+          key={activeSession?.session_id ?? 'idle'}
           onAcceptanceCriterionSelect={handleAcceptanceCriterionSelect}
           onViewChange={handleInspectorViewChange}
           selectedAcceptanceCriterionIndex={selectedAcceptanceCriterionIndex}
@@ -384,6 +446,32 @@ function resolvePhaseActionError(error: unknown, action: 'approve' | 'revise') {
   return action === 'approve'
     ? 'Unable to approve the active phase.'
     : 'Unable to request a revised phase response.';
+}
+
+function buildPhaseActionAnnouncement(
+  action: 'approve' | 'revise',
+  session: StartNegotiationResponse,
+) {
+  if (action === 'revise') {
+    return `Revision response loaded for ${session.phase_title}.`;
+  }
+
+  if (session.done) {
+    return 'Phase approved. Verification workspace ready.';
+  }
+
+  return `Phase approved. ${session.phase_title} is now active.`;
+}
+
+function paneLabel(pane: WorkspacePaneId) {
+  switch (pane) {
+    case 'story':
+      return 'Story';
+    case 'evidence':
+      return 'Evidence';
+    default:
+      return 'Workspace';
+  }
 }
 
 function readPanelPreferences(): PanelPreferences {
