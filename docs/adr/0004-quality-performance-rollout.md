@@ -17,7 +17,7 @@ Adopt a three-part rollout and quality model:
 - cap Vitest worker fan-out at `1` for the shared jsdom-heavy UI suite so the non-browser gate stays deterministic on constrained local and Codex-hosted macOS environments
 - keep the core operator journey deterministic in Playwright by routing all browser tests through mocked API/SSE fixtures with retained screenshots on failure and opt-in traces via `PW_TRACE=1` or CI
 - bridge negotiation SSE into the shared workspace event store from per-message callbacks rather than a derived `lastEvent` effect so same-batch phase updates preserve order and do not disappear under React batching
-- keep the shell CSS gzip ceiling fixed at `7 kB`, but allow the raw shell CSS budget to rise to `36 kB` when shipped operator chrome grows without materially changing compressed transfer size
+- keep the shell CSS budget fixed at `33.5 kB` raw and `7 kB` gzip, trimming decorative chrome or splitting surfaces instead of raising thresholds for routine shell changes
 - treat the FastAPI root as a reversible rollout boundary by supporting `MAGIC_AGENTS_FRONTEND_MODE=auto|react|legacy` and `/?frontend=react|legacy` overrides while preserving the legacy HTML entrypoint
 
 Add bundle budgets as part of the shipped contract by generating a Vite manifest and checking the entry shell plus lazy-loaded workspace chunks from [`/Users/dannytrevino/development/magic-agents/ui/config/bundle-budgets.json`](/Users/dannytrevino/development/magic-agents/ui/config/bundle-budgets.json). Keep the verification console behind a lazy import so artifact-heavy proof surfaces do not inflate the initial workspace shell.
