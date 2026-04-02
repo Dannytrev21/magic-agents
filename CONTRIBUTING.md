@@ -11,7 +11,7 @@
 - Idle inspector states should stay compact. Before a session exists, prefer one focused prompt over stacked empty disclosures or artifact shells that compete with the center pane.
 - Shared acceptance-criterion selection should remain the source of truth for left-rail, center-pane, and inspector cross-highlighting.
 - Verification console state must remain session-scoped inside the center pane so approval, artifacts, live pipeline events, and Jira feedback survive tab changes without forcing a second route model.
-- Real-time event handling should use the `EventStoreProvider` + typed selector hooks (`usePhaseEvents`, `useBudgetEvents`, etc.) from `eventStore.ts` rather than ad-hoc component state. Keep the shared store mount centralized and route shell-level SSE state through one workspace model instead of duplicating subscriptions across panes.
+- Real-time event handling should use the `EventStoreProvider` + typed selector hooks (`usePhaseEvents`, `useBudgetEvents`, etc.) from `eventStore.ts` rather than ad-hoc component state. Keep the shared store mount centralized and route shell-level SSE state through one workspace model instead of duplicating subscriptions across panes. Dispatch store writes from the `useSSE` `onEvent` callback rather than only from `lastEvent` so back-to-back phase updates are not collapsed by React batching.
 - Any new pane swap, status strip, or execution control should preserve keyboard reachability, visible focus, and a screen-reader announcement path for major status changes.
 - Reduced-motion behavior is required for new UI motion; rely on the shared motion tokens and the global `prefers-reduced-motion` fallback instead of inventing per-component timing constants.
 

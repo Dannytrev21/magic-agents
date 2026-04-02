@@ -16,6 +16,7 @@ The new UI should not become a second prototype. Once the workflow is ported, th
 - A recurring verification run on 2026-04-01 re-checked the UI-port tracker and epic markdown files, found no unfinished stories remaining in U1 through U8, and reconfirmed both `npm run test:ci` and `npm run test:e2e:chromium` as the active gap-detection gates for this completed frontend epic.
 - A follow-up 2026-04-02 verification run again found no unfinished UI-port stories, confirmed the remaining U8.1 gap was harness stability rather than product behavior, serialized the jsdom suite with `maxWorkers: 1` in `ui/vitest.config.ts`, reran `npm run test:ci`, and reran `npm run test:e2e:chromium`; both gates are green on the current branch.
 - A later 2026-04-02 quality pass repaired the typed ESLint gate so local Playwright browser caches no longer break lint, tracked Playwright config/spec files stay in the linted TypeScript project, and `npm run test:ci` now runs lint before Vitest, build, and budget checks.
+- A follow-up proof pass also closed a live-stream correctness gap in `ui/src/features/workspace/phaseWorkspaceModel.ts`: the workspace now dispatches each negotiation SSE from the `useSSE` `onEvent` callback so `phase_start` and immediate `phase_progress` events survive the same React batch instead of collapsing to the last payload only.
 
 ---
 

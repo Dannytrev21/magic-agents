@@ -16,6 +16,7 @@ Adopt a three-part rollout and quality model:
 - treat `npm run test:ci` as the baseline contributor gate for UI-only changes, while keeping `npm run test:e2e` additive for release validation, regression investigation, and environments that use the remote Playwright server path
 - cap Vitest worker fan-out at `1` for the shared jsdom-heavy UI suite so the non-browser gate stays deterministic on constrained local and Codex-hosted macOS environments
 - keep the core operator journey deterministic in Playwright by routing all browser tests through mocked API/SSE fixtures with retained screenshots on failure and opt-in traces via `PW_TRACE=1` or CI
+- bridge negotiation SSE into the shared workspace event store from per-message callbacks rather than a derived `lastEvent` effect so same-batch phase updates preserve order and do not disappear under React batching
 - keep the shell CSS gzip ceiling fixed at `7 kB`, but allow the raw shell CSS budget to rise to `36 kB` when shipped operator chrome grows without materially changing compressed transfer size
 - treat the FastAPI root as a reversible rollout boundary by supporting `MAGIC_AGENTS_FRONTEND_MODE=auto|react|legacy` and `/?frontend=react|legacy` overrides while preserving the legacy HTML entrypoint
 
