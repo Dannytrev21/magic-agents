@@ -59,6 +59,10 @@
   background: transparent;
   text-align: left;
   cursor: pointer;
+  transition:
+    background-color var(--motion-fast) var(--easing-standard),
+    border-color var(--motion-fast) var(--easing-standard),
+    transform var(--motion-fast) var(--easing-standard);
 }
 
 .phaseRailButton:disabled {
@@ -76,6 +80,11 @@
 
 .phaseRailButton[data-selected='true'] {
   background: color-mix(in srgb, var(--color-bg-elevated) 82%, transparent);
+}
+
+.phaseRailButton:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: -2px;
 }
 
 .phaseRailMarker {
@@ -128,10 +137,24 @@
   color: var(--color-text);
 }
 
+.viewTab:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 2px;
+}
+
 .focusRegion {
   display: grid;
   gap: var(--space-4);
   outline: none;
+  transition:
+    opacity var(--motion-panel) var(--easing-standard),
+    transform var(--motion-panel) var(--easing-standard);
+  transform-origin: top center;
+}
+
+.focusRegion[aria-busy='true'] {
+  opacity: 0.88;
+  transform: translateY(0.35rem);
 }
 
 .phaseSummary {
@@ -157,7 +180,7 @@
 .detailRow {
   display: grid;
   gap: var(--space-1);
-  padding-bottom: var(--space-3);
+  padding: 0 0 var(--space-3);
   border-bottom: 1px solid color-mix(in srgb, var(--color-border) 72%, transparent);
 }
 
@@ -207,13 +230,16 @@
 .reviewItem {
   display: grid;
   gap: var(--space-2);
-  padding-bottom: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--color-border) 68%, transparent);
+  border-radius: var(--radius-lg);
   border-bottom: 1px solid color-mix(in srgb, var(--color-border) 72%, transparent);
+  background: color-mix(in srgb, var(--color-bg-elevated) 82%, transparent);
+  box-shadow: var(--shadow-soft);
 }
 
 .reviewItem:last-child {
-  padding-bottom: 0;
-  border-bottom: 0;
+  padding-bottom: var(--space-3);
 }
 
 .reviewItemHeader {
@@ -261,6 +287,13 @@
   border-top: 1px solid color-mix(in srgb, var(--color-border) 72%, transparent);
 }
 
+.actionRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
 .field {
   display: grid;
   gap: var(--space-2);
@@ -295,6 +328,7 @@
   gap: var(--space-3);
   max-height: 22rem;
   padding-right: var(--space-2);
+  content-visibility: auto;
   overflow: auto;
 }
 
@@ -323,6 +357,55 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.console {
+  display: grid;
+  gap: var(--space-3);
+  max-height: 24rem;
+  padding-right: var(--space-2);
+  content-visibility: auto;
+  overflow: auto;
+}
+
+.console:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 2px;
+}
+
+.consoleEntry {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--color-bg-elevated) 88%, transparent);
+  box-shadow: var(--shadow-soft);
+}
+
+.consoleEntry[data-status='running'] {
+  border-color: color-mix(in srgb, var(--color-signal) 36%, transparent);
+}
+
+.consoleEntry[data-status='done'] {
+  border-color: color-mix(in srgb, var(--color-success) 36%, transparent);
+}
+
+.consoleEntry[data-status='skipped'] {
+  border-color: color-mix(in srgb, var(--color-border) 92%, transparent);
+}
+
+.consoleEntry[data-status='failed'],
+.consoleEntry[data-status='error'] {
+  border-color: color-mix(in srgb, var(--color-signal) 52%, transparent);
+}
+
+.consoleEntryHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 

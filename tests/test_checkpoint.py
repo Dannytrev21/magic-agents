@@ -216,7 +216,7 @@ class TestLoadCheckpoint:
         result = load_checkpoint(populated_context.jira_key)
         assert result is not None
 
-        ctx, phase_idx = result
+        ctx, phase_idx, _controller = result
         assert ctx.jira_key == "TEST-001"
         assert ctx.jira_summary == "Test Story"
         assert ctx.current_phase == "phase_1"
@@ -232,7 +232,7 @@ class TestLoadCheckpoint:
             save_checkpoint(populated_context, phase_name)
 
             result = load_checkpoint(populated_context.jira_key)
-            ctx, idx = result
+            ctx, idx, _controller = result
             assert ctx.current_phase == phase_name
             # Phase index is the index in PHASES list
             assert idx == PHASES.index(phase_name)
@@ -250,7 +250,7 @@ class TestLoadCheckpoint:
         save_checkpoint(populated_context, "phase_2")
 
         # Load should get phase_2 (most recent)
-        ctx, phase_idx = load_checkpoint(populated_context.jira_key)
+        ctx, phase_idx, _controller = load_checkpoint(populated_context.jira_key)
         assert ctx.current_phase == "phase_2"
         assert len(ctx.postconditions) == 2
 
@@ -280,7 +280,7 @@ class TestLoadCheckpoint:
         ]
 
         save_checkpoint(populated_context, "phase_1")
-        ctx, _ = load_checkpoint(populated_context.jira_key)
+        ctx, _, _controller = load_checkpoint(populated_context.jira_key)
 
         assert len(ctx.negotiation_log) == 3
         assert ctx.negotiation_log[0]["content"] == "Step 1"
@@ -306,7 +306,7 @@ class TestLoadCheckpoint:
         with open(session_dir / "checkpoint_phase_0.json", "w") as f:
             json.dump(minimal_data, f)
 
-        ctx, phase_idx = load_checkpoint(sample_context.jira_key)
+        ctx, phase_idx, _controller = load_checkpoint(sample_context.jira_key)
         assert ctx.jira_key == "TEST-001"
         assert ctx.classifications == []
         assert ctx.postconditions == []
@@ -330,7 +330,7 @@ class TestLoadCheckpoint:
         result = load_checkpoint(populated_context.jira_key)
         assert result is not None
 
-        ctx, _ = result
+        ctx, _, _controller = result
         assert getattr(ctx, "session_id", "") == "session-checkpoint-001"
         assert getattr(ctx, "usage", {}).get("api_calls") == 8
         assert getattr(ctx, "usage", {}).get("tokens_used") == 125000
@@ -509,7 +509,7 @@ class TestHarnessIntegration:
 
         # Check that checkpoint was saved
         assert has_checkpoint(sample_context.jira_key)
-        ctx, phase_idx = load_checkpoint(sample_context.jira_key)
+        ctx, phase_idx, _controller = load_checkpoint(sample_context.jira_key)
         assert ctx.current_phase == "phase_1"
         assert phase_idx == 1  # phase_1 is index 1 in PHASES
 
@@ -539,7 +539,7 @@ class TestHarnessIntegration:
         assert len(checkpoints) == 2
 
         # Load the latest (should be phase_2)
-        ctx, phase_idx = load_checkpoint(sample_context.jira_key)
+        ctx, phase_idx, _controller = load_checkpoint(sample_context.jira_key)
         assert ctx.current_phase == "phase_2"
 
 
@@ -566,7 +566,7 @@ class TestRoundTrip:
         save_checkpoint(populated_context, "phase_3")
 
         # Load
-        ctx, phase_idx = load_checkpoint(populated_context.jira_key)
+        ctx, phase_idx, _controller = load_checkpoint(populated_context.jira_key)
 
         # Verify all data matches
         assert ctx.jira_key == populated_context.jira_key
@@ -591,7 +591,7 @@ class TestRoundTrip:
         sample_context.constitution = constitution
 
         save_checkpoint(sample_context, "phase_0")
-        ctx, _ = load_checkpoint(sample_context.jira_key)
+        ctx, _, _controller = load_checkpoint(sample_context.jira_key)
 
         assert ctx.constitution == constitution
 
@@ -616,7 +616,7 @@ class TestRoundTrip:
         }
 
         save_checkpoint(sample_context, "phase_4")
-        ctx, _ = load_checkpoint(sample_context.jira_key)
+        ctx, _, _controller = load_checkpoint(sample_context.jira_key)
 
         assert ctx.traceability_map == sample_context.traceability_map
         assert ctx.verification_routing == sample_context.verification_routing

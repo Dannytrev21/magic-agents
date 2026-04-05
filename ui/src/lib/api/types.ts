@@ -159,8 +159,18 @@ export type AcceptanceCriterionVerdict = {
   ac_checkbox?: number;
   ac_index?: number;
   ac_text?: string;
+  evidence?: Array<{
+    description?: string;
+    details?: string;
+    passed?: boolean;
+    ref?: string;
+    verification_type?: string;
+    [key: string]: unknown;
+  }>;
+  pass_condition?: string;
   passed?: boolean;
   status?: 'pass' | 'fail' | 'pending';
+  summary?: string;
   [key: string]: unknown;
 };
 
@@ -177,6 +187,8 @@ export type SessionUsageSummary = {
 export type StartNegotiationResponse = {
   acceptance_criteria?: AcceptanceCriterionInput[];
   approved?: boolean;
+  approved_at?: string;
+  approved_by?: string;
   classifications?: AcceptanceCriterionClassification[];
   current_phase?: string;
   done: boolean;
@@ -274,6 +286,32 @@ export type CompileSpecResponse = {
   traceability?: TraceabilityMap;
 };
 
+export type EarsApprovalResponse = {
+  approved: boolean;
+  approved_at: string;
+  approved_by: string;
+};
+
+export type GenerateTestsStep = {
+  all_passed?: boolean;
+  message?: string;
+  passed?: number;
+  path?: string;
+  status?: string;
+  step: string;
+  total?: number;
+  [key: string]: unknown;
+};
+
+export type GenerateTestsResponse = {
+  all_passed?: boolean;
+  error?: string;
+  steps: GenerateTestsStep[];
+  test_content?: string;
+  test_path?: string;
+  verdicts?: AcceptanceCriterionVerdict[];
+};
+
 export type SessionCheckpointSummary = {
   acceptance_criteria_count?: number;
   approved?: boolean;
@@ -294,6 +332,29 @@ export type SessionInfoResponse = {
 };
 
 export type PipelineEvent = {
+  all_passed?: boolean;
+  message?: string;
+  requirements?: CompiledSpecRequirement[];
+  session_id?: string;
+  spec_content?: string;
+  spec_path?: string;
+  status?: string;
+  step?: string;
+  success?: boolean;
+  test_content?: string;
+  test_path?: string;
+  traceability?: TraceabilityMap;
+  verdicts?: AcceptanceCriterionVerdict[];
   [key: string]: unknown;
   type: string;
+};
+
+export type JiraUpdateResponse = {
+  all_passed?: boolean;
+  checkboxes_ticked?: number | number[];
+  comment_posted?: boolean;
+  evidence_posted?: boolean;
+  jira_key?: string;
+  status?: string;
+  [key: string]: unknown;
 };

@@ -65,10 +65,11 @@
 
 ## Current Status
 
-- U1 through U5 are now complete in the React workspace.
-- The right inspector now owns the evidence, scan, traceability, planning/critique, and structured spec-contract surfaces.
-- Inspector actions stay session-scoped and keep the center-pane negotiation flow stable while scan, critique, planning, and spec-compare requests run.
-- The next delivery slice is Epic U6: verification console and pipeline execution.
+- U1 through U8 are now complete in the React workspace, with U8.2 browser coverage authored but blocked from local execution in this sandbox because Playwright Chromium cannot launch under the current macOS permission envelope.
+- The shell, rails, workspace, and verification console now consume a typed graphite/bone/signal design system mirrored into CSS tokens.
+- Workspace announcements, pane focus handoff, busy states, and the pipeline log now support keyboard and screen-reader operation without pointer-only assumptions.
+- Reduced-motion fallbacks and shared timing tokens now govern pane transitions, live console behavior, and responsive shell refinements.
+- The frontend now ships explicit quality gates: `npm run test:ci` for Vitest + build + bundle budgets, `npm run test:e2e` for deterministic mock-mode browser journeys, and a FastAPI rollout switch that can force either React or legacy HTML at request or process scope.
 
 ## Success Criteria
 

@@ -37,3 +37,41 @@ def test_api_routes_remain_available_when_ui_bundle_exists(monkeypatch, tmp_path
 
     assert response.status_code == 200
     assert isinstance(response.json(), list)
+
+
+def test_root_can_serve_legacy_ui_for_rollout_override(monkeypatch, tmp_path):
+    static_dir = tmp_path / "static"
+    built_dir = static_dir / "ui"
+    static_dir.mkdir()
+    built_dir.mkdir()
+    (static_dir / "index.html").write_text("<html><body>legacy-ui</body></html>")
+    (built_dir / "index.html").write_text("<html><body>react-ui</body></html>")
+
+    monkeypatch.setattr(web, "STATIC_DIR", static_dir)
+
+    client = TestClient(web.app)
+    response = client.get("/?frontend=legacy")
+
+    assert response.status_code == 200
+    assert "legacy-ui" in response.text
+
+
+def test_root_respects_env_rollout_mode_but_allows_react_override(monkeypatch, tmp_path):
+    static_dir = tmp_path / "static"
+    built_dir = static_dir / "ui"
+    static_dir.mkdir()
+    built_dir.mkdir()
+    (static_dir / "index.html").write_text("<html><body>legacy-ui</body></html>")
+    (built_dir / "index.html").write_text("<html><body>react-ui</body></html>")
+
+    monkeypatch.setattr(web, "STATIC_DIR", static_dir)
+    monkeypatch.setenv(web.FRONTEND_MODE_ENV, "legacy")
+
+    client = TestClient(web.app)
+    legacy_response = client.get("/")
+    react_response = client.get("/?frontend=react")
+
+    assert legacy_response.status_code == 200
+    assert react_response.status_code == 200
+    assert "legacy-ui" in legacy_response.text
+    assert "react-ui" in react_response.text

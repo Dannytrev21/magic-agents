@@ -2,18 +2,18 @@
   "meta": {
     "project": "Magic Agents Operator Workspace UI port",
     "created": "2026-03-31",
-    "last_updated": "2026-04-01T12:39:32Z",
+    "last_updated": "2026-04-01T18:10:00Z",
     "total_epics": 8,
     "total_stories": 36
   },
   "summary": {
-    "epics_complete": 5,
+    "epics_complete": 8,
     "epics_in_progress": 0,
-    "epics_not_started": 3,
-    "stories_complete": 26,
+    "epics_not_started": 0,
+    "stories_complete": 36,
     "stories_in_progress": 0,
-    "stories_not_started": 10,
-    "stories_tested": 26
+    "stories_not_started": 0,
+    "stories_tested": 35
   },
   "epics": [
     {
@@ -92,12 +92,12 @@
       "title": "Verification Console and Pipeline Execution",
       "file": "U06-verification-console-pipeline.md",
       "priority": 6,
-      "status": "not_started",
+      "status": "complete",
       "stories": [
-        { "id": "U6.1", "title": "Integrate the EARS approval gate and execution controls", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U6.2", "title": "Add artifact viewers for specs and generated tests", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U6.3", "title": "Stream pipeline execution as a live console", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U6.4", "title": "Present verdicts and Jira feedback in one post-run surface", "status": "not_started", "tested": false, "notes": "" }
+        { "id": "U6.1", "title": "Integrate the EARS approval gate and execution controls", "status": "complete", "tested": true, "notes": "Added a session-scoped verification console in the center pane, surfaced backend approval metadata, and enforced the EARS gate in both the React controls and FastAPI execution endpoints." },
+        { "id": "U6.2", "title": "Add artifact viewers for specs and generated tests", "status": "complete", "tested": true, "notes": "Added inline spec YAML and generated-test viewers with revisit-friendly tabs, mono file refs, and long-content handling without leaving the workspace." },
+        { "id": "U6.3", "title": "Stream pipeline execution as a live console", "status": "complete", "tested": true, "notes": "Implemented `/api/pipeline/stream` SSE events for compile, generate, run, evaluate, and completion states, then rendered them as an in-place live console with durable final status." },
+        { "id": "U6.4", "title": "Present verdicts and Jira feedback in one post-run surface", "status": "complete", "tested": true, "notes": "Added post-run summaries, per-AC verdict details with evidence refs, Jira configuration gating, and session-scoped Jira feedback results in the verification console." }
       ]
     },
     {
@@ -105,11 +105,11 @@
       "title": "Design System, Accessibility, and Motion",
       "file": "U07-design-system-accessibility-motion.md",
       "priority": 7,
-      "status": "not_started",
+      "status": "complete",
       "stories": [
-        { "id": "U7.1", "title": "Establish the visual system and typography rules", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U7.2", "title": "Make the workspace accessible for keyboard and screen-reader users", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U7.3", "title": "Add restrained motion and responsive refinement", "status": "not_started", "tested": false, "notes": "" }
+        { "id": "U7.1", "title": "Establish the visual system and typography rules", "status": "complete", "tested": true, "notes": "Added a typed graphite/bone/signal design-system source mirrored into CSS variables, tightened shell and rail surfaces, and preserved mono typography for refs and artifacts only." },
+        { "id": "U7.2", "title": "Make the workspace accessible for keyboard and screen-reader users", "status": "complete", "tested": true, "notes": "Added shell announcements, busy/log semantics, focus handoff after session/phase/pipeline transitions, and stronger visible focus treatment across primary controls." },
+        { "id": "U7.3", "title": "Add restrained motion and responsive refinement", "status": "complete", "tested": true, "notes": "Introduced shared motion tokens, reduced-motion fallbacks, calmer pane transitions, and responsive chrome refinements without disturbing the existing mobile/tablet pane model." }
       ]
     },
     {
@@ -117,11 +117,11 @@
       "title": "Quality, Performance, and Rollout",
       "file": "U08-quality-performance-rollout.md",
       "priority": 8,
-      "status": "not_started",
+      "status": "complete",
       "stories": [
-        { "id": "U8.1", "title": "Add component, integration, and contract tests for the new UI", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U8.2", "title": "Cover the operator journey with browser-level end-to-end tests", "status": "not_started", "tested": false, "notes": "" },
-        { "id": "U8.3", "title": "Ship performance budgets and a safe rollout path", "status": "not_started", "tested": false, "notes": "" }
+        { "id": "U8.1", "title": "Add component, integration, and contract tests for the new UI", "status": "complete", "tested": true, "notes": "Added direct rail coverage in SessionBootstrap, page-level integration coverage in OperatorWorkspace.integration.test.tsx, and expanded typed client contract coverage in client.test.ts so UI regressions fail at component, integration, and adapter layers." },
+        { "id": "U8.2", "title": "Cover the operator journey with browser-level end-to-end tests", "status": "complete", "tested": false, "notes": "Added an env-selectable Playwright harness plus deterministic specs for the manual-entry negotiation-to-pipeline flow and a mocked pipeline failure path. On 2026-04-01 in the Codex macOS 26.3.1 sandbox, Chromium, WebKit, and Firefox all aborted before page boot, so browser validation remains environment-blocked despite retained traces and reproducible specs." },
+        { "id": "U8.3", "title": "Ship performance budgets and a safe rollout path", "status": "complete", "tested": true, "notes": "Lazy-loaded the verification workspace, added manifest-backed bundle budgets enforced by npm run test:budgets, and introduced FastAPI rollout controls via MAGIC_AGENTS_FRONTEND_MODE plus the frontend query parameter while keeping the legacy HTML entrypoint available." }
       ]
     }
   ]

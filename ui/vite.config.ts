@@ -19,6 +19,7 @@ export default defineConfig({
     },
   },
   build: {
+    manifest: true,
     outDir: '../static/ui',
     emptyOutDir: true,
   },

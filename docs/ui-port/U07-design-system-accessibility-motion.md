@@ -34,16 +34,26 @@ The new workspace should look and feel premium, but polish only matters after th
 
 ### Acceptance Criteria
 
-- [ ] CSS variables or tokens define color, spacing, radius, and type scales.
-- [ ] Sans-serif is the default product copy face.
-- [ ] Mono is limited to IDs, refs, paths, and artifact text.
-- [ ] Visual treatment favors dividers and whitespace over boxed cards.
+- [x] CSS variables or tokens define color, spacing, radius, and type scales.
+- [x] Sans-serif is the default product copy face.
+- [x] Mono is limited to IDs, refs, paths, and artifact text.
+- [x] Visual treatment favors dividers and whitespace over boxed cards.
+
+### Implementation Notes
+
+- Added a typed design-system source in `ui/src/styles/system.ts` and mirrored its shared values into `ui/src/styles/tokens.css`.
+- Re-tuned shell, primitive, workspace, and left-rail surfaces toward calmer graphite workplanes, softer glass chrome, and clearer whitespace.
+- Kept mono styling scoped to identifiers, refs, paths, and proof artifacts while leaving product copy on the sans stack.
 
 ### How to Test
 
 - Add visual regression coverage for the shell, rails, and artifact surfaces.
 - Verify token usage through component stories or design-system snapshots.
 - Manually inspect representative screens for typography misuse or accent overuse.
+
+### Verification
+
+- `npm test -- --run src/styles/system.test.ts`
 
 ---
 
@@ -71,16 +81,26 @@ The new workspace should look and feel premium, but polish only matters after th
 
 ### Acceptance Criteria
 
-- [ ] Keyboard users can move through the rails, workspace, and inspector predictably.
-- [ ] Focus is managed after major transitions such as story selection, phase approval, and pipeline completion.
-- [ ] Live regions announce important status changes such as running, failed, and complete.
-- [ ] Contrast and visible focus styling meet accessible operator-use standards.
+- [x] Keyboard users can move through the rails, workspace, and inspector predictably.
+- [x] Focus is managed after major transitions such as story selection, phase approval, and pipeline completion.
+- [x] Live regions announce important status changes such as running, failed, and complete.
+- [x] Contrast and visible focus styling meet accessible operator-use standards.
+
+### Implementation Notes
+
+- Added a shell-level polite live region for session, pane, and phase updates plus a focusable live pipeline log for execution events.
+- Focus now returns to the active workspace after phase progression and to the pipeline console after run completion.
+- Expanded visible focus treatment on shell, workspace, and left-rail controls so keyboard users can track the active surface without relying on color alone.
 
 ### How to Test
 
 - Add accessibility tests with axe or equivalent tooling.
 - Run keyboard-only manual checks for the main negotiation and execution flows.
 - Verify screen-reader-friendly labels on tabs, buttons, and execution output.
+
+### Verification
+
+- `npm test -- --run src/features/workspace/OperatorWorkspacePage.test.tsx src/features/workspace/WorkspaceVerificationConsole.test.tsx`
 
 ---
 
@@ -108,13 +128,23 @@ The new workspace should look and feel premium, but polish only matters after th
 
 ### Acceptance Criteria
 
-- [ ] Pane and section transitions use a shared motion vocabulary.
-- [ ] Reduced-motion users receive a no-frills equivalent.
-- [ ] Tablet and mobile layouts collapse gracefully without losing key actions.
-- [ ] Motion does not introduce jank during data-heavy updates.
+- [x] Pane and section transitions use a shared motion vocabulary.
+- [x] Reduced-motion users receive a no-frills equivalent.
+- [x] Tablet and mobile layouts collapse gracefully without losing key actions.
+- [x] Motion does not introduce jank during data-heavy updates.
+
+### Implementation Notes
+
+- Added shared panel-motion tokens plus shell/workspace transitions that use shallow opacity and translate changes instead of theatrical movement.
+- Introduced a global `prefers-reduced-motion` fallback and marked active workspace transitions with `aria-busy` so visual motion and assistive feedback stay aligned.
+- Preserved the existing mobile/tablet pane fallbacks while tightening chrome, spacing, and scroll-region behavior to keep the interface breathable at narrower widths.
 
 ### How to Test
 
 - Add visual interaction tests for key transitions.
 - Verify reduced-motion handling in browser devtools or OS settings.
 - Run manual responsive checks across desktop, tablet, and mobile widths.
+
+### Verification
+
+- `npm test -- --run src/features/workspace/WorkspaceCenterPane.test.tsx src/styles/system.test.ts`

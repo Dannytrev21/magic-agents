@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from 'react';
+import { Suspense, lazy, useEffect, useState, type RefObject } from 'react';
 import { Button } from '@/components/primitives/Button';
 import { Badge } from '@/components/primitives/Badge';
 import { Divider } from '@/components/primitives/Divider';
@@ -7,6 +7,10 @@ import { Mono } from '@/components/primitives/Mono';
 import { SectionHeader } from '@/components/primitives/SectionHeader';
 import { Text } from '@/components/primitives/Text';
 import { PhaseTranscript } from '@/features/workspace/PhaseTranscript';
+import {
+  buildInitialVerificationState,
+  type VerificationWorkspaceState,
+} from '@/features/workspace/workspaceVerificationModel';
 import {
   buildPhaseReview,
   buildTranscriptEntries,
@@ -19,6 +23,11 @@ import {
 } from '@/features/workspace/workspaceModel';
 import type { StartNegotiationResponse } from '@/lib/api/types';
 import styles from '@/features/workspace/workspace.module.css';
+
+const WorkspaceVerificationConsole = lazy(async () => {
+  const module = await import('@/features/workspace/WorkspaceVerificationConsole');
+  return { default: module.WorkspaceVerificationConsole };
+});
 
 export type PhaseActionState = {
   activeAction: 'approve' | 'revise' | null;
@@ -69,6 +78,10 @@ export function WorkspaceCenterPane({
   statusLabel,
   storySummary = null,
 }: WorkspaceCenterPaneProps) {
+  const [verificationState, setVerificationState] = useState<VerificationWorkspaceState>(() =>
+    buildInitialVerificationState(activeSession),
+  );
+
   useEffect(() => {
     if (!activeSession || activeView !== 'negotiation') {
       return;
@@ -99,6 +112,10 @@ export function WorkspaceCenterPane({
       window.removeEventListener('keydown', handleKeydown);
     };
   }, [activeSession, activeView, onPhaseSelect]);
+
+  useEffect(() => {
+    setVerificationState(buildInitialVerificationState(activeSession));
+  }, [activeSession?.session_id]);
 
   if (!activeSession) {
     return (
@@ -211,6 +228,7 @@ export function WorkspaceCenterPane({
 
       <section
         aria-label="Active workspace region"
+        aria-busy={isTransitionPending}
         className={styles.focusRegion}
         ref={focusRef}
         role="region"
@@ -242,6 +260,22 @@ export function WorkspaceCenterPane({
             activeSession={activeSession}
             selectedAcceptanceCriterionIndex={selectedAcceptanceCriterionIndex}
           />
+        ) : null}
+        {activeView === 'verification' ? (
+          activeSession.done ? (
+            <Suspense fallback={<Text size="sm">Loading verification workspace</Text>}>
+              <WorkspaceVerificationConsole
+                activeSession={activeSession}
+                onStateChange={setVerificationState}
+                state={verificationState}
+              />
+            </Suspense>
+          ) : (
+            <EmptyState
+              title="Verification unlocks after negotiation"
+              description="Finish the negotiation loop to approve EARS, inspect proof artifacts, and run the verification pipeline."
+            />
+          )
         ) : null}
       </section>
     </div>

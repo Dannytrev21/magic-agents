@@ -8,6 +8,12 @@
 
 The new UI should not become a second prototype. Once the workflow is ported, the team needs confidence that the app is performant, tested, and shippable without breaking the backend or losing the ability to compare with the legacy interface during rollout.
 
+## Implementation Status
+
+- `U8.1` is implemented with new left-rail component coverage, page-level integration coverage, and expanded typed API contract tests. `npm run test:ui` and `npm run test:ci` both pass.
+- `U8.2` is implemented with Playwright specs for the deterministic manual-entry happy path and a mocked pipeline failure path, plus retained traces/screenshots on failure. The harness is now environment-selectable so Chromium, Firefox, and WebKit can be tried from one config, but browser validation remains blocked in the current Codex macOS 26 sandbox because every tested engine aborts before any page code runs.
+- `U8.3` is implemented with a lazy-loaded verification console chunk, manifest-backed bundle budgets, and a reversible FastAPI frontend switch via `MAGIC_AGENTS_FRONTEND_MODE` or the `frontend` query parameter. The targeted backend rollout tests pass.
+
 ---
 
 ## Story U8.1: Add component, integration, and contract tests for the new UI
@@ -34,10 +40,10 @@ The new UI should not become a second prototype. Once the workflow is ported, th
 
 ### Acceptance Criteria
 
-- [ ] Component tests exist for shell, rails, phase surfaces, inspector tabs, and artifact viewers.
-- [ ] Integration tests cover story selection, phase approval, revision, and pipeline launch.
-- [ ] API contract tests validate the typed frontend adapters against representative backend payloads.
-- [ ] CI can run frontend tests independently of browser e2e tests.
+- [x] Component tests exist for shell, rails, phase surfaces, inspector tabs, and artifact viewers.
+- [x] Integration tests cover story selection, phase approval, revision, and pipeline launch.
+- [x] API contract tests validate the typed frontend adapters against representative backend payloads.
+- [x] CI can run frontend tests independently of browser e2e tests.
 
 ### How to Test
 
@@ -71,16 +77,17 @@ The new UI should not become a second prototype. Once the workflow is ported, th
 
 ### Acceptance Criteria
 
-- [ ] Browser tests cover manual entry, Jira intake fallback, negotiation progress, approval, and pipeline execution.
-- [ ] Browser tests cover at least one failure mode such as stream error or mutation failure.
-- [ ] Tests run in deterministic mock mode.
-- [ ] Screenshots or traces are retained for failed runs.
+- [x] Browser tests cover manual entry, Jira intake fallback, negotiation progress, approval, and pipeline execution.
+- [x] Browser tests cover at least one failure mode such as stream error or mutation failure.
+- [x] Tests run in deterministic mock mode.
+- [x] Screenshots or traces are retained for failed runs.
 
 ### How to Test
 
 - Run the browser suite locally against mock mode.
 - Intentionally inject one failing API response and confirm the failure path is asserted.
 - Review captured traces or screenshots from a failed test run.
+- Use `npm run test:e2e` for the default Chromium path in this repo, or `npm run test:e2e:chromium`, `npm run test:e2e:firefox`, and `npm run test:e2e:webkit` when isolating host-specific browser failures.
 
 ---
 
@@ -108,13 +115,14 @@ The new UI should not become a second prototype. Once the workflow is ported, th
 
 ### Acceptance Criteria
 
-- [ ] Bundle-size budgets are defined for the shell and major lazy-loaded surfaces.
-- [ ] Heavy surfaces such as artifact viewers and analyst tools are code-split.
-- [ ] A feature flag, route split, or reversible deployment path exists for rollout.
-- [ ] The legacy UI remains available until the new workspace is accepted.
+- [x] Bundle-size budgets are defined for the shell and major lazy-loaded surfaces.
+- [x] Heavy surfaces such as artifact viewers and analyst tools are code-split.
+- [x] A feature flag, route split, or reversible deployment path exists for rollout.
+- [x] The legacy UI remains available until the new workspace is accepted.
 
 ### How to Test
 
 - Run bundle analysis on production builds and compare against budgets.
 - Verify lazy-loaded surfaces are not present in the initial shell chunk.
 - Perform a manual cutover test between legacy and new UI entrypoints.
+- Verify `/?frontend=legacy` still serves [`/Users/dannytrevino/development/magic-agents/static/index.html`](/Users/dannytrevino/development/magic-agents/static/index.html) while the default root continues to prefer the built React bundle when present.

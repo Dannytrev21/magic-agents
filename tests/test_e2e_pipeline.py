@@ -335,7 +335,7 @@ class TestCheckpointResume:
             # Load
             result = load_checkpoint("CP-001")
             assert result is not None
-            loaded_ctx, phase_idx = result
+            loaded_ctx, phase_idx, _controller = result
             assert loaded_ctx.jira_key == "CP-001"
             assert len(loaded_ctx.classifications) == 1
         finally:

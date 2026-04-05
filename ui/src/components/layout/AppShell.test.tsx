@@ -74,7 +74,9 @@ describe('AppShell', () => {
     expect(screen.getByText(/negotiation surface/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /toggle story intake panel/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /toggle evidence panel/i })).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent(/awaiting operator input/i);
+    expect(screen.getByRole('status', { name: /session status/i })).toHaveTextContent(
+      /awaiting operator input/i,
+    );
   });
 
   it('supports collapsed panel state and mobile panel switching controls', async () => {
